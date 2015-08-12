@@ -1,0 +1,215 @@
+{
+  "SmallMonoFontData":
+  {
+    "res:type": "fontData",
+    "file": "file:Inconsolata-Regular.ttf"
+  },
+
+  "SmallMonoFont":
+  {
+    "res:type": "font",
+    "data": "ref:SmallMonoFontData",
+    "size": 14,
+    "outline": 1
+  },
+
+  "DebugPageInput":
+  {
+    "res:type": "input",
+    "events":
+    {
+      "toggleNumbers":
+      [
+        { "action": [ "f8" ] }
+      ],
+      "nextPage":
+      [
+        { "action": [ "control", "f8" ] }
+      ],
+      "prevPage":
+      [
+        { "action": [ "control", "shift", "f8" ] }
+      ],
+      "customDebug":
+      [
+        { "action": [ "shift", "f8" ] }
+      ],
+      "toggle0":
+      [
+        { "action": [ "control", "0" ] }
+      ],
+      "toggle1":
+      [
+        { "action": [ "control", "1" ] }
+      ],
+      "toggle2":
+      [
+        { "action": [ "control", "2" ] }
+      ],
+      "toggle3":
+      [
+        { "action": [ "control", "3" ] }
+      ],
+      "toggle4":
+      [
+        { "action": [ "control", "4" ] }
+      ],
+      "toggle5":
+      [
+        { "action": [ "control", "5" ] }
+      ],
+      "toggle6":
+      [
+        { "action": [ "control", "6" ] }
+      ],
+      "toggle7":
+      [
+        { "action": [ "control", "7" ] }
+      ],
+      "toggle8":
+      [
+        { "action": [ "control", "8" ] }
+      ],
+      "toggle9":
+      [
+        { "action": [ "control", "9" ] }
+      ]
+    }
+  },
+
+  "LineVS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "vs_4_0",
+    "entry": "LineVS"
+  },
+
+  "CircleVS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "vs_4_0",
+    "entry": "CircleVS"
+  },
+
+  "TriangleVS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "vs_4_0",
+    "entry": "TriangleVS"
+  },
+
+  "SpriteVS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "vs_4_0",
+    "entry": "SpriteVS"
+  },
+
+  "MultiSpriteVS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "vs_4_0",
+    "entry": "MultiSpriteVS"
+  },
+
+  "LineGS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "gs_4_0",
+    "entry": "LineGS"
+  },
+
+  "LineScreenGS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "gs_4_0",
+    "entry": "LineGS",
+    "defines":
+    {
+      "SCREEN_SPACE": "1"
+    }
+  },
+
+  "CircleGS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "gs_4_0",
+    "entry": "CircleGS"
+  },
+
+  "CircleScreenGS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "gs_4_0",
+    "entry": "CircleGS",
+    "defines":
+    {
+      "SCREEN_SPACE": "1"
+    }
+  },
+
+  "TriangleGS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "gs_4_0",
+    "entry": "TriangleGS"
+  },
+
+  "SpriteGS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "gs_4_0",
+    "entry": "SpriteGS"
+  },
+
+  "MultiSpriteGS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "gs_4_0",
+    "entry": "MultiSpriteGS"
+  },
+
+  "ColorPS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "ps_4_0",
+    "entry": "ColorPS"
+  },
+
+  "SpritePS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "ps_4_0",
+    "entry": "SpritePS"
+  },
+
+  "SpriteAlphaPS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "ps_4_0",
+    "entry": "SpriteAlphaPS"
+  },
+
+  "MultiSpritePS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "ps_4_0",
+    "entry": "MultiSpritePS"
+  }
+}

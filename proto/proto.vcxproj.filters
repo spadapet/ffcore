@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="States\TestEntityState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="States\TestFontState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="States\TitleState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="States\TestUiState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="States\TestEntityState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+    <ClInclude Include="States\TestFontState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+    <ClInclude Include="States\TitleState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\resource.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="States\TestUiState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="States">
+      <UniqueIdentifier>{0a041f6b-237b-40ea-a4a2-d61134dc8a8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{d91d63c1-2aba-4026-8862-6da077fc5f2d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Assets\resource.rc">
+      <Filter>Assets</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Assets\ApplicationResources.xaml">
+      <Filter>Assets</Filter>
+    </Page>
+    <Page Include="Assets\Overlay.xaml">
+      <Filter>Assets</Filter>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <ResJson Include="Assets\Assets.res.json">
+      <Filter>Assets</Filter>
+    </ResJson>
+    <ResJson Include="Assets\Assets.Xaml.res.json">
+      <Filter>Assets</Filter>
+    </ResJson>
+  </ItemGroup>
+</Project>

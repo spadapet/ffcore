@@ -1,0 +1,15 @@
+{
+  "ApplicationResources.xaml":
+  {
+    "res:type": "file",
+    "file": "file:ApplicationResources.xaml",
+    "compress": false
+  },
+
+  "Overlay.xaml":
+  {
+    "res:type": "file",
+    "file": "file:Overlay.xaml",
+    "compress": false
+  }
+}

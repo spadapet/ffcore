@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29721.122
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.zlib", "zlib\zlib-metro.vcxproj", "{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.dxtex", "dxtex\dxtex-metro.vcxproj", "{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util", "util\util-metro.vcxproj", "{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.libpng", "libpng\libpng-metro.vcxproj", "{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{755DCD0F-9F3C-4F0B-9256-F3EC63B80176}"
+	ProjectSection(SolutionItems) = preProject
+		..\msbuild\cpp.props = ..\msbuild\cpp.props
+		..\msbuild\cpp.targets = ..\msbuild\cpp.targets
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Debug|Win32.Build.0 = Debug|Win32
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Debug|x64.ActiveCfg = Debug|x64
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Debug|x64.Build.0 = Debug|x64
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Release|Win32.ActiveCfg = Release|Win32
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Release|Win32.Build.0 = Release|Win32
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Release|x64.ActiveCfg = Release|x64
+		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Release|x64.Build.0 = Release|x64
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Debug|Win32.Build.0 = Debug|Win32
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Debug|x64.ActiveCfg = Debug|x64
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Debug|x64.Build.0 = Debug|x64
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Release|Win32.ActiveCfg = Release|Win32
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Release|Win32.Build.0 = Release|Win32
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Release|x64.ActiveCfg = Release|x64
+		{D6F468CF-1B2B-46E1-91DD-2C36AC216E7A}.Release|x64.Build.0 = Release|x64
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Debug|Win32.Build.0 = Debug|Win32
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Debug|x64.ActiveCfg = Debug|x64
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Debug|x64.Build.0 = Debug|x64
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Release|Win32.ActiveCfg = Release|Win32
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Release|Win32.Build.0 = Release|Win32
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Release|x64.ActiveCfg = Release|x64
+		{EFF8144D-F91E-4BBD-B09B-D6DB6B3A5512}.Release|x64.Build.0 = Release|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|Win32.Build.0 = Debug|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|x64.ActiveCfg = Debug|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|x64.Build.0 = Debug|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|Win32.ActiveCfg = Release|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|Win32.Build.0 = Release|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|x64.ActiveCfg = Release|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {91B866E1-603E-452C-8833-B8815476D11B}
+	EndGlobalSection
+EndGlobal

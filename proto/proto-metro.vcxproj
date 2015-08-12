@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{5029024d-8fff-4ecf-94fc-3acad731caa1}</ProjectGuid>
+    <AppType>Metro</AppType>
+    <ConfigurationType>Application</ConfigurationType>
+    <ProjectName>Proto</ProjectName>
+    <RootNamespace>Proto</RootNamespace>
+  </PropertyGroup>
+  <Import Project="..\msbuild\cpp.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\util</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\ui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\noesis\Include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(FFCoreRoot)core\noesis\Lib\$(XPlatform)\Noesis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>Noesis.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="States\TestEntityState.cpp" />
+    <ClCompile Include="States\TestFontState.cpp" />
+    <ClCompile Include="States\TestUiState.cpp" />
+    <ClCompile Include="States\TitleState.cpp" />
+    <ClInclude Include="App.xaml.h">
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="App.xaml.cpp">
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ApplicationDefinition Include="App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <ClInclude Include="States\TestEntityState.h" />
+    <ClInclude Include="States\TestFontState.h" />
+    <ClInclude Include="States\TestUiState.h" />
+    <ClInclude Include="States\TitleState.h" />
+    <None Include="Assets\Overlay.xaml">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Assets\ApplicationResources.xaml">
+      <FileType>Document</FileType>
+    </None>
+    <AppxManifest Include="Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+    <Image Include="Assets\Logo.scale-100.png" />
+    <Image Include="Assets\player moving.png">
+      <DeploymentContent>false</DeploymentContent>
+    </Image>
+    <Image Include="Assets\player.png">
+      <DeploymentContent>false</DeploymentContent>
+    </Image>
+    <Image Include="Assets\SmallLogo.scale-100.png" />
+    <Image Include="Assets\SplashScreen.scale-100.png" />
+    <Image Include="Assets\StoreLogo.scale-100.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\core\util\util-metro.vcxproj">
+      <Project>{eff8144d-f91e-4bbd-b09b-d6db6b3a5512}</Project>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResJson Include="Assets\Assets.res.json" />
+    <ResJson Include="Assets\Assets.Xaml.res.json" />
+    <None Include="..\core\noesis\Bin\$(XPlatform)\Noesis.dll">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Assets\TestAssets.res.json">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Assets\Beat_32.mp3">
+      <DeploymentContent>false</DeploymentContent>
+    </Media>
+    <Media Include="Assets\free-life-0.wav">
+      <DeploymentContent>false</DeploymentContent>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Assets\LiberationMono-Regular.ttf" />
+    <Font Include="Assets\OpenSans-Regular.ttf" />
+    <Font Include="Assets\pressstart2p.ttf">
+      <FileType>Document</FileType>
+      <DeploymentContent>false</DeploymentContent>
+    </Font>
+  </ItemGroup>
+  <Import Project="..\msbuild\cpp.targets" />
+</Project>

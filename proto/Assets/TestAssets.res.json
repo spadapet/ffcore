@@ -1,0 +1,29 @@
+{
+  "SmallMonoFontData":
+  {
+    "res:type": "fontData",
+    "file": "file:LiberationMono-Regular.ttf"
+  },
+
+  "SansFontData":
+  {
+    "res:type": "fontData",
+    "file": "file:OpenSans-Regular.ttf"
+  },
+
+  "SmallMonoFont":
+  {
+    "res:type": "font",
+    "data": "ref:SmallMonoFontData",
+    "size": 24,
+    "outline":  1
+  },
+  
+  "SansFont":
+  {
+    "res:type": "font",
+    "data": "ref:SansFontData",
+    "size": 24,
+    "outline":  1
+  }
+}

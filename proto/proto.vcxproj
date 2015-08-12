@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ConfigurationType>Application</ConfigurationType>
+    <ProjectName>proto</ProjectName>
+    <ProjectGuid>{88617b7d-be22-4835-a8d3-140518425ce9}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="..\msbuild\cpp.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\util</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\ui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\noesis\Include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(ConfigOutRoot)util\bin\util.lib;$(FFCoreRoot)core\noesis\Lib\$(XPlatform)\Noesis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>Noesis.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\core\util\util.vcxproj">
+      <Project>{8877ef09-1cdd-4e67-95ba-58e3b251b7d8}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="States\TestEntityState.cpp" />
+    <ClCompile Include="States\TestFontState.cpp" />
+    <ClCompile Include="States\TestUiState.cpp" />
+    <ClCompile Include="States\TitleState.cpp" />
+    <ClInclude Include="Assets\resource.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="States\TestEntityState.h" />
+    <ClInclude Include="States\TestFontState.h" />
+    <ClInclude Include="States\TestUiState.h" />
+    <ClInclude Include="States\TitleState.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Assets\resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Assets\ApplicationResources.xaml" />
+    <Page Include="Assets\Overlay.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResJson Include="Assets\Assets.res.json" />
+    <ResJson Include="Assets\Assets.Xaml.res.json" />
+  </ItemGroup>
+  <Import Project="..\msbuild\cpp.targets" />
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="..\core\noesis\Bin\$(XPlatform)\Noesis.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="True" />
+  </Target>
+</Project>

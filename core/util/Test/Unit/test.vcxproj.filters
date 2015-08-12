@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Types\CompareTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\ListTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\MapTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\PoolTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\SmartPtrTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\StringTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\VectorTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\ProgramGlobalsTest.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity\EntityTest.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\DictPerf.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\JsonTest.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\SmallDictTest.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Types\FixedIntTest.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\ValueTest.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Types">
+      <UniqueIdentifier>{a9c9219b-814d-426e-98ea-97391b7413d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Globals">
+      <UniqueIdentifier>{dd6c87b3-8f71-4a8b-a7bc-249e04e6131c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Entity">
+      <UniqueIdentifier>{325b8132-d090-466c-b100-bce5694a9951}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dict">
+      <UniqueIdentifier>{12f61a25-2da8-44a0-b078-dfda93dacd53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Value">
+      <UniqueIdentifier>{a59ffc65-91e8-4aed-b219-0b5c4aa9f83f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

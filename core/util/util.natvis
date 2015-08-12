@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="ff::FixedInt">
+    <DisplayString>{_data / 256.0f}_f</DisplayString>
+    <Expand>
+      <Item Name="[int]">_data >> 8</Item>
+      <Item Name="[frac*256]">_data &amp; 0xFF</Item>
+      <Item Name="[hex]">_data,h</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::String">
+    <DisplayString>{_str->_data,su}</DisplayString>
+    <Expand>
+      <Item Name="[string]">_str->_data,su</Item>
+      <Item Name="[size]">_str->_size</Item>
+      <Item Name="[alloc]">_str->_alloc</Item>
+      <Item Name="[refs]">_str->_refs</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::PointType&lt;*&gt;">
+    <DisplayString>{{{x}, {y}}}</DisplayString>
+    <Expand>
+      <Item Name="x">x</Item>
+      <Item Name="y">y</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::RectType&lt;*&gt;">
+    <DisplayString>{{{left}, {top}, {right}, {bottom}}}</DisplayString>
+    <Expand>
+      <Item Name="left">left</Item>
+      <Item Name="top">top</Item>
+      <Item Name="right">right</Item>
+      <Item Name="bottom">bottom</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::Vector&lt;*&gt;">
+    <DisplayString>{{size={_size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">_size</Item>
+      <Item Name="[alloc]">_alloc</Item>
+      <ArrayItems>
+        <Size>_size</Size>
+        <ValuePointer>_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::List&lt;*&gt;">
+    <DisplayString>{{size={size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">size</Item>
+      <LinkedListItems>
+        <Size>size</Size>
+        <HeadPointer>head</HeadPointer>
+        <NextPointer>next</NextPointer>
+        <ValueNode>val</ValueNode>
+      </LinkedListItems>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::Set&lt;*&gt;">
+    <DisplayString>{{size={items.size}, buckets={buckets._size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">items.size</Item>
+      <Item Name="[bucket load]">loadSize</Item>
+      <Item Name="[buckets]">buckets._size</Item>
+      <Item Name="[items]">items</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::Set&lt;*&gt;::SetItem">
+    <DisplayString>{key}</DisplayString>
+  </Type>
+
+  <Type Name="ff::Map&lt;*&gt;">
+    <DisplayString>{{size={set.items.size}, buckets={set.buckets._size}}}</DisplayString>
+    <Expand>
+      <Item Name="[size]">set.items.size</Item>
+      <Item Name="[bucket load]">set.loadSize</Item>
+      <Item Name="[buckets]">set.buckets._size</Item>
+      <Item Name="[items]">set.items</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::KeyValue&lt;*&gt;">
+    <DisplayString>{_key} -> {_val}</DisplayString>
+    <Expand>
+      <Item Name="[key]">_key</Item>
+      <Item Name="[value]">_val</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::ComPtr&lt;*&gt;">
+    <DisplayString>{{obj={_obj}}}</DisplayString>
+  </Type>
+
+  <Type Name="ff::SmartPtr&lt;ff::Value const, ff::Value const&gt;">
+    <DisplayString>{_obj->_entry->_typeName}</DisplayString>
+    <Expand>
+      <Item Name="[typeId]">_obj->_entry->_typeId</Item>
+      <Item Name="[refs]">_obj->_refs</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ff::SmartPtr&lt;*&gt;">
+    <DisplayString>{{obj={_obj}}}</DisplayString>
+  </Type>
+
+  <Type Name="ff::Value">
+    <DisplayString>{_entry->_typeName}</DisplayString>
+    <Expand>
+      <Item Name="[typeId]">_entry->_typeId</Item>
+      <Item Name="[refs]">_refs</Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

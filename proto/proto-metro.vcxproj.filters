@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="App.xaml.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="States\TitleState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="States\TestFontState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="States\TestEntityState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="States\TestUiState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.xaml.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="States\TitleState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+    <ClInclude Include="States\TestFontState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+    <ClInclude Include="States\TestEntityState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+    <ClInclude Include="States\TestUiState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\Logo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SmallLogo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\StoreLogo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\player moving.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\player.png">
+      <Filter>Assets</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{4a4c3f78-f106-4a86-a4e0-f50a6a616e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="States">
+      <UniqueIdentifier>{018c99c9-d5f9-4fbd-9475-b47f478996a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Package">
+      <UniqueIdentifier>{fdf6c490-14cc-4176-bdd9-de7dc6f94ef9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\TestAssets.res.json">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\core\noesis\Bin\$(XPlatform)\Noesis.dll" />
+    <None Include="Assets\Overlay.xaml">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="Assets\ApplicationResources.xaml">
+      <Filter>Assets</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Assets\Beat_32.mp3">
+      <Filter>Assets</Filter>
+    </Media>
+    <Media Include="Assets\free-life-0.wav">
+      <Filter>Assets</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Assets\pressstart2p.ttf">
+      <Filter>Assets</Filter>
+    </Font>
+    <Font Include="Assets\OpenSans-Regular.ttf">
+      <Filter>Assets</Filter>
+    </Font>
+    <Font Include="Assets\LiberationMono-Regular.ttf">
+      <Filter>Assets</Filter>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest">
+      <Filter>Package</Filter>
+    </AppxManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <ResJson Include="Assets\Assets.res.json">
+      <Filter>Assets</Filter>
+    </ResJson>
+    <ResJson Include="Assets\Assets.Xaml.res.json">
+      <Filter>Assets</Filter>
+    </ResJson>
+  </ItemGroup>
+</Project>

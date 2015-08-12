@@ -1,0 +1,1138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Audio">
+      <UniqueIdentifier>{ab0f61c7-14e7-4e69-aa05-0ba05f4e5a0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="COM">
+      <UniqueIdentifier>{67440f7f-e009-4e9a-9171-9fdae3374dee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{56ae66a9-5ebb-4cbb-a4a8-88e7c8b4e098}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dict">
+      <UniqueIdentifier>{ece3fa59-be40-4240-8729-577707901dad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Globals">
+      <UniqueIdentifier>{26477236-9a84-4c75-8c12-0a7abe846eca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{2410d26b-6067-4bd8-a172-b4091885444e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Module">
+      <UniqueIdentifier>{290a6dcf-1f59-4fda-85de-cefae01c039d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource">
+      <UniqueIdentifier>{0b33caa9-1bf0-4d6f-8173-e99f02650faf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="String">
+      <UniqueIdentifier>{5724ced6-7401-4d88-9147-3c44e29ce394}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Types">
+      <UniqueIdentifier>{514cc692-f8a0-4992-b0b8-ba73ff609ff7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Windows">
+      <UniqueIdentifier>{51fc266b-6152-491a-87c0-f4fadeb7228b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph">
+      <UniqueIdentifier>{8aabf50f-93f0-437d-8f90-a266ebca5ca6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph\Anim">
+      <UniqueIdentifier>{88126682-97b8-476c-9475-6d969ca09ef4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph\Font">
+      <UniqueIdentifier>{311ea994-e0fd-4cb2-810d-3ef6b6a54281}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph\RenderTarget">
+      <UniqueIdentifier>{d0ba62b0-3bec-4954-a18f-ae8ec3eb9635}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data">
+      <UniqueIdentifier>{4709a59e-9064-45c3-a9ef-46bbc7a2e634}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input\Joystick">
+      <UniqueIdentifier>{c49817df-2f39-4c24-ad80-968cfb417e42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="State">
+      <UniqueIdentifier>{48200a64-d1cb-4aab-934b-4a07ac377295}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Entity">
+      <UniqueIdentifier>{9a25bbd4-0ab8-4d4f-bc09-ec7de71f2c1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph\Render">
+      <UniqueIdentifier>{42f9605f-f429-4457-a7dd-84c6471aca42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph\Sprite">
+      <UniqueIdentifier>{b366ba99-d049-427f-9ed4-27a8fd4e571d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph\State">
+      <UniqueIdentifier>{4158e502-b6bb-4abf-ba24-dd4cb2b6081b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graph\Texture">
+      <UniqueIdentifier>{49dc61a0-e5e6-444c-bf96-134a46587299}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{d3bbdaf3-ec98-41dd-857a-a880749b86f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Thread">
+      <UniqueIdentifier>{8c62e67a-b94c-4da2-a4e2-9ba642ac7e56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Value">
+      <UniqueIdentifier>{f1597f2c-6f93-4f99-9037-4c69518b9d5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input\Keyboard">
+      <UniqueIdentifier>{26cda10c-16c6-470a-8706-1d7d5611693d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input\Pointer">
+      <UniqueIdentifier>{1a9316fd-411e-4047-9aa9-47ccab4fd294}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{2c554a45-72f0-477f-a54b-cec76ed3d711}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\Internal">
+      <UniqueIdentifier>{a0f8671c-618a-4692-bc50-ef422da13a41}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Audio\AudioBuffer.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\AudioDevice.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\AudioEffect.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\AudioFactory.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\AudioMusic.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\AudioStream.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\DestroyVoice.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="COM\ComBase.cpp">
+      <Filter>COM</Filter>
+    </ClCompile>
+    <ClCompile Include="COM\ComConnectionPoint.cpp">
+      <Filter>COM</Filter>
+    </ClCompile>
+    <ClCompile Include="COM\ComFactory.cpp">
+      <Filter>COM</Filter>
+    </ClCompile>
+    <ClCompile Include="COM\ComUtil.cpp">
+      <Filter>COM</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\AssertUtil.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\Dict.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\DictPersist.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\JsonPersist.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\JsonTokenizer.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\SmallDict.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\GlobalsScope.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\ProcessGlobals.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\ProcessStartup.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\ThreadGlobals.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\InputMapping.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Module\Module.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="Module\ModuleFactory.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="Module\Modules.cpp">
+      <Filter>Module</Filter>
+    </ClCompile>
+    <ClCompile Include="String\String.cpp">
+      <Filter>String</Filter>
+    </ClCompile>
+    <ClCompile Include="String\StringCache.cpp">
+      <Filter>String</Filter>
+    </ClCompile>
+    <ClCompile Include="String\StringManager.cpp">
+      <Filter>String</Filter>
+    </ClCompile>
+    <ClCompile Include="String\StringUtil.cpp">
+      <Filter>String</Filter>
+    </ClCompile>
+    <ClCompile Include="Thread\ThreadPool.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="Thread\ThreadUtil.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\MemAlloc.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Windows\FileUtil.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Windows\Handles.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Windows\WinUtil.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Anim\AnimKeys.cpp">
+      <Filter>Graph\Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Font\FontData.cpp">
+      <Filter>Graph\Font</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Font\SpriteFont.cpp">
+      <Filter>Graph\Font</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\GraphFactory.cpp">
+      <Filter>Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="DllMain.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Data\Compression.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\Data.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\DataFile.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\DataPersist.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\DataWriterReader.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\SavedData.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\Stream.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\Resources.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\ResourceValue.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\ValueTable.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\RenderTarget\Viewport.cpp">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\ResourcePersist.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Thread\ThreadDispatch.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\MetroGlobals.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="State\State.cpp">
+      <Filter>State</Filter>
+    </ClCompile>
+    <ClCompile Include="State\States.cpp">
+      <Filter>State</Filter>
+    </ClCompile>
+    <ClCompile Include="State\StateWrapper.cpp">
+      <Filter>State</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\Log.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\Timer.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\DataBlob.cpp">
+      <Filter>Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity\EntityDomain.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity\EntityEvents.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity\ComponentFactory.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Render\MatrixStack.cpp">
+      <Filter>Graph\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Sprite\Sprite.cpp">
+      <Filter>Graph\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Sprite\SpriteAnimation.cpp">
+      <Filter>Graph\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Sprite\SpriteList.cpp">
+      <Filter>Graph\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Sprite\SpriteOptimizer.cpp">
+      <Filter>Graph\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\GraphShader.cpp">
+      <Filter>Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Render\RendererVertex.cpp">
+      <Filter>Graph\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Render\RendererActive.cpp">
+      <Filter>Graph\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="State\DebugPageState.cpp">
+      <Filter>State</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict\DictVisitor.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\DirectXUtil.cpp">
+      <Filter>Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\GraphDevice11.cpp">
+      <Filter>Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\RenderTarget\RenderDepth11.cpp">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Render\Renderer11.cpp">
+      <Filter>Graph\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Texture\StagingTexture11.cpp">
+      <Filter>Graph\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Texture\StaticTexture11.cpp">
+      <Filter>Graph\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Texture\TextureView11.cpp">
+      <Filter>Graph\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\State\GraphStateCache11.cpp">
+      <Filter>Graph\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\State\GraphFixedState11.cpp">
+      <Filter>Graph\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\State\GraphContext11.cpp">
+      <Filter>Graph\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\RenderTarget\RenderTargetTexture11.cpp">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\NullValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\Value.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\ValueType.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\BoolValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\Values.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\IntValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\DoubleValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\ObjectValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\FixedIntValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\FloatValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\GuidValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\PointDoubleValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\PointFixedIntValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\PointFloatValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\PointIntValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\RectDoubleValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\RectFixedIntValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\RectFloatValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\RectIntValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\StringValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\SharedResourceWrapperValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\DataValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\DictValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\SavedDataValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\SavedDictValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\DoubleVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\FixedIntVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\FloatVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\IntVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\StringVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\ValueVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\ValuePersist.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\SizeValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\RenderTarget\RenderTargetWindow11.cpp">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Value\HashValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity\Entity.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\Event.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\AppGlobalsHelper.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Thread\Mutex.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="Thread\ReaderWriterLock.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="Types\Hash.cpp">
+      <Filter>Types</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\RenderTarget\RenderTargetWindowMetro11.cpp">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Joystick\JoystickInputMetro.cpp">
+      <Filter>Input\Joystick</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Joystick\XboxJoystickMetro.cpp">
+      <Filter>Input\Joystick</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Joystick\JoystickInput.cpp">
+      <Filter>Input\Joystick</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Joystick\XboxJoystick.cpp">
+      <Filter>Input\Joystick</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\AppGlobals.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Keyboard\KeyboardDevice.cpp">
+      <Filter>Input\Keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Keyboard\KeyboardDeviceMetro.cpp">
+      <Filter>Input\Keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Pointer\PointerDevice.cpp">
+      <Filter>Input\Pointer</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Pointer\PointerDeviceMetro.cpp">
+      <Filter>Input\Pointer</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals\DesktopGlobals.cpp">
+      <Filter>Globals</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\GraphBuffer.cpp" />
+    <ClCompile Include="Input\DeviceEvent.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlProvider.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\NotifyPropertyChangedBase.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlStream.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlRenderTarget.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlTexture.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\XamlGlobalState.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlFontProvider.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlTextureProvider.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlKeyMap.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlRenderDevice11.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Internal\XamlView11.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\XamlConverters.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\XamlView.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\XamlViewState.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Audio\AudioBuffer.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Audio\AudioDevice.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Audio\AudioDeviceChild.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Audio\AudioEffect.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Audio\AudioFactory.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Audio\AudioMusic.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Audio\AudioPlaying.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Audio\AudioStream.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComAlloc.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComBase.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComConnectionPoint.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComFactory.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComInclude.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComObject.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComPch.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComPtr.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="COM\ComUtil.h">
+      <Filter>COM</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\AssertUtil.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\ConstantsPch.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\CrtPch.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\DelayLoadInclude.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\FunctionsPch.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Dict\Dict.h">
+      <Filter>Dict</Filter>
+    </ClInclude>
+    <ClInclude Include="Dict\DictPersist.h">
+      <Filter>Dict</Filter>
+    </ClInclude>
+    <ClInclude Include="Dict\JsonPersist.h">
+      <Filter>Dict</Filter>
+    </ClInclude>
+    <ClInclude Include="Dict\JsonTokenizer.h">
+      <Filter>Dict</Filter>
+    </ClInclude>
+    <ClInclude Include="Dict\SmallDict.h">
+      <Filter>Dict</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\GlobalsScope.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\ProcessGlobals.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\ProcessStartup.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\ThreadGlobals.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\InputDevice.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\InputMapping.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Module\Module.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="Module\ModuleFactory.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="Module\ModuleInclude.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="Module\Modules.h">
+      <Filter>Module</Filter>
+    </ClInclude>
+    <ClInclude Include="String\String.h">
+      <Filter>String</Filter>
+    </ClInclude>
+    <ClInclude Include="String\StringCache.h">
+      <Filter>String</Filter>
+    </ClInclude>
+    <ClInclude Include="String\StringManager.h">
+      <Filter>String</Filter>
+    </ClInclude>
+    <ClInclude Include="String\StringUtil.h">
+      <Filter>String</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread\ThreadPool.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread\ThreadUtil.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Hash.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\KeyValue.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Map.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\MemAlloc.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Point.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\PoolAllocator.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Rect.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Set.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\SmartPtr.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Vector.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Windows\FileUtil.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Windows\Handles.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Windows\WindowsPch.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Windows\WinUtil.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Anim\AnimKeys.h">
+      <Filter>Graph\Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Anim\KeyFrames.h">
+      <Filter>Graph\Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Font\FontData.h">
+      <Filter>Graph\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Font\SpriteFont.h">
+      <Filter>Graph\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\RenderTarget\RenderTarget.h">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\DirectXPch.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\GraphDevice.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\GraphDeviceChild.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\GraphFactory.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="MainUtilInclude.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="UtilApi.h" />
+    <ClInclude Include="Data\Compression.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Data.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\DataFile.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\DataPersist.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\DataWriterReader.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\SavedData.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\Stream.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\ResourcePersist.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Resources.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\ResourceValue.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Dict\ValueTable.h">
+      <Filter>Dict</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\RenderTarget\Viewport.h">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread\ThreadDispatch.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\MetroGlobals.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\Joystick\JoystickDevice.h">
+      <Filter>Input\Joystick</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\Joystick\JoystickInput.h">
+      <Filter>Input\Joystick</Filter>
+    </ClInclude>
+    <ClInclude Include="State\State.h">
+      <Filter>State</Filter>
+    </ClInclude>
+    <ClInclude Include="State\States.h">
+      <Filter>State</Filter>
+    </ClInclude>
+    <ClInclude Include="State\StateWrapper.h">
+      <Filter>State</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\Log.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Timer.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\DataBlob.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity\Entity.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity\EntityDomain.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity\EntityEvents.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\List.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity\ComponentFactory.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity\EntityBucket.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\MatrixStack.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Sprite\Sprite.h">
+      <Filter>Graph\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Sprite\SpriteAnimation.h">
+      <Filter>Graph\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Sprite\SpriteList.h">
+      <Filter>Graph\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Sprite\SpriteOptimizer.h">
+      <Filter>Graph\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\RenderAnimation.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\Renderer.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\RendererActive.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\GraphShader.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\RendererVertex.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="State\DebugPageState.h">
+      <Filter>State</Filter>
+    </ClInclude>
+    <ClInclude Include="State\IDebugPages.h">
+      <Filter>State</Filter>
+    </ClInclude>
+    <ClInclude Include="Dict\DictVisitor.h">
+      <Filter>Dict</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Texture\TextureView.h">
+      <Filter>Graph\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Texture\Texture.h">
+      <Filter>Graph\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\util-resource.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\RenderTarget\RenderDepth.h">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\RenderTarget\RenderTargetWindow.h">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\RenderTarget\RenderTargetSwapChain.h">
+      <Filter>Graph\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\State\GraphStateCache11.h">
+      <Filter>Graph\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\State\GraphFixedState11.h">
+      <Filter>Graph\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\State\GraphContext11.h">
+      <Filter>Graph\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\DirectXUtil.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\ItemCollector.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\FixedInt.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\NullValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\Value.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\ValueType.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\BoolValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\Values.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\IntValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\DoubleValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\ObjectValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\FixedIntValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\FloatValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\GuidValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\PointDoubleValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\PointFixedIntValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\PointFloatValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\PointIntValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\RectDoubleValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\RectFixedIntValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\RectFloatValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\RectIntValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\StringValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\SharedResourceWrapperValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\DataValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\DictValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\SavedDataValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\SavedDictValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\DoubleVectorValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\FixedIntVectorValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\FloatVectorValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\IntVectorValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\StringValueType.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\StringVectorValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\ValueVectorValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\ValuePersist.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\SizeValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\SharedResourceValue.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\HashValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Event.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\AppGlobalsHelper.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread\Mutex.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread\ReaderWriterLock.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\AppGlobals.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\Keyboard\KeyboardDevice.h">
+      <Filter>Input\Keyboard</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\Pointer\PointerDevice.h">
+      <Filter>Input\Pointer</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals\DesktopGlobals.h">
+      <Filter>Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\GraphBuffer.h" />
+    <ClInclude Include="Input\DeviceEvent.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlProvider.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\NotifyPropertyChangedBase.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlStream.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlRenderTarget.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlTexture.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\XamlGlobalState.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlFontProvider.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlTextureProvider.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlKeyMap.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlShaders11.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlView11.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Internal\XamlRenderDevice11.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\XamlConverters.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\XamlView.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\XamlViewState.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\util-metro.def">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="Assets\Renderer.hlsl">
+      <Filter>Assets</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="util.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Assets\Inconsolata-Regular.ttf">
+      <Filter>Assets</Filter>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+    <CustomBuild Include="@(ResJson)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResJson Include="Assets\Assets.res.json">
+      <Filter>Assets</Filter>
+    </ResJson>
+    <ResJson Include="Assets\Values.res.json">
+      <Filter>Assets</Filter>
+    </ResJson>
+  </ItemGroup>
+</Project>
