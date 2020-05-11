@@ -474,8 +474,7 @@ static bool ConvertFinalTextures(ff::IGraphDevice* device, ff::TextureFormat for
 	for (OptimizedTextureInfo& textureInfo : textureInfos)
 	{
 		ff::SpriteType spriteType = ::GetSpriteTypeForImage(textureInfo._texture);
-		ff::ComPtr<ff::ITexture> rgbTexture = device->AsGraphDeviceInternal()->CreateTexture(
-			std::move(textureInfo._texture), spriteType);
+		ff::ComPtr<ff::ITexture> rgbTexture = device->AsGraphDeviceInternal()->CreateTexture(std::move(textureInfo._texture), spriteType);
 		assertRetVal(rgbTexture, false);
 
 		textureInfo._finalTexture = rgbTexture->Convert(format, mipMapLevels);

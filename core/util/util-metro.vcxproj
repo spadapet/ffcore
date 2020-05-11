@@ -11,6 +11,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\dxtex</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\libpng</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\noesis\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -48,6 +49,9 @@
     <ProjectReference Include="..\dxtex\dxtex-metro.vcxproj">
       <Project>{d6f468cf-1b2b-46e1-91dd-2c36ac216e7a}</Project>
       <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\libpng\libpng-metro.vcxproj">
+      <Project>{dab734ee-9037-4b24-adca-a6dc9d0d66dc}</Project>
     </ProjectReference>
     <ProjectReference Include="..\zlib\zlib-metro.vcxproj">
       <Project>{49f8c1b7-6d04-44b7-82ba-a813d826b2f1}</Project>
@@ -120,6 +124,7 @@
     <ClCompile Include="Graph\State\GraphContext11.cpp" />
     <ClCompile Include="Graph\State\GraphFixedState11.cpp" />
     <ClCompile Include="Graph\State\GraphStateCache11.cpp" />
+    <ClCompile Include="Graph\Texture\PngImage.cpp" />
     <ClCompile Include="Graph\Texture\StagingTexture11.cpp" />
     <ClCompile Include="Graph\Texture\StaticTexture11.cpp" />
     <ClCompile Include="Graph\Texture\TextureView11.cpp" />
@@ -289,7 +294,9 @@
     <ClInclude Include="Graph\State\GraphContext11.h" />
     <ClInclude Include="Graph\State\GraphFixedState11.h" />
     <ClInclude Include="Graph\State\GraphStateCache11.h" />
+    <ClInclude Include="Graph\Texture\PngImage.h" />
     <ClInclude Include="Graph\Texture\Texture.h" />
+    <ClInclude Include="Graph\Texture\TextureFormat.h" />
     <ClInclude Include="Graph\Texture\TextureView.h" />
     <ClInclude Include="Input\DeviceEvent.h" />
     <ClInclude Include="Input\InputDevice.h" />

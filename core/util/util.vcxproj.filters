@@ -548,6 +548,9 @@
     <ClCompile Include="UI\XamlViewState.cpp">
       <Filter>UI</Filter>
     </ClCompile>
+    <ClCompile Include="Graph\Texture\PngImage.cpp">
+      <Filter>Graph\Texture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1092,6 +1095,12 @@
     </ClInclude>
     <ClInclude Include="UI\XamlViewState.h">
       <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Texture\PngImage.h">
+      <Filter>Graph\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Texture\TextureFormat.h">
+      <Filter>Graph\Texture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

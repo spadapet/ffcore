@@ -1,9 +1,12 @@
 #include "pch.h"
+#include "Data/Data.h"
 #include "Globals/ProcessGlobals.h"
 #include "Graph/GraphFactory.h"
 #include "Graph/Sprite/Sprite.h"
+#include "Graph/Texture/PngImage.h"
 #include "Graph/Texture/Texture.h"
 #include "String/StringUtil.h"
+#include "Windows/FileUtil.h"
 
 __declspec(align(16)) static const float s_identityMatrix[] =
 {
@@ -92,6 +95,7 @@ DXGI_FORMAT ff::ConvertTextureFormat(ff::TextureFormat format)
 	default: assertRetVal(false, DXGI_FORMAT_UNKNOWN);
 	case ff::TextureFormat::Unknown: return DXGI_FORMAT_UNKNOWN;
 	case ff::TextureFormat::A8: return DXGI_FORMAT_A8_UNORM;
+	case ff::TextureFormat::R1: return DXGI_FORMAT_R1_UNORM;
 	case ff::TextureFormat::R8: return DXGI_FORMAT_R8_UNORM;
 	case ff::TextureFormat::R8_UINT: return DXGI_FORMAT_R8_UINT;
 	case ff::TextureFormat::R8G8: return DXGI_FORMAT_R8G8_UNORM;
@@ -115,6 +119,7 @@ ff::TextureFormat ff::ConvertTextureFormat(DXGI_FORMAT format)
 	default: assertRetVal(false, ff::TextureFormat::Unknown);
 	case DXGI_FORMAT_UNKNOWN: return ff::TextureFormat::Unknown;
 	case DXGI_FORMAT_A8_UNORM: return ff::TextureFormat::A8;
+	case DXGI_FORMAT_R1_UNORM: return ff::TextureFormat::R1;
 	case DXGI_FORMAT_R8_UNORM: return ff::TextureFormat::R8;
 	case DXGI_FORMAT_R8_UINT: return ff::TextureFormat::R8_UINT;
 	case DXGI_FORMAT_R8G8_UNORM: return ff::TextureFormat::R8G8;
@@ -154,6 +159,22 @@ DXGI_FORMAT ff::ParseDxgiTextureFormat(ff::StringRef szFormat)
 	else if (szFormat == L"bc3")
 	{
 		format = DXGI_FORMAT_BC3_UNORM;
+	}
+	else if (szFormat == L"pal")
+	{
+		format = DXGI_FORMAT_R8_UINT;
+	}
+	else if (szFormat == L"gray")
+	{
+		format = DXGI_FORMAT_R8_UNORM;
+	}
+	else if (szFormat == L"bw")
+	{
+		format = DXGI_FORMAT_R1_UNORM;
+	}
+	else if (szFormat == L"alpha")
+	{
+		format = DXGI_FORMAT_A8_UNORM;
 	}
 
 	return format;
@@ -368,21 +389,34 @@ ff::ComPtr<ID3D11ShaderResourceView> CreateDefaultTextureView(ID3D11DeviceX* dev
 
 ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect = nullptr)
 {
+	ff::RectSize size(0, 0, scratch.GetMetadata().width, scratch.GetMetadata().height);
+	if (rect == nullptr || *rect == size)
+	{
+		return scratch.IsAlphaAllOpaque() ? ff::SpriteType::Opaque : ff::SpriteType::Transparent;
+	}
+
 	DirectX::ScratchImage alphaScratch;
 	const DirectX::Image* alphaImage = nullptr;
 	size_t alphaGap = 1;
+	DXGI_FORMAT format = scratch.GetMetadata().format;
 
-	if (scratch.GetMetadata().format == DXGI_FORMAT_A8_UNORM)
+	if (format == DXGI_FORMAT_R1_UNORM ||
+		format == DXGI_FORMAT_R8_UNORM ||
+		format == DXGI_FORMAT_R8_UINT ||
+		format == DXGI_FORMAT_R8G8_UNORM)
+	{
+		return ff::SpriteType::Opaque;
+	}
+	else if (format == DXGI_FORMAT_A8_UNORM)
 	{
 		alphaImage = scratch.GetImages();
 	}
-	else if (scratch.GetMetadata().format == DXGI_FORMAT_R8G8B8A8_UNORM ||
-		scratch.GetMetadata().format == DXGI_FORMAT_B8G8R8A8_UNORM)
+	else if (format == DXGI_FORMAT_R8G8B8A8_UNORM || format == DXGI_FORMAT_B8G8R8A8_UNORM)
 	{
 		alphaImage = scratch.GetImages();
 		alphaGap = 4;
 	}
-	else if (DirectX::IsCompressed(scratch.GetMetadata().format))
+	else if (DirectX::IsCompressed(format))
 	{
 		assertHrRetVal(DirectX::Decompress(
 			scratch.GetImages(),
@@ -406,7 +440,6 @@ ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const
 	}
 
 	ff::SpriteType newType = ff::SpriteType::Opaque;
-	ff::RectSize size(0, 0, alphaImage->width, alphaImage->height);
 	rect = rect ? rect : &size;
 
 	for (size_t y = rect->top; y < rect->bottom && newType == ff::SpriteType::Opaque; y++)
@@ -425,16 +458,30 @@ ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const
 	return newType;
 }
 
-DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::SpriteType& spriteType)
+static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::SpriteType& spriteType)
 {
-	assertRetVal(device, DirectX::ScratchImage());
-
 	DirectX::ScratchImage scratchFinal;
-	assertHrRetVal(DirectX::LoadFromWICFile(
-		path.c_str(),
-		DirectX::WIC_FLAGS_IGNORE_SRGB,
-		nullptr,
-		scratchFinal), DirectX::ScratchImage());
+	assertRetVal(device, scratchFinal);
+
+	ff::ComPtr<ff::IData> pngData;
+	assertRetVal(ff::ReadWholeFileMemMapped(path, &pngData), scratchFinal);
+	ff::PngImage png(pngData->GetMem(), pngData->GetSize());
+	{
+		std::unique_ptr<DirectX::ScratchImage> scratchTemp = png.Read();
+		if (scratchTemp)
+		{
+			scratchFinal = std::move(*scratchTemp);
+		}
+		else
+		{
+			assertSzRetVal(false, png.GetError().c_str(), scratchFinal);
+		}
+	}
+
+	if (format == DXGI_FORMAT_UNKNOWN)
+	{
+		format = scratchFinal.GetMetadata().format;
+	}
 
 	spriteType = ::GetSpriteTypeForImage(scratchFinal);
 
@@ -498,6 +545,49 @@ DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef pa
 	}
 
 	return scratchFinal;
+}
+
+static DirectX::ScratchImage LoadTexturePal(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::SpriteType& spriteType)
+{
+	DirectX::ScratchImage scratchFinal;
+	assertRetVal(device && mips < 2, scratchFinal);
+
+	ff::ComPtr<ff::IData> data;
+	assertRetVal(ff::ReadWholeFileMemMapped(path, &data) && data->GetSize() && data->GetSize() % 3 == 0, scratchFinal);
+
+	assertHrRetVal(scratchFinal.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 256, 1, 1, 1), scratchFinal);
+	const DirectX::Image* image = scratchFinal.GetImages();
+	BYTE* dest = image->pixels;
+	std::memset(dest, 0, image->rowPitch);
+
+	for (const BYTE* start = data->GetMem(), *end = start + data->GetSize(), *cur = start; cur < end; cur += 3, dest += 4)
+	{
+		dest[0] = cur[0]; // R
+		dest[1] = cur[1]; // G
+		dest[2] = cur[2]; // B
+		dest[3] = 0xFF; // A
+	}
+
+	return scratchFinal;
+}
+
+DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::SpriteType& spriteType)
+{
+	ff::String pathExt = ff::GetPathExtension(path);
+	ff::LowerCaseInPlace(pathExt);
+
+	if (pathExt == L"pal")
+	{
+		return ::LoadTexturePal(device, path, format, mips, spriteType);
+	}
+	else if (pathExt == L"png")
+	{
+		return ::LoadTexturePng(device, path, format, mips, spriteType);
+	}
+	else
+	{
+		assertSzRetVal(false, L"Invalid texture file extension", DirectX::ScratchImage());
+	}
 }
 
 DirectX::ScratchImage ConvertTextureData(const DirectX::ScratchImage& data, DXGI_FORMAT format, size_t mips)
@@ -678,7 +768,7 @@ DXGI_MODE_ROTATION ff::GetDxgiRotation(Windows::Graphics::Display::DisplayOrient
 
 	case Windows::Graphics::Display::DisplayOrientations::PortraitFlipped:
 		return DXGI_MODE_ROTATION_ROTATE270;
-	}
+}
 }
 
 #endif

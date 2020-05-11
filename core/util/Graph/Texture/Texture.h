@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graph/GraphDeviceChild.h"
+#include "Graph/Texture/TextureFormat.h"
 
 namespace DirectX
 {
@@ -14,27 +15,6 @@ namespace ff
 	class ITextureDxgi;
 	class ITextureView;
 	enum class SpriteType;
-
-	enum class TextureFormat
-	{
-		Unknown,
-		A8,
-		R8,
-		R8_UINT,
-		R8G8,
-
-		RGBA32,
-		BGRA32,
-		BC1,
-		BC2,
-		BC3,
-
-		RGBA32_SRGB,
-		BGRA32_SRGB,
-		BC1_SRGB,
-		BC2_SRGB,
-		BC3_SRGB,
-	};
 
 	class __declspec(uuid("8d9fab28-83b4-4327-8bf1-87b75eb9235e")) __declspec(novtable)
 		ITexture : public IUnknown, public IGraphDeviceChild

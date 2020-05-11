@@ -13,7 +13,7 @@
 
 #ifdef UTIL_DLL
 #include <DirectXTex.h>
-#include <d3dx12.h>
+#include <png.h>
 #endif
 
 #define ID2D1DeviceX ID2D1Device5

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Graph/Texture/TextureFormat.h"
 #include "Windows/WinUtil.h"
 
 namespace DirectX
@@ -26,7 +27,6 @@ namespace ff
 	class ITexture;
 	enum class GraphBufferType;
 	enum class SpriteType;
-	enum class TextureFormat;
 
 	class __declspec(uuid("1b26d121-cda5-4705-ae3d-4815b4a4115b")) __declspec(novtable)
 		IGraphDevice : public IUnknown
@@ -41,7 +41,7 @@ namespace ff
 		virtual IGraphDeviceInternal* AsGraphDeviceInternal() = 0;
 
 		virtual ComPtr<IGraphBuffer> CreateBuffer(GraphBufferType type, size_t size, bool writable = true, ff::IData* initialData = nullptr) = 0;
-		virtual ComPtr<ITexture> CreateTexture(StringRef path, TextureFormat format, size_t mips = 1) = 0;
+		virtual ComPtr<ITexture> CreateTexture(StringRef path, TextureFormat format = TextureFormat::Unknown, size_t mips = 1) = 0;
 		virtual ComPtr<ITexture> CreateTexture(PointInt size, TextureFormat format, size_t mips = 1, size_t count = 1, size_t samples = 1) = 0;
 		virtual ComPtr<ITexture> CreateStagingTexture(PointInt size, TextureFormat format, bool readable, bool writable, size_t mips = 1, size_t count = 1, size_t samples = 1) = 0;
 		virtual std::unique_ptr<IRenderer> CreateRenderer() = 0;
