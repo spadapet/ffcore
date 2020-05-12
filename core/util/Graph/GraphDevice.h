@@ -26,7 +26,6 @@ namespace ff
 	class IRenderTargetWindow;
 	class ITexture;
 	enum class GraphBufferType;
-	enum class SpriteType;
 
 	class __declspec(uuid("1b26d121-cda5-4705-ae3d-4815b4a4115b")) __declspec(novtable)
 		IGraphDevice : public IUnknown
@@ -80,6 +79,6 @@ namespace ff
 	class IGraphDeviceInternal
 	{
 	public:
-		virtual ComPtr<ITexture> CreateTexture(DirectX::ScratchImage&& data, SpriteType spriteType) = 0;
+		virtual ComPtr<ITexture> CreateTexture(DirectX::ScratchImage&& data) = 0;
 	};
 }

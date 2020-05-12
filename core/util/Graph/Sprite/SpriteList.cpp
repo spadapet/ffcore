@@ -7,6 +7,7 @@
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteList.h"
 #include "Graph/Sprite/SpriteOptimizer.h"
+#include "Graph/Sprite/SpriteType.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
@@ -301,13 +302,10 @@ bool SpriteList::LoadFromSource(const ff::Dict& dict)
 
 		for (size_t i = 0; i < repeat; i++)
 		{
-			ff::String spriteName = (repeat > 1)
-				? ff::String::format_new(L"%s %d", name.c_str(), i)
-				: name;
+			ff::String spriteName = (repeat > 1) ? ff::String::format_new(L"%s %d", name.c_str(), i) : name;
 			ff::PointFloat topLeft(pos.x + offset.x * i, pos.y + offset.y * i);
 			ff::RectFloat rect(topLeft, topLeft + size);
-
-			assertRetVal(origSprites->Add(textureView, spriteName, rect, handle, scale, ff::SpriteType::Unknown), false);
+			assertRetVal(origSprites->Add(textureView, spriteName, rect, handle, scale), false);
 		}
 	}
 

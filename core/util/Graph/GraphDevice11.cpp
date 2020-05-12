@@ -39,7 +39,7 @@ public:
 	virtual std::unique_ptr<ff::IRenderer> CreateRenderer() override;
 	virtual ff::ComPtr<ff::IGraphBuffer> CreateBuffer(ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData) override;
 	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::StringRef path, ff::TextureFormat format, size_t mips) override;
-	virtual ff::ComPtr<ff::ITexture> CreateTexture(DirectX::ScratchImage&& data, ff::SpriteType spriteType) override;
+	virtual ff::ComPtr<ff::ITexture> CreateTexture(DirectX::ScratchImage&& data) override;
 	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples) override;
 	virtual ff::ComPtr<ff::ITexture> CreateStagingTexture(ff::PointInt size, ff::TextureFormat format, bool readable, bool writable, size_t mips, size_t count, size_t samples) override;
 	virtual ff::ComPtr<ff::IRenderDepth> CreateRenderDepth(ff::PointInt size, size_t samples) override;
@@ -220,7 +220,7 @@ std::unique_ptr<ff::IRenderer> GraphDevice11::CreateRenderer()
 }
 
 bool CreateTexture11(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::ITexture** texture);
-bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::SpriteType spriteType, ff::ITexture** texture);
+bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::ITexture** texture);
 bool CreateTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, size_t mips, size_t count, size_t samples, ff::ITexture** texture);
 bool CreateStagingTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::ITexture** texture);
 bool CreateGraphBuffer11(ff::IGraphDevice* device, ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData, ff::IGraphBuffer** buffer);
@@ -237,10 +237,10 @@ ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::StringRef path, ff::Te
 	return ::CreateTexture11(this, path, ff::ConvertTextureFormat(format), mips, &obj) ? obj : nullptr;
 }
 
-ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(DirectX::ScratchImage&& data, ff::SpriteType spriteType)
+ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(DirectX::ScratchImage&& data)
 {
 	ff::ComPtr<ff::ITexture> obj;
-	return ::CreateTexture11(this, std::move(data), spriteType, &obj) ? obj : nullptr;
+	return ::CreateTexture11(this, std::move(data), &obj) ? obj : nullptr;
 }
 
 ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples)

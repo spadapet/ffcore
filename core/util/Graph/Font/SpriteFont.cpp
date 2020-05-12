@@ -6,6 +6,7 @@
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteList.h"
 #include "Graph/Sprite/SpriteOptimizer.h"
+#include "Graph/Sprite/SpriteType.h"
 #include "Graph/Font/FontData.h"
 #include "Graph/Font/SpriteFont.h"
 #include "Graph/GraphDevice.h"
@@ -208,7 +209,6 @@ bool SpriteFont::InitSprites()
 	ff::Vector<BYTE> glyphBytes;
 	ff::Map<ff::hash_t, UINT16, ff::NonHasher<ff::hash_t>> hashToSprite;
 	DWRITE_TEXTURE_TYPE glyphTextureType = _antiAlias ? DWRITE_TEXTURE_CLEARTYPE_3x1 : DWRITE_TEXTURE_ALIASED_1x1;
-	ff::SpriteType spriteType = _antiAlias ? ff::SpriteType::Transparent : ff::SpriteType::Opaque;
 
 	UINT16 glyphId = 0;
 	DWRITE_GLYPH_RUN gr;
@@ -346,7 +346,7 @@ bool SpriteFont::InitSprites()
 	ff::Vector<ff::ComPtr<ff::ITextureView>> textures;
 	for (DirectX::ScratchImage& scratch : stagingScratches)
 	{
-		ff::ComPtr<ff::ITexture> texture = _device->AsGraphDeviceInternal()->CreateTexture(std::move(scratch), spriteType);
+		ff::ComPtr<ff::ITexture> texture = _device->AsGraphDeviceInternal()->CreateTexture(std::move(scratch));
 		assertRetVal(texture && texture->AsTextureView(), false);
 		textures.Push(texture->AsTextureView());
 	}
@@ -356,13 +356,7 @@ bool SpriteFont::InitSprites()
 
 	for (const SpriteInfo& info : spriteInfos)
 	{
-		assertRetVal(sprites->Add(
-			textures[info._texture],
-			ff::GetEmptyString(),
-			info._pos,
-			info._handle,
-			ff::PointFloat::Ones(),
-			spriteType), false);
+		assertRetVal(sprites->Add(textures[info._texture], ff::GetEmptyString(), info._pos, info._handle), false);
 	}
 
 	// Create optimized sprite list

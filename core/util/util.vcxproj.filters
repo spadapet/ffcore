@@ -1102,6 +1102,9 @@
     <ClInclude Include="Graph\Texture\TextureFormat.h">
       <Filter>Graph\Texture</Filter>
     </ClInclude>
+    <ClInclude Include="Graph\Sprite\SpriteType.h">
+      <Filter>Graph\Sprite</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\util.def">

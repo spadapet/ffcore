@@ -10,6 +10,7 @@
 #include "Graph/RenderTarget/RenderDepth.h"
 #include "Graph/RenderTarget/RenderTarget.h"
 #include "Graph/Sprite/Sprite.h"
+#include "Graph/Sprite/SpriteType.h"
 #include "Graph/State/GraphContext11.h"
 #include "Graph/State/GraphFixedState11.h"
 #include "Graph/State/GraphStateCache11.h"
@@ -34,6 +35,7 @@ enum class GeometryBucketType
 	Triangles,
 	Sprites,
 	MultiSprites,
+	PaletteSprites,
 
 	LinesAlpha,
 	LinesScreenAlpha,
@@ -411,7 +413,7 @@ static AlphaType GetAlphaType(const ff::SpriteData& data, const DirectX::XMFLOAT
 		return AlphaType::Transparent;
 
 	case AlphaType::Opaque:
-		return (data._type == ff::SpriteType::Transparent && !forceOpaque)
+		return (ff::HasAllFlags(data._type, ff::SpriteType::Transparent) && !forceOpaque)
 			? AlphaType::Transparent
 			: AlphaType::Opaque;
 

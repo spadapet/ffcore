@@ -15,6 +15,7 @@ namespace ff
 	class ITextureDxgi;
 	class ITextureView;
 	enum class SpriteType;
+	enum class TextureFormat;
 
 	class __declspec(uuid("8d9fab28-83b4-4327-8bf1-87b75eb9235e")) __declspec(novtable)
 		ITexture : public IUnknown, public IGraphDeviceChild
@@ -25,6 +26,7 @@ namespace ff
 		virtual size_t GetArraySize() const = 0;
 		virtual size_t GetSampleCount() const = 0;
 		virtual TextureFormat GetFormat() const = 0;
+		virtual SpriteType GetSpriteType() const = 0;
 		virtual ComPtr<ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) = 0;
 		virtual ComPtr<ITexture> Convert(TextureFormat format, size_t mips) = 0;
 

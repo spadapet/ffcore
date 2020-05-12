@@ -1,7 +1,9 @@
 #include "pch.h"
+#include "Graph/DirectXUtil.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteList.h"
 #include "Graph/Sprite/SpriteOptimizer.h"
+#include "Graph/Sprite/SpriteType.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/RenderTarget/RenderTarget.h"
 #include "Graph/Texture/Texture.h"
@@ -11,8 +13,6 @@
 static const int TEXTURE_SIZE_MAX = 1024;
 static const int TEXTURE_SIZE_MIN = 128;
 static const int TEXTURE_GRID_SIZE = 8;
-
-ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect = nullptr);
 
 // Info about where each sprite came from and where it's going
 struct OptimizedSpriteInfo
@@ -447,11 +447,7 @@ static bool CopyOptimizedSprites(
 		auto iter = originalTextures.GetKey(sprite._spriteData._textureView->GetTexture());
 		assertRetVal(iter, false);
 		OriginalTextureInfo& originalInfo = iter->GetEditableValue();
-
-		if (sprite._spriteData._type == ff::SpriteType::Unknown)
-		{
-			sprite._spriteData._type = ::GetSpriteTypeForImage(*originalInfo._rgbScratch, &sprite._sourceRect.ToType<size_t>());
-		}
+		sprite._spriteData._type = ff::GetSpriteTypeForImage(*originalInfo._rgbScratch, &sprite._sourceRect.ToType<size_t>());
 
 		DirectX::CopyRectangle(
 			*originalInfo._rgbScratch->GetImages(),
@@ -473,8 +469,7 @@ static bool ConvertFinalTextures(ff::IGraphDevice* device, ff::TextureFormat for
 {
 	for (OptimizedTextureInfo& textureInfo : textureInfos)
 	{
-		ff::SpriteType spriteType = ::GetSpriteTypeForImage(textureInfo._texture);
-		ff::ComPtr<ff::ITexture> rgbTexture = device->AsGraphDeviceInternal()->CreateTexture(std::move(textureInfo._texture), spriteType);
+		ff::ComPtr<ff::ITexture> rgbTexture = device->AsGraphDeviceInternal()->CreateTexture(std::move(textureInfo._texture));
 		assertRetVal(rgbTexture, false);
 
 		textureInfo._finalTexture = rgbTexture->Convert(format, mipMapLevels);
@@ -595,8 +590,7 @@ static bool CreateOutlineSprites(
 			}
 		}
 
-		ff::ComPtr<ff::ITexture> outlineTexture = originalTexture->GetDevice()->AsGraphDeviceInternal()->CreateTexture(
-			std::move(outlineScratch), ff::SpriteType::Opaque);
+		ff::ComPtr<ff::ITexture> outlineTexture = originalTexture->GetDevice()->AsGraphDeviceInternal()->CreateTexture(std::move(outlineScratch));
 		assertRetVal(outlineTexture, false);
 		outlineTextures.Push(outlineTexture);
 
@@ -605,7 +599,7 @@ static bool CreateOutlineSprites(
 			spriteData._name,
 			ff::RectInt(outlineTexture->GetSize()).ToType<float>(),
 			spriteData.GetHandle() + ff::PointFloat(1, 1),
-			spriteData.GetScale(), ff::SpriteType::Opaque), false);
+			spriteData.GetScale()), false);
 	}
 
 	return true;

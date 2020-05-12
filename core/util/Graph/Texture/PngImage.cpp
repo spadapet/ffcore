@@ -30,13 +30,13 @@ ff::PngImage::~PngImage()
 	::png_destroy_read_struct(&_png, &_info, &_endInfo);
 }
 
-std::unique_ptr<DirectX::ScratchImage> ff::PngImage::Read()
+std::unique_ptr<DirectX::ScratchImage> ff::PngImage::Read(DXGI_FORMAT requestedFormat)
 {
 	std::unique_ptr<DirectX::ScratchImage> scratch;
 
 	try
 	{
-		scratch = InternalRead();
+		scratch = InternalRead(requestedFormat);
 		if (!scratch && _errorText.empty())
 		{
 			_errorText = L"Failed to read PNG data";
@@ -81,7 +81,7 @@ ff::StringRef ff::PngImage::GetError() const
 	return _errorText;
 }
 
-std::unique_ptr<DirectX::ScratchImage> ff::PngImage::InternalRead()
+std::unique_ptr<DirectX::ScratchImage> ff::PngImage::InternalRead(DXGI_FORMAT requestedFormat)
 {
 	if (::png_sig_cmp(_readPos, 0, _endPos - _readPos) != 0)
 	{
@@ -119,21 +119,40 @@ std::unique_ptr<DirectX::ScratchImage> ff::PngImage::InternalRead()
 		return nullptr;
 
 	case PNG_COLOR_TYPE_GRAY:
-		if (_bitDepth > 1 && _bitDepth < 8)
+		format = (_bitDepth == 1) ? DXGI_FORMAT_R1_UNORM : DXGI_FORMAT_R8_UNORM;
+		if (requestedFormat != format)
+		{
+			::png_set_gray_to_rgb(_png);
+			::png_set_add_alpha(_png, 0xFF, PNG_FILLER_AFTER);
+			format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+		else if (_bitDepth > 1 && _bitDepth < 8)
 		{
 			::png_set_expand_gray_1_2_4_to_8(_png);
 		}
-
-		format = (_bitDepth == 1) ? DXGI_FORMAT_R1_UNORM : DXGI_FORMAT_R8_UNORM;
 		break;
 
 	case PNG_COLOR_TYPE_PALETTE:
-		if (_paletteSize < 256)
+		format = DXGI_FORMAT_R8_UINT;
+		if (requestedFormat != format)
+		{
+			::png_set_palette_to_rgb(_png);
+
+			if (_hasTransPalette)
+			{
+				::png_set_tRNS_to_alpha(_png);
+			}
+			else
+			{
+				::png_set_add_alpha(_png, 0xFF, PNG_FILLER_AFTER);
+			}
+
+			format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+		else if (_paletteSize < 256)
 		{
 			::png_set_packing(_png);
 		}
-
-		format = DXGI_FORMAT_R8_UINT;
 		break;
 
 	case PNG_COLOR_TYPE_RGB:

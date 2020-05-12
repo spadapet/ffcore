@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graph/GraphDeviceChild.h"
+#include "Graph/Sprite/SpriteType.h"
 
 namespace ff
 {
@@ -13,7 +14,7 @@ namespace ff
 		ISpriteList : public IUnknown, public IGraphDeviceChild
 	{
 	public:
-		virtual ISprite* Add(ITextureView* texture, StringRef name, RectFloat rect, PointFloat handle, PointFloat scale, SpriteType type) = 0;
+		virtual ISprite* Add(ITextureView* texture, StringRef name, RectFloat rect, PointFloat handle, PointFloat scale = PointFloat::Ones(), SpriteType type = SpriteType::Unknown) = 0;
 		virtual ISprite* Add(ISprite* sprite) = 0;
 		virtual bool Add(ISpriteList* list) = 0;
 

@@ -6,13 +6,7 @@ namespace ff
 {
 	class ITextureView;
 	class ISpriteList;
-
-	enum class SpriteType
-	{
-		Unknown,
-		Opaque,
-		Transparent,
-	};
+	enum class SpriteType;
 
 	struct SpriteData
 	{

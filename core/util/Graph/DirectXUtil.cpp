@@ -3,6 +3,7 @@
 #include "Globals/ProcessGlobals.h"
 #include "Graph/GraphFactory.h"
 #include "Graph/Sprite/Sprite.h"
+#include "Graph/Sprite/SpriteType.h"
 #include "Graph/Texture/PngImage.h"
 #include "Graph/Texture/Texture.h"
 #include "String/StringUtil.h"
@@ -349,7 +350,7 @@ D3D_SRV_DIMENSION GetDefaultDimension(const D3D11_TEXTURE2D_DESC& desc)
 	}
 }
 
-ff::ComPtr<ID3D11ShaderResourceView> CreateDefaultTextureView(ID3D11DeviceX* device, ID3D11Texture2D* texture)
+ff::ComPtr<ID3D11ShaderResourceView> ff::CreateDefaultTextureView(ID3D11DeviceX* device, ID3D11Texture2D* texture)
 {
 	assertRetVal(texture, nullptr);
 
@@ -387,23 +388,18 @@ ff::ComPtr<ID3D11ShaderResourceView> CreateDefaultTextureView(ID3D11DeviceX* dev
 	return view;
 }
 
-ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect = nullptr)
+ff::SpriteType ff::GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect)
 {
-	ff::RectSize size(0, 0, scratch.GetMetadata().width, scratch.GetMetadata().height);
-	if (rect == nullptr || *rect == size)
-	{
-		return scratch.IsAlphaAllOpaque() ? ff::SpriteType::Opaque : ff::SpriteType::Transparent;
-	}
-
 	DirectX::ScratchImage alphaScratch;
 	const DirectX::Image* alphaImage = nullptr;
 	size_t alphaGap = 1;
 	DXGI_FORMAT format = scratch.GetMetadata().format;
 
-	if (format == DXGI_FORMAT_R1_UNORM ||
-		format == DXGI_FORMAT_R8_UNORM ||
-		format == DXGI_FORMAT_R8_UINT ||
-		format == DXGI_FORMAT_R8G8_UNORM)
+	if (format == DXGI_FORMAT_R8_UINT)
+	{
+		return ff::SpriteType::OpaquePalette;
+	}
+	else if (!DirectX::HasAlpha(format))
 	{
 		return ff::SpriteType::Opaque;
 	}
@@ -440,6 +436,7 @@ ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const
 	}
 
 	ff::SpriteType newType = ff::SpriteType::Opaque;
+	ff::RectSize size(0, 0, scratch.GetMetadata().width, scratch.GetMetadata().height);
 	rect = rect ? rect : &size;
 
 	for (size_t y = rect->top; y < rect->bottom && newType == ff::SpriteType::Opaque; y++)
@@ -458,7 +455,7 @@ ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const
 	return newType;
 }
 
-static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::SpriteType& spriteType)
+static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips)
 {
 	DirectX::ScratchImage scratchFinal;
 	assertRetVal(device, scratchFinal);
@@ -467,7 +464,7 @@ static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::String
 	assertRetVal(ff::ReadWholeFileMemMapped(path, &pngData), scratchFinal);
 	ff::PngImage png(pngData->GetMem(), pngData->GetSize());
 	{
-		std::unique_ptr<DirectX::ScratchImage> scratchTemp = png.Read();
+		std::unique_ptr<DirectX::ScratchImage> scratchTemp = png.Read(format);
 		if (scratchTemp)
 		{
 			scratchFinal = std::move(*scratchTemp);
@@ -482,8 +479,6 @@ static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::String
 	{
 		format = scratchFinal.GetMetadata().format;
 	}
-
-	spriteType = ::GetSpriteTypeForImage(scratchFinal);
 
 	if (DirectX::IsCompressed(format))
 	{
@@ -547,7 +542,7 @@ static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::String
 	return scratchFinal;
 }
 
-static DirectX::ScratchImage LoadTexturePal(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::SpriteType& spriteType)
+static DirectX::ScratchImage LoadTexturePal(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips)
 {
 	DirectX::ScratchImage scratchFinal;
 	assertRetVal(device && mips < 2, scratchFinal);
@@ -571,18 +566,18 @@ static DirectX::ScratchImage LoadTexturePal(ff::IGraphDevice* device, ff::String
 	return scratchFinal;
 }
 
-DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::SpriteType& spriteType)
+DirectX::ScratchImage ff::LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips)
 {
 	ff::String pathExt = ff::GetPathExtension(path);
 	ff::LowerCaseInPlace(pathExt);
 
 	if (pathExt == L"pal")
 	{
-		return ::LoadTexturePal(device, path, format, mips, spriteType);
+		return ::LoadTexturePal(device, path, format, mips);
 	}
 	else if (pathExt == L"png")
 	{
-		return ::LoadTexturePng(device, path, format, mips, spriteType);
+		return ::LoadTexturePng(device, path, format, mips);
 	}
 	else
 	{
@@ -590,7 +585,7 @@ DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef pa
 	}
 }
 
-DirectX::ScratchImage ConvertTextureData(const DirectX::ScratchImage& data, DXGI_FORMAT format, size_t mips)
+DirectX::ScratchImage ff::ConvertTextureData(const DirectX::ScratchImage& data, DXGI_FORMAT format, size_t mips)
 {
 	assertRetVal(data.GetImageCount(), DirectX::ScratchImage());
 

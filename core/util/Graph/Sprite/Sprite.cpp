@@ -6,6 +6,7 @@
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteList.h"
+#include "Graph/Sprite/SpriteType.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
 #include "Module/ModuleFactory.h"
@@ -169,13 +170,14 @@ bool ff::CreateSprite(ITextureView* textureView, StringRef name, RectFloat rect,
 {
 	assertRetVal(ppSprite && textureView, false);
 
-	PointInt sizeTex = textureView->GetTexture()->GetSize();
+	ff::ITexture* texture = textureView->GetTexture();
+	PointInt sizeTex = texture->GetSize();
 	assertRetVal(sizeTex.x && sizeTex.y, false);
 
 	SpriteData data;
 	data._name = name;
 	data._textureView = textureView;
-	data._type = type;
+	data._type = (type == ff::SpriteType::Unknown) ? texture->GetSpriteType() : type;
 
 	data._textureUV.SetRect(
 		rect.left / sizeTex.x,
@@ -255,10 +257,9 @@ void Sprite::Init(const ff::SpriteData& data)
 	_textureView = data._textureView;
 	_data = data;
 
-	ff::ComPtr<ff::ISprite> textureAsSprite;
-	if (_data._type == ff::SpriteType::Unknown && textureAsSprite.QueryFrom(_textureView))
+	if (_data._type == ff::SpriteType::Unknown)
 	{
-		_data._type = textureAsSprite->GetSpriteData()._type;
+		_data._type = _textureView->GetTexture()->GetSpriteType();
 	}
 }
 

@@ -5,6 +5,7 @@ namespace ff
 	class GraphContext11;
 	class IRendererActive11;
 	class ISprite;
+	class ITexture;
 	class MatrixStack;
 
 	typedef std::function<bool(GraphContext11 & context, const std::type_info & vertexType, bool opaqueOnly)> CustomRenderContextFunc11;
@@ -31,6 +32,8 @@ namespace ff
 		virtual void DrawOutlineCircle(PointFloat center, float radius, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawOutlineCircle(PointFloat center, float radius, const DirectX::XMFLOAT4& insideColor, const DirectX::XMFLOAT4& outsideColor, float thickness, bool pixelThickness = false) = 0;
 
+		//virtual void PushPalette(ITexture* palette) = 0;
+		//virtual void PopPalette() = 0;
 		virtual void PushNoOverlap() = 0;
 		virtual void PopNoOverlap() = 0;
 		virtual void PushOpaque() = 0;

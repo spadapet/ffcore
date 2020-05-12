@@ -7,6 +7,7 @@
 #include "Graph/Render/RenderAnimation.h"
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Sprite/Sprite.h"
+#include "Graph/Sprite/SpriteType.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
 #include "Resource/ResourcePersist.h"
@@ -14,10 +15,6 @@
 
 static ff::StaticString PROP_DATA(L"data");
 static ff::StaticString PROP_SPRITE_TYPE(L"spriteType");
-
-DirectX::ScratchImage ConvertTextureData(const DirectX::ScratchImage& data, DXGI_FORMAT format, size_t mips);
-ff::ComPtr<ID3D11ShaderResourceView> CreateDefaultTextureView(ID3D11DeviceX* device, ID3D11Texture2D* texture);
-ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect = nullptr);
 
 class __declspec(uuid("94ba864d-9773-4ddd-8ede-bc39335e6852"))
 	StagingTexture11
@@ -52,6 +49,7 @@ public:
 	virtual size_t GetArraySize() const override;
 	virtual size_t GetSampleCount() const override;
 	virtual ff::TextureFormat GetFormat() const override;
+	virtual ff::SpriteType GetSpriteType() const override;
 	virtual ff::ComPtr<ff::ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) override;
 	virtual ff::ComPtr<ff::ITexture> Convert(ff::TextureFormat format, size_t mips) override;
 	virtual ff::ISprite* AsSprite() override;
@@ -244,6 +242,13 @@ ff::TextureFormat StagingTexture11::GetFormat() const
 	return ff::ConvertTextureFormat(GetDxgiFormat());
 }
 
+ff::SpriteType StagingTexture11::GetSpriteType() const
+{
+	return (GetDxgiFormat() == DXGI_FORMAT_R8_UINT)
+		? ff::SpriteType::OpaquePalette
+		: (DirectX::HasAlpha(GetDxgiFormat()) ? ff::SpriteType::Transparent : ff::SpriteType::Opaque);
+}
+
 bool CreateTextureView11(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount, ff::ITextureView** obj);
 
 ff::ComPtr<ff::ITextureView> StagingTexture11::CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount)
@@ -301,7 +306,7 @@ ID3D11ShaderResourceView* StagingTexture11::GetView()
 {
 	if (!_view)
 	{
-		_view = ::CreateDefaultTextureView(_device->AsGraphDevice11()->Get3d(), GetTexture2d());
+		_view = ff::CreateDefaultTextureView(_device->AsGraphDevice11()->Get3d(), GetTexture2d());
 	}
 
 	return _view;
@@ -314,10 +319,8 @@ ff::ComPtr<ff::ITexture> StagingTexture11::Convert(ff::TextureFormat format, siz
 	DirectX::ScratchImage scratch;
 	assertRetVal(Capture(scratch) == &scratch, false);
 
-	ff::SpriteType spriteType = ::GetSpriteTypeForImage(scratch);
-	DirectX::ScratchImage data = ::ConvertTextureData(scratch, ff::ConvertTextureFormat(format), mips);
-
-	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data), spriteType);
+	DirectX::ScratchImage data = ff::ConvertTextureData(scratch, ff::ConvertTextureFormat(format), mips);
+	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data));
 }
 
 const DirectX::ScratchImage* StagingTexture11::Capture(DirectX::ScratchImage& tempHolder)
@@ -363,7 +366,7 @@ const ff::SpriteData& StagingTexture11::GetSpriteData()
 		_spriteData->_textureView = this;
 		_spriteData->_textureUV.SetRect(0, 0, 1, 1);
 		_spriteData->_worldRect = ff::RectFloat(GetSize().ToType<float>());
-		_spriteData->_type = ff::SpriteType::Unknown;
+		_spriteData->_type = GetSpriteType();
 	}
 
 	return *_spriteData;

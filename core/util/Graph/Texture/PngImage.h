@@ -8,12 +8,12 @@ namespace ff
 		PngImage(const unsigned char* bytes, size_t size);
 		~PngImage();
 
-		std::unique_ptr<DirectX::ScratchImage> Read();
+		std::unique_ptr<DirectX::ScratchImage> Read(DXGI_FORMAT requestedFormat = DXGI_FORMAT_UNKNOWN);
 		std::unique_ptr<DirectX::ScratchImage> GetPalette() const;
 		ff::StringRef GetError() const;
 
 	private:
-		std::unique_ptr<DirectX::ScratchImage> InternalRead();
+		std::unique_ptr<DirectX::ScratchImage> InternalRead(DXGI_FORMAT requestedFormat);
 
 		static void PngErrorCallback(png_struct* png, const char* text);
 		static void PngWarningCallback(png_struct* png, const char* text);

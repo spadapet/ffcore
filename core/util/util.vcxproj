@@ -296,6 +296,7 @@
     <ClInclude Include="Graph\Sprite\SpriteAnimation.h" />
     <ClInclude Include="Graph\Sprite\SpriteList.h" />
     <ClInclude Include="Graph\Sprite\SpriteOptimizer.h" />
+    <ClInclude Include="Graph\Sprite\SpriteType.h" />
     <ClInclude Include="Graph\State\GraphContext11.h" />
     <ClInclude Include="Graph\State\GraphFixedState11.h" />
     <ClInclude Include="Graph\State\GraphStateCache11.h" />

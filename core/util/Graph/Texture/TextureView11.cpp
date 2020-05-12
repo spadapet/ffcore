@@ -190,14 +190,11 @@ const ff::SpriteData& TextureView11::GetSpriteData()
 {
 	if (!_spriteData)
 	{
-		ff::ComPtr<ff::ISprite> sprite;
-		sprite.QueryFrom(_texture);
-
 		_spriteData = std::make_unique<ff::SpriteData>();
 		_spriteData->_textureView = this;
 		_spriteData->_textureUV.SetRect(0, 0, 1, 1);
 		_spriteData->_worldRect = ff::RectFloat(_texture->GetSize().ToType<float>());
-		_spriteData->_type = sprite ? sprite->GetSpriteData()._type : ff::SpriteType::Unknown;
+		_spriteData->_type = _texture->GetSpriteType();
 	}
 
 	return *_spriteData;

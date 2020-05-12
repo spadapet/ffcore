@@ -2,6 +2,10 @@
 
 namespace ff
 {
+	class IGraphDevice;
+	enum class SpriteType;
+	enum class TextureFormat;
+
 	UTIL_API const DirectX::XMFLOAT4& GetColorWhite();
 	UTIL_API const DirectX::XMFLOAT4& GetColorBlack();
 	UTIL_API const DirectX::XMFLOAT4& GetColorNone();
@@ -14,7 +18,6 @@ namespace ff
 	UTIL_API const DirectX::XMFLOAT4X4& GetIdentityMatrix();
 	UTIL_API const DirectX::XMFLOAT3X3& GetIdentityMatrix3x3();
 
-	enum class TextureFormat;
 	DXGI_FORMAT ConvertTextureFormat(TextureFormat format);
 	TextureFormat ConvertTextureFormat(DXGI_FORMAT format);
 	UTIL_API DXGI_FORMAT ParseDxgiTextureFormat(StringRef szFormat);
@@ -45,6 +48,13 @@ namespace ff
 
 		return tObj;
 	}
+
+#ifdef UTIL_DLL
+	ff::ComPtr<ID3D11ShaderResourceView> CreateDefaultTextureView(ID3D11DeviceX* device, ID3D11Texture2D* texture);
+	DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips);
+	DirectX::ScratchImage ConvertTextureData(const DirectX::ScratchImage& data, DXGI_FORMAT format, size_t mips);
+	ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect = nullptr);
+#endif
 }
 
 inline bool operator==(const D3D11_BLEND_DESC& lhs, const D3D11_BLEND_DESC& rhs)
