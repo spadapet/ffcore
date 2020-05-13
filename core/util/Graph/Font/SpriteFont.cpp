@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "COM/ComAlloc.h"
+#include "Data/Data.h"
 #include "Dict/Dict.h"
 #include "Globals/AppGlobals.h"
 #include "Globals/ProcessGlobals.h"

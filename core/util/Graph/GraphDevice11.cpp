@@ -39,9 +39,8 @@ public:
 	virtual std::unique_ptr<ff::IRenderer> CreateRenderer() override;
 	virtual ff::ComPtr<ff::IGraphBuffer> CreateBuffer(ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData) override;
 	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::StringRef path, ff::TextureFormat format, size_t mips) override;
-	virtual ff::ComPtr<ff::ITexture> CreateTexture(DirectX::ScratchImage&& data) override;
-	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples) override;
-	virtual ff::ComPtr<ff::ITexture> CreateStagingTexture(ff::PointInt size, ff::TextureFormat format, bool readable, bool writable, size_t mips, size_t count, size_t samples) override;
+	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples, ff::IData* initialData) override;
+	virtual ff::ComPtr<ff::ITexture> CreateStagingTexture(ff::PointInt size, ff::TextureFormat format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::IData* initialData) override;
 	virtual ff::ComPtr<ff::IRenderDepth> CreateRenderDepth(ff::PointInt size, size_t samples) override;
 	virtual ff::ComPtr<ff::IRenderTarget> CreateRenderTargetTexture(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipLevel) override;
 #if METRO_APP
@@ -64,6 +63,9 @@ public:
 	virtual ID3D11DeviceContextX* GetContext() override;
 	virtual ff::GraphContext11& GetStateContext() override;
 	virtual ff::GraphStateCache11& GetStateCache() override;
+
+	// IGraphDeviceInternal
+	virtual ff::ComPtr<ff::ITexture> CreateTexture(DirectX::ScratchImage&& data) override;
 
 private:
 	ff::Mutex _mutex;
@@ -221,8 +223,8 @@ std::unique_ptr<ff::IRenderer> GraphDevice11::CreateRenderer()
 
 bool CreateTexture11(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::ITexture** texture);
 bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::ITexture** texture);
-bool CreateTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, size_t mips, size_t count, size_t samples, ff::ITexture** texture);
-bool CreateStagingTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::ITexture** texture);
+bool CreateTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, size_t mips, size_t count, size_t samples, ff::IData* initialData, ff::ITexture** texture);
+bool CreateStagingTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::IData* initialData, ff::ITexture** texture);
 bool CreateGraphBuffer11(ff::IGraphDevice* device, ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData, ff::IGraphBuffer** buffer);
 
 ff::ComPtr<ff::IGraphBuffer> GraphDevice11::CreateBuffer(ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData)
@@ -243,16 +245,16 @@ ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(DirectX::ScratchImage&& da
 	return ::CreateTexture11(this, std::move(data), &obj) ? obj : nullptr;
 }
 
-ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples)
+ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples, ff::IData* initialData)
 {
 	ff::ComPtr<ff::ITexture> obj;
-	return ::CreateTexture11(this, size, ff::ConvertTextureFormat(format), mips, count, samples, &obj) ? obj : nullptr;
+	return ::CreateTexture11(this, size, ff::ConvertTextureFormat(format), mips, count, samples, initialData, &obj) ? obj : nullptr;
 }
 
-ff::ComPtr<ff::ITexture> GraphDevice11::CreateStagingTexture(ff::PointInt size, ff::TextureFormat format, bool readable, bool writable, size_t mips, size_t count, size_t samples)
+ff::ComPtr<ff::ITexture> GraphDevice11::CreateStagingTexture(ff::PointInt size, ff::TextureFormat format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::IData* initialData)
 {
 	ff::ComPtr<ff::ITexture> obj;
-	return ::CreateStagingTexture11(this, size, ff::ConvertTextureFormat(format), readable, writable, mips, count, samples, &obj) ? obj : nullptr;
+	return ::CreateStagingTexture11(this, size, ff::ConvertTextureFormat(format), readable, writable, mips, count, samples, initialData, &obj) ? obj : nullptr;
 }
 
 bool CreateRenderDepth11(ff::IGraphDevice* pDevice, ff::PointInt size, size_t multiSamples, ff::IRenderDepth** ppDepth);

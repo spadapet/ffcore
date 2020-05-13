@@ -39,10 +39,10 @@ namespace ff
 		virtual IGraphDevice11* AsGraphDevice11() = 0;
 		virtual IGraphDeviceInternal* AsGraphDeviceInternal() = 0;
 
-		virtual ComPtr<IGraphBuffer> CreateBuffer(GraphBufferType type, size_t size, bool writable = true, ff::IData* initialData = nullptr) = 0;
+		virtual ComPtr<IGraphBuffer> CreateBuffer(GraphBufferType type, size_t size, bool writable = true, IData* initialData = nullptr) = 0;
 		virtual ComPtr<ITexture> CreateTexture(StringRef path, TextureFormat format = TextureFormat::Unknown, size_t mips = 1) = 0;
-		virtual ComPtr<ITexture> CreateTexture(PointInt size, TextureFormat format, size_t mips = 1, size_t count = 1, size_t samples = 1) = 0;
-		virtual ComPtr<ITexture> CreateStagingTexture(PointInt size, TextureFormat format, bool readable, bool writable, size_t mips = 1, size_t count = 1, size_t samples = 1) = 0;
+		virtual ComPtr<ITexture> CreateTexture(PointInt size, TextureFormat format, size_t mips = 1, size_t count = 1, size_t samples = 1, IData* initialData = nullptr) = 0;
+		virtual ComPtr<ITexture> CreateStagingTexture(PointInt size, TextureFormat format, bool readable, bool writable, size_t mips = 1, size_t count = 1, size_t samples = 1, IData* initialData = nullptr) = 0;
 		virtual std::unique_ptr<IRenderer> CreateRenderer() = 0;
 		virtual ComPtr<IRenderDepth> CreateRenderDepth(PointInt size = PointInt(1, 1), size_t samples = 1) = 0;
 		virtual ComPtr<IRenderTarget> CreateRenderTargetTexture(ITexture* texture, size_t arrayStart = 0, size_t arrayCount = 1, size_t mipLevel = 0) = 0;

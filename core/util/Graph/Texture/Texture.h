@@ -29,6 +29,7 @@ namespace ff
 		virtual SpriteType GetSpriteType() const = 0;
 		virtual ComPtr<ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) = 0;
 		virtual ComPtr<ITexture> Convert(TextureFormat format, size_t mips) = 0;
+		virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, TextureFormat dataFormat) = 0;
 
 		virtual ISprite* AsSprite() = 0;
 		virtual ITextureView* AsTextureView() = 0;

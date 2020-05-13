@@ -551,6 +551,12 @@
     <ClCompile Include="Graph\Texture\PngImage.cpp">
       <Filter>Graph\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="Graph\Texture\Palette.cpp">
+      <Filter>Graph\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Texture\PaletteData.cpp">
+      <Filter>Graph\Texture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1104,6 +1110,12 @@
     </ClInclude>
     <ClInclude Include="Graph\Sprite\SpriteType.h">
       <Filter>Graph\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Texture\Palette.h">
+      <Filter>Graph\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Texture\PaletteData.h">
+      <Filter>Graph\Texture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

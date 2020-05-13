@@ -59,6 +59,7 @@ public:
 	virtual ff::SpriteType GetSpriteType() const override;
 	virtual ff::ComPtr<ff::ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) override;
 	virtual ff::ComPtr<ff::ITexture> Convert(ff::TextureFormat format, size_t mips) override;
+	virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat) override;
 	virtual ff::ISprite* AsSprite() override;
 	virtual ff::ITextureView* AsTextureView() override;
 	virtual ff::ITextureDxgi* AsTextureDxgi() override;
@@ -295,6 +296,15 @@ ff::ComPtr<ff::ITexture> StaticTexture11::Convert(ff::TextureFormat format, size
 
 	DirectX::ScratchImage data = ff::ConvertTextureData(_originalData, dxgiFormat, mips);
 	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data));
+}
+
+void StaticTexture11::Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat)
+{
+	assertRet(GetFormat() == dataFormat);
+
+	CD3D11_BOX box((UINT)rect.left, (UINT)rect.top, 0, (UINT)rect.right, (UINT)rect.bottom, 0);
+	UINT subResource = ::D3D11CalcSubresource((UINT)mipIndex, (UINT)arrayIndex, (UINT)_originalData.GetMetadata().mipLevels);
+	_device->AsGraphDevice11()->GetContext()->UpdateSubresource(GetTexture2d(), subResource, &box, data, (UINT)rowPitch, 0);
 }
 
 const DirectX::ScratchImage* StaticTexture11::Capture(DirectX::ScratchImage& tempHolder)

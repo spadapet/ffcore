@@ -111,7 +111,10 @@ cbuffer GeometryShaderConstants1 : register(b1)
 };
 
 Texture2D _textures[32] : register(t0);
+Texture2D<uint> _texturesPalette[32] : register(t0);
+Texture2D _palette : register(t32);
 SamplerState _sampler : register(s0);
+SamplerState _paletteSampler : register(s1);
 
 LineGeometry LineVS(LineGeometry input)
 {
@@ -455,14 +458,65 @@ float4 SampleSpriteTexture(float2 tex, uint ntex)
 	case 28: return _textures[28].Sample(_sampler, tex);
 	case 29: return _textures[29].Sample(_sampler, tex);
 	case 30: return _textures[30].Sample(_sampler, tex);
-	case 31: return _textures[31].Sample(_sampler, tex);
 	default: return (float4)0;
+	}
+}
+
+uint SamplePaletteSpriteTexture(float2 tex, uint ntex)
+{
+	switch (ntex)
+	{
+	case 0: return _texturesPalette[0].Sample(_paletteSampler, tex).r;
+	case 1: return _texturesPalette[1].Sample(_paletteSampler, tex).r;
+	case 2: return _texturesPalette[2].Sample(_paletteSampler, tex).r;
+	case 3: return _texturesPalette[3].Sample(_paletteSampler, tex).r;
+	case 4: return _texturesPalette[4].Sample(_paletteSampler, tex).r;
+	case 5: return _texturesPalette[5].Sample(_paletteSampler, tex).r;
+	case 6: return _texturesPalette[6].Sample(_paletteSampler, tex).r;
+	case 7: return _texturesPalette[7].Sample(_paletteSampler, tex).r;
+	case 8: return _texturesPalette[8].Sample(_paletteSampler, tex).r;
+	case 9: return _texturesPalette[9].Sample(_paletteSampler, tex).r;
+	case 10: return _texturesPalette[10].Sample(_paletteSampler, tex).r;
+	case 11: return _texturesPalette[11].Sample(_paletteSampler, tex).r;
+	case 12: return _texturesPalette[12].Sample(_paletteSampler, tex).r;
+	case 13: return _texturesPalette[13].Sample(_paletteSampler, tex).r;
+	case 14: return _texturesPalette[14].Sample(_paletteSampler, tex).r;
+	case 15: return _texturesPalette[15].Sample(_paletteSampler, tex).r;
+	case 16: return _texturesPalette[16].Sample(_paletteSampler, tex).r;
+	case 17: return _texturesPalette[17].Sample(_paletteSampler, tex).r;
+	case 18: return _texturesPalette[18].Sample(_paletteSampler, tex).r;
+	case 19: return _texturesPalette[19].Sample(_paletteSampler, tex).r;
+	case 20: return _texturesPalette[20].Sample(_paletteSampler, tex).r;
+	case 21: return _texturesPalette[21].Sample(_paletteSampler, tex).r;
+	case 22: return _texturesPalette[22].Sample(_paletteSampler, tex).r;
+	case 23: return _texturesPalette[23].Sample(_paletteSampler, tex).r;
+	case 24: return _texturesPalette[24].Sample(_paletteSampler, tex).r;
+	case 25: return _texturesPalette[25].Sample(_paletteSampler, tex).r;
+	case 26: return _texturesPalette[26].Sample(_paletteSampler, tex).r;
+	case 27: return _texturesPalette[27].Sample(_paletteSampler, tex).r;
+	case 28: return _texturesPalette[28].Sample(_paletteSampler, tex).r;
+	case 29: return _texturesPalette[29].Sample(_paletteSampler, tex).r;
+	case 30: return _texturesPalette[30].Sample(_paletteSampler, tex).r;
+	default: return 0;
 	}
 }
 
 float4 SpritePS(SpritePixel input) : SV_TARGET
 {
 	float4 color = input.color * SampleSpriteTexture(input.uv, input.tex);
+
+	if (color.a == 0)
+	{
+		discard;
+	}
+
+	return color;
+}
+
+float4 SpritePalettePS(SpritePixel input) : SV_TARGET
+{
+	int index = (int)SamplePaletteSpriteTexture(input.uv, input.tex);
+	float4 color = input.color * _palette.Load(int3(index, 0, 0));
 
 	if (color.a == 0)
 	{

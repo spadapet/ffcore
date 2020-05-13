@@ -32,7 +32,7 @@ public:
 	DECLARE_HEADER(StagingTexture11);
 
 	virtual HRESULT _Construct(IUnknown* unkOuter) override;
-	bool Init(const D3D11_TEXTURE2D_DESC& textureDesc);
+	bool Init(const D3D11_TEXTURE2D_DESC& textureDesc, ff::IData* initialData);
 
 	// IGraphDeviceChild
 	virtual ff::IGraphDevice* GetDevice() const override;
@@ -52,6 +52,7 @@ public:
 	virtual ff::SpriteType GetSpriteType() const override;
 	virtual ff::ComPtr<ff::ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) override;
 	virtual ff::ComPtr<ff::ITexture> Convert(ff::TextureFormat format, size_t mips) override;
+	virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat) override;
 	virtual ff::ISprite* AsSprite() override;
 	virtual ff::ITextureView* AsTextureView() override;
 	virtual ff::ITextureDxgi* AsTextureDxgi() override;
@@ -88,6 +89,7 @@ private:
 	ff::ComPtr<ff::IGraphDevice> _device;
 	ff::ComPtr<ID3D11Texture2D> _texture;
 	ff::ComPtr<ID3D11ShaderResourceView> _view;
+	ff::ComPtr<ff::IData> _initialData;
 	std::unique_ptr<ff::SpriteData> _spriteData;
 	D3D11_TEXTURE2D_DESC _textureDesc;
 };
@@ -100,7 +102,15 @@ BEGIN_INTERFACES(StagingTexture11)
 	HAS_INTERFACE(ff::IRenderAnimation)
 END_INTERFACES()
 
-bool CreateTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, size_t mips, size_t count, size_t samples, ff::ITexture** texture)
+bool CreateTexture11(
+	ff::IGraphDevice* device,
+	ff::PointInt size,
+	DXGI_FORMAT format,
+	size_t mips,
+	size_t count,
+	size_t samples,
+	ff::IData* initialData,
+	ff::ITexture** texture)
 {
 	assertRetVal(device && texture && size.x > 0 && size.y > 0, false);
 	assertRetVal(mips > 0 && count > 0 && samples > 0 && ff::NearestPowerOfTwo(samples) == samples, false);
@@ -134,13 +144,23 @@ bool CreateTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT fo
 
 	ff::ComPtr<StagingTexture11, ff::ITexture> obj;
 	assertHrRetVal(ff::ComAllocator<StagingTexture11>::CreateInstance(device, &obj), false);
-	assertRetVal(obj->Init(desc), false);
+	assertRetVal(obj->Init(desc, initialData), false);
 
 	*texture = obj.Detach();
 	return true;
 }
 
-bool CreateStagingTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::ITexture** texture)
+bool CreateStagingTexture11(
+	ff::IGraphDevice* device,
+	ff::PointInt size,
+	DXGI_FORMAT format,
+	bool readable,
+	bool writable,
+	size_t mips,
+	size_t count,
+	size_t samples,
+	ff::IData* initialData,
+	ff::ITexture** texture)
 {
 	assertRetVal(device && texture && size.x > 0 && size.y > 0, false);
 	assertRetVal(mips > 0 && count > 0 && samples > 0 && ff::NearestPowerOfTwo(samples) == samples, false);
@@ -171,7 +191,7 @@ bool CreateStagingTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FO
 
 	ff::ComPtr<StagingTexture11, ff::ITexture> obj;
 	assertHrRetVal(ff::ComAllocator<StagingTexture11>::CreateInstance(device, &obj), false);
-	assertRetVal(obj->Init(desc), false);
+	assertRetVal(obj->Init(desc, initialData), false);
 
 	*texture = obj.Detach();
 	return true;
@@ -198,10 +218,10 @@ HRESULT StagingTexture11::_Construct(IUnknown* unkOuter)
 	return __super::_Construct(unkOuter);
 }
 
-bool StagingTexture11::Init(const D3D11_TEXTURE2D_DESC& textureDesc)
+bool StagingTexture11::Init(const D3D11_TEXTURE2D_DESC& textureDesc, ff::IData* initialData)
 {
 	_textureDesc = textureDesc;
-
+	_initialData = initialData;
 	return true;
 }
 
@@ -291,7 +311,26 @@ ID3D11Texture2D* StagingTexture11::GetTexture2d()
 {
 	if (!_texture)
 	{
-		assertHrRetVal(_device->AsGraphDevice11()->Get3d()->CreateTexture2D(&_textureDesc, nullptr, &_texture), nullptr);
+		D3D11_SUBRESOURCE_DATA data{ 0 };
+		const D3D11_SUBRESOURCE_DATA* initialData = nullptr;
+		size_t rowPitch, slicePitch;
+
+		if (_initialData && SUCCEEDED(DirectX::ComputePitch(_textureDesc.Format, _textureDesc.Width, _textureDesc.Height, rowPitch, slicePitch)))
+		{
+			if (_initialData->GetSize() == rowPitch * _textureDesc.Height)
+			{
+				data.pSysMem = _initialData->GetMem();
+				data.SysMemPitch = (UINT)rowPitch;
+				data.SysMemSlicePitch = (UINT)slicePitch;
+				initialData = &data;
+			}
+			else
+			{
+				assertSz(false, L"Invalid initial data for scratch texture");
+			}
+		}
+
+		assertHrRetVal(_device->AsGraphDevice11()->Get3d()->CreateTexture2D(&_textureDesc, initialData, &_texture), nullptr);
 	}
 
 	return _texture;
@@ -321,6 +360,15 @@ ff::ComPtr<ff::ITexture> StagingTexture11::Convert(ff::TextureFormat format, siz
 
 	DirectX::ScratchImage data = ff::ConvertTextureData(scratch, ff::ConvertTextureFormat(format), mips);
 	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data));
+}
+
+void StagingTexture11::Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat)
+{
+	assertRet(GetFormat() == dataFormat);
+
+	CD3D11_BOX box((UINT)rect.left, (UINT)rect.top, 0, (UINT)rect.right, (UINT)rect.bottom, 0);
+	UINT subResource = ::D3D11CalcSubresource((UINT)mipIndex, (UINT)arrayIndex, (UINT)_textureDesc.MipLevels);
+	_device->AsGraphDevice11()->GetContext()->UpdateSubresource(GetTexture2d(), subResource, &box, data, (UINT)rowPitch, 0);
 }
 
 const DirectX::ScratchImage* StagingTexture11::Capture(DirectX::ScratchImage& tempHolder)

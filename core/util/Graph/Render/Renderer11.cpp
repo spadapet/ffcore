@@ -20,11 +20,11 @@
 
 static const size_t MAX_TEXTURES = 32;
 static const size_t MAX_MODEL_MATRIXES = 1024;
-static const size_t MAX_RENDER_COUNT = 524288;
+static const size_t MAX_RENDER_COUNT = 524288; // 0x00080000
 static const float MAX_RENDER_DEPTH = 1.0f;
 static const float RENDER_DEPTH_DELTA = MAX_RENDER_DEPTH / MAX_RENDER_COUNT;
 
-ID3D11ShaderResourceView* NULL_TEXTURES[::MAX_TEXTURES] = { nullptr };
+static ID3D11ShaderResourceView* NULL_TEXTURES[::MAX_TEXTURES + 1] = { nullptr };
 
 enum class GeometryBucketType
 {
@@ -44,6 +44,7 @@ enum class GeometryBucketType
 	TrianglesAlpha,
 	SpritesAlpha,
 	MultiSpritesAlpha,
+	PaletteSpritesAlpha,
 
 	Count,
 	FirstAlpha = LinesAlpha,
@@ -231,6 +232,8 @@ public:
 	virtual void DrawOutlineCircle(ff::PointFloat center, float radius, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness) override;
 	virtual void DrawOutlineCircle(ff::PointFloat center, float radius, const DirectX::XMFLOAT4& insideColor, const DirectX::XMFLOAT4& outsideColor, float thickness, bool pixelThickness) override;
 
+	virtual void PushPalette(ff::ITextureView* palette) override;
+	virtual void PopPalette() override;
 	virtual void PushCustomContext(ff::CustomRenderContextFunc11&& func) override;
 	virtual void PopCustomContext() override;
 	virtual void PushTextureSampler(D3D11_FILTER filter) override;
@@ -311,8 +314,10 @@ private:
 	{
 		return (T*)AddGeometry(sizeof(T), bucketType, depth);
 	}
+
 	ff::GraphFixedState11 CreateOpaqueDrawState();
 	ff::GraphFixedState11 CreateAlphaDrawState();
+	ID3D11ShaderResourceView* GetPaletteResourceView() const;
 	GeometryBucketBase& GetGeometryBucket(GeometryBucketType type);
 
 	enum class State
@@ -335,6 +340,7 @@ private:
 
 	// Render state
 	ff::Vector<ff::ComPtr<ID3D11SamplerState>> _samplerStack;
+	ff::ComPtr<ID3D11SamplerState> _paletteSampler;
 	ff::GraphFixedState11 _opaqueState;
 	ff::GraphFixedState11 _alphaState;
 	ff::Vector<ff::CustomRenderContextFunc11> _customContextStack;
@@ -351,6 +357,7 @@ private:
 
 	// Render data
 	ff::Vector<AlphaGeometryEntry> _alphaGeometry;
+	ff::Vector<ff::ITextureView11*> _paletteStack;
 	GeometryBucketArray _geometryBuckets;
 	LastDepthType _lastDepthType;
 	float _drawDepth;
@@ -721,6 +728,7 @@ Renderer11::Renderer11(ff::IGraphDevice* device)
 	::InitGeometryBucket<ff::TriangleGeometryInput, GeometryBucketType::Triangles>(_geometryBuckets);
 	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::Sprites>(_geometryBuckets);
 	::InitGeometryBucket<ff::MultiSpriteGeometryInput, GeometryBucketType::MultiSprites>(_geometryBuckets);
+	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::PaletteSprites>(_geometryBuckets);
 
 	::InitGeometryBucket<ff::LineGeometryInput, GeometryBucketType::LinesAlpha>(_geometryBuckets);
 	::InitGeometryBucket<ff::LineScreenGeometryInput, GeometryBucketType::LinesScreenAlpha>(_geometryBuckets);
@@ -729,6 +737,7 @@ Renderer11::Renderer11(ff::IGraphDevice* device)
 	::InitGeometryBucket<ff::TriangleGeometryInput, GeometryBucketType::TrianglesAlpha>(_geometryBuckets);
 	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::SpritesAlpha>(_geometryBuckets);
 	::InitGeometryBucket<ff::MultiSpriteGeometryInput, GeometryBucketType::MultiSpritesAlpha>(_geometryBuckets);
+	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::PaletteSpritesAlpha>(_geometryBuckets);
 
 	Init();
 
@@ -753,6 +762,7 @@ void Renderer11::Destroy()
 	_geometryConstantsHash1 = 0;
 
 	_samplerStack.Clear();
+	_paletteSampler = nullptr;
 	_opaqueState = ff::GraphFixedState11();
 	_alphaState = ff::GraphFixedState11();
 	_customContextStack.Clear();
@@ -807,6 +817,7 @@ bool Renderer11::Init()
 	// Pixel shaders
 	ID3D11PixelShader* colorPS = ::GetPixelShader(L"ColorPS", cache);
 	ID3D11PixelShader* spritePS = ::GetPixelShader(L"SpritePS", cache);
+	ID3D11PixelShader* spritePalettePS = ::GetPixelShader(L"SpritePalettePS", cache);
 	ID3D11PixelShader* multiSpritePS = ::GetPixelShader(L"MultiSpritePS", cache);
 
 	assertRetVal(
@@ -824,6 +835,7 @@ bool Renderer11::Init()
 		multiSpriteGS != nullptr &&
 		colorPS != nullptr &&
 		spritePS != nullptr &&
+		spritePalettePS != nullptr &&
 		multiSpritePS != nullptr &&
 		lineLayout != nullptr &&
 		circleLayout != nullptr &&
@@ -842,6 +854,7 @@ bool Renderer11::Init()
 	GetGeometryBucket(GeometryBucketType::Triangles).Reset(triangleLayout, triangleVS, triangleGS, colorPS);
 	GetGeometryBucket(GeometryBucketType::Sprites).Reset(spriteLayout, spriteVS, spriteGS, spritePS);
 	GetGeometryBucket(GeometryBucketType::MultiSprites).Reset(multiSpriteLayout, multiSpriteVS, multiSpriteGS, multiSpritePS);
+	GetGeometryBucket(GeometryBucketType::PaletteSprites).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS);
 
 	GetGeometryBucket(GeometryBucketType::LinesAlpha).Reset(lineLayout, lineVS, lineGS, colorPS);
 	GetGeometryBucket(GeometryBucketType::CircleAlpha).Reset(circleLayout, circleVS, circleGS, colorPS);
@@ -850,9 +863,11 @@ bool Renderer11::Init()
 	GetGeometryBucket(GeometryBucketType::TrianglesAlpha).Reset(triangleLayout, triangleVS, triangleGS, colorPS);
 	GetGeometryBucket(GeometryBucketType::SpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePS);
 	GetGeometryBucket(GeometryBucketType::MultiSpritesAlpha).Reset(multiSpriteLayout, multiSpriteVS, multiSpriteGS, multiSpritePS);
+	GetGeometryBucket(GeometryBucketType::PaletteSpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS);
 
 	// States
-	_samplerStack.Push(::GetTextureSamplerState(cache, D3D11_FILTER_MIN_MAG_MIP_POINT));
+	_paletteSampler = ::GetTextureSamplerState(cache, D3D11_FILTER_MIN_MAG_MIP_POINT);
+	_samplerStack.Push(_paletteSampler);
 	_opaqueState = CreateOpaqueDrawState();
 	_alphaState = CreateAlphaDrawState();
 
@@ -882,6 +897,21 @@ ff::GraphFixedState11 Renderer11::CreateAlphaDrawState()
 	state._raster = ::GetNoCullRasterState(_device);
 
 	return state;
+}
+
+ID3D11ShaderResourceView* Renderer11::GetPaletteResourceView() const
+{
+	size_t size = _paletteStack.Size();
+	if (size)
+	{
+		ff::ITextureView11* view = _paletteStack[size - 1];
+		if (view)
+		{
+			return view->GetView();
+		}
+	}
+
+	return nullptr;
 }
 
 GeometryBucketBase& Renderer11::GetGeometryBucket(GeometryBucketType type)
@@ -991,7 +1021,9 @@ void Renderer11::SetShaderInput(const ff::Vector<ff::ComPtr<ID3D11ShaderResource
 	};
 
 	context.SetConstantsGS(buffersGS.data(), 0, buffersGS.size());
-	context.SetSamplersPS(_samplerStack.GetLast().Address(), 0, 1);
+
+	ID3D11SamplerState* samplerStates[2] = { _samplerStack.GetLast(), _paletteSampler };
+	context.SetSamplersPS(samplerStates, 0, 2);
 
 	if (texturesOverride)
 	{
@@ -1002,14 +1034,17 @@ void Renderer11::SetShaderInput(const ff::Vector<ff::ComPtr<ID3D11ShaderResource
 	}
 	else if (_textureCount)
 	{
-		ID3D11ShaderResourceView* textures[::MAX_TEXTURES] = { nullptr };
-
+		std::array<ID3D11ShaderResourceView*, ::MAX_TEXTURES> textures;
 		for (size_t i = 0; i < _textureCount; i++)
 		{
 			textures[i] = _textures[i]->GetView();
 		}
 
-		context.SetResourcesPS(textures, 0, _textureCount);
+		context.SetResourcesPS(textures.data(), 0, _textureCount);
+
+		// Reserved texture 1: Palette
+		ID3D11ShaderResourceView* palette = GetPaletteResourceView();
+		context.SetResourcesPS(&palette, ::MAX_TEXTURES, 1);
 	}
 }
 
@@ -1154,7 +1189,7 @@ void Renderer11::EndRender()
 
 	Flush();
 
-	_device->AsGraphDevice11()->GetStateContext().SetResourcesPS(::NULL_TEXTURES, 0, ::MAX_TEXTURES);
+	_device->AsGraphDevice11()->GetStateContext().SetResourcesPS(::NULL_TEXTURES, 0, _countof(::NULL_TEXTURES));
 
 	_state = State::Valid;
 	_samplerStack.Resize(1);
@@ -1224,7 +1259,7 @@ unsigned int Renderer11::GetTextureIndex(ff::ITextureView* texture)
 		}
 	}
 
-	if (_textureCount == ::MAX_TEXTURES)
+	if (_textureCount == _textures.size())
 	{
 		// Make room for more textures
 		Flush();
@@ -1316,6 +1351,38 @@ ff::IRendererActive11* Renderer11::AsRendererActive11()
 	return this;
 }
 
+void Renderer11::PushPalette(ff::ITextureView* palette)
+{
+	assert(!palette || (palette->GetTexture()->GetSize() == ff::PointInt(256, 1) && palette->GetTexture()->GetFormat() == ff::TextureFormat::RGBA32));
+
+	ff::ITextureView11* oldPalette = _paletteStack.Size() ? _paletteStack.GetLast() : nullptr;
+	ff::ITextureView11* newPalette = palette ? palette->AsTextureView11() : nullptr;
+	if (oldPalette != newPalette)
+	{
+		Flush();
+	}
+
+	_paletteStack.Push(newPalette);
+}
+
+void Renderer11::PopPalette()
+{
+	size_t size = _paletteStack.Size();
+	assertRet(size);
+
+	if (size > 1)
+	{
+		ff::ITextureView11* oldPalette = _paletteStack[size - 1];
+		ff::ITextureView11* newPalette = _paletteStack[size - 2];
+		if (oldPalette != newPalette)
+		{
+			Flush();
+		}
+	}
+
+	_paletteStack.Pop();
+}
+
 void Renderer11::PushCustomContext(ff::CustomRenderContextFunc11&& func)
 {
 	Flush();
@@ -1373,7 +1440,10 @@ void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::PointFloat& pos, cons
 	if (alphaType != AlphaType::Invisible)
 	{
 		float depth = NudgeDepth(depthType);
-		GeometryBucketType bucketType = (alphaType == AlphaType::Transparent) ? GeometryBucketType::SpritesAlpha : GeometryBucketType::Sprites;
+		bool usePalette = ff::HasAllFlags(data._type, ff::SpriteType::Palette);
+		GeometryBucketType bucketType = (alphaType == AlphaType::Transparent)
+			? (usePalette ? GeometryBucketType::PaletteSpritesAlpha : GeometryBucketType::SpritesAlpha)
+			: (usePalette ? GeometryBucketType::PaletteSprites : GeometryBucketType::Sprites);
 		ff::SpriteGeometryInput& input = *AddGeometry<ff::SpriteGeometryInput>(bucketType, depth);
 
 		GetWorldMatrixAndTextureIndex(data._textureView, input.matrixIndex, input.textureIndex);
