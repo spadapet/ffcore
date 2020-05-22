@@ -549,6 +549,9 @@
     <ClCompile Include="Graph\Texture\PngImage.cpp">
       <Filter>Graph\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="UI\Internal\XamlShaders11.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">

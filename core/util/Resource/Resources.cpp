@@ -23,6 +23,7 @@ public:
 	// IResources
 	virtual void SetResources(const ff::Dict& dict) override;
 	virtual ff::Dict GetResources() const override;
+	virtual ff::Vector<ff::String> GetResourceNames() const override;
 	virtual void Clear() override;
 	virtual bool IsLoading() const override;
 
@@ -130,6 +131,12 @@ ff::Dict Resources::GetResources() const
 	}
 
 	return dict;
+}
+
+ff::Vector<ff::String> Resources::GetResourceNames() const
+{
+	ff::LockMutex lock(_mutex);
+	return _dict.GetAllNames();
 }
 
 void Resources::Clear()

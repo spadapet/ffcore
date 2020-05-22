@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{1668AC0E
 		msbuild\cpp.xml = msbuild\cpp.xml
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.libpng", "core\libpng\libpng-metro.vcxproj", "{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -62,6 +64,14 @@ Global
 		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Release|x64.Build.0 = Release|x64
 		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Release|x86.ActiveCfg = Release|Win32
 		{49F8C1B7-6D04-44B7-82BA-A813D826B2F1}.Release|x86.Build.0 = Release|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|x64.ActiveCfg = Debug|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|x64.Build.0 = Debug|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|x86.ActiveCfg = Debug|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Debug|x86.Build.0 = Debug|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|x64.ActiveCfg = Release|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|x64.Build.0 = Release|x64
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|x86.ActiveCfg = Release|Win32
+		{DAB734EE-9037-4B24-ADCA-A6DC9D0D66DC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

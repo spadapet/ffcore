@@ -19,6 +19,6 @@ void ff::NotifyPropertyChangedBase::OnPropertyChanged(const char* name)
 {
     if (_propertyChanged)
     {
-        _propertyChanged.Invoke(this, Noesis::PropertyChangedEventArgs(NsSymbol(name)));
+        _propertyChanged.Invoke(this, Noesis::PropertyChangedEventArgs(Noesis::Symbol(name)));
     }
 }

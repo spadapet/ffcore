@@ -176,6 +176,7 @@
     <ClCompile Include="UI\Internal\XamlProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderDevice11.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderTarget.cpp" />
+    <ClCompile Include="UI\Internal\XamlShaders11.cpp" />
     <ClCompile Include="UI\Internal\XamlStream.cpp" />
     <ClCompile Include="UI\Internal\XamlTexture.cpp" />
     <ClCompile Include="UI\Internal\XamlTextureProvider.cpp" />

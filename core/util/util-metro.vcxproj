@@ -164,6 +164,7 @@
     <ClCompile Include="Types\Hash.cpp" />
     <ClCompile Include="Types\MemAlloc.cpp" />
     <ClCompile Include="Types\Timer.cpp" />
+    <ClCompile Include="UI\Internal\XamlShaders11.cpp" />
     <ClCompile Include="UI\XamlConverters.cpp" />
     <ClCompile Include="UI\Internal\XamlFontProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlKeyMap.cpp" />

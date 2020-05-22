@@ -27,7 +27,7 @@ public:
 		static ff::StaticString resName(L"ApplicationResources.xaml");
 
 		_uiGlobals = std::make_shared<ff::XamlGlobalState>(globals);
-		_uiGlobals->Startup(this, this, resName);
+		_uiGlobals->Startup(ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2"), ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV"), this, this, resName);
 	}
 
 	virtual void OnGameThreadShutdown(ff::AppGlobals* globals) override
@@ -52,6 +52,11 @@ public:
 	virtual ff::AutoResourceValue GetResource(ff::StringRef name) override
 	{
 		return ff::AutoResourceValue(ff::GetThisModule().GetResources(), name);
+	}
+
+	virtual ff::Vector<ff::String> GetResourceNames() const override
+	{
+		return ff::GetThisModule().GetResources()->GetResourceNames();
 	}
 
 	virtual ff::ValuePtr GetValue(ff::StringRef name) const override

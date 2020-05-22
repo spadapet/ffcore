@@ -15,7 +15,7 @@
 #include "Core/CrtPch.h"
 #include "Windows/WindowsPch.h"
 #include "Graph/DirectXPch.h"
-#include <Noesis_pch.h>
+#include <NoesisPCH.h>
 
 // Internal basic stuff (order matters)
 

@@ -24,6 +24,7 @@
 static ff::XamlGlobalState* s_globals;
 static Noesis::AssertHandler s_assertHandler;
 static Noesis::ErrorHandler s_errorHandler;
+static Noesis::LogHandler s_logHandler;
 
 ff::XamlGlobalState* ff::XamlGlobalState::Get()
 {
@@ -88,6 +89,11 @@ static void NoesisLogHandler(const char* filename, uint32_t line, uint32_t level
 	{
 		OnBindingFailure(message);
 	}
+
+	if (s_logHandler)
+	{
+		s_logHandler(filename, line, level, channel, message);
+	}
 }
 
 static bool NoesisAssertHandler(const char* file, uint32_t line, const char* expr)
@@ -99,7 +105,7 @@ static bool NoesisAssertHandler(const char* file, uint32_t line, const char* exp
 	}
 #endif
 
-	return s_assertHandler(file, line, expr);
+	return s_assertHandler ? s_assertHandler(file, line, expr) : false;
 }
 
 static void NoesisErrorHandler(const char* file, uint32_t line, const char* message, bool fatal)
@@ -111,7 +117,10 @@ static void NoesisErrorHandler(const char* file, uint32_t line, const char* mess
 	}
 #endif
 
-	return s_errorHandler(file, line, message, fatal);
+	if (s_errorHandler)
+	{
+		s_errorHandler(file, line, message, fatal);
+	}
 }
 
 static void* NoesisAlloc(void* user, size_t size)
@@ -179,16 +188,22 @@ ff::XamlGlobalState::~XamlGlobalState()
 	s_globals = nullptr;
 }
 
-bool ff::XamlGlobalState::Startup(ff::IResourceAccess* resources, ff::IValueAccess* values, ff::StringRef resourcesName, bool sRGB)
+bool ff::XamlGlobalState::Startup(ff::StringRef noesisLicenseName, ff::StringRef noesisLicenseKey, ff::IResourceAccess* resources, ff::IValueAccess* values, ff::StringRef resourcesName, bool sRGB)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
 	assertRetVal(!s_assertHandler && !_resources && resources && values && _appGlobals->GetGraph()->AsGraphDevice11(), false);
 
 	::TraceLoggingRegister(s_traceLoggingProvider);
 
-	Noesis::GUI::Init(nullptr, ::NoesisLogHandler, &s_memoryCallbacks);
 	s_assertHandler = Noesis::SetAssertHandler(::NoesisAssertHandler);
 	s_errorHandler = Noesis::SetErrorHandler(::NoesisErrorHandler);
+	s_logHandler = Noesis::SetLogHandler(::NoesisLogHandler);
+	Noesis::SetMemoryCallbacks(s_memoryCallbacks);
+	Noesis::GUI::Init(ff::StringToUTF8(noesisLicenseName).Data(), ff::StringToUTF8(noesisLicenseKey).Data());
+
+	const char* fallbackFonts[] = { "Segoe UI" };
+	Noesis::GUI::SetFontFallbacks(fallbackFonts, _countof(fallbackFonts));
+	Noesis::GUI::SetFontDefaultProperties(12.0f, Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
 
 	_resources = resources;
 	_values = values;
@@ -199,7 +214,7 @@ bool ff::XamlGlobalState::Startup(ff::IResourceAccess* resources, ff::IValueAcce
 
 	Noesis::GUI::SetCursorCallback(this, ff::XamlGlobalState::StaticUpdateCursorCallback);
 	Noesis::GUI::SetOpenUrlCallback(this, ff::XamlGlobalState::StaticOpenUrlCallback);
-	Noesis::GUI::SetPlaySoundCallback(this, ff::XamlGlobalState::StaticPlaySoundCallback);
+	Noesis::GUI::SetPlayAudioCallback(this, ff::XamlGlobalState::StaticPlaySoundCallback);
 	Noesis::GUI::SetSoftwareKeyboardCallback(this, ff::XamlGlobalState::StaticSoftwareKeyboardCallback);
 
 	Noesis::GUI::SetXamlProvider(_xamlProvider);
@@ -258,20 +273,20 @@ void ff::XamlGlobalState::Shutdown()
 	::TraceLoggingUnregister(s_traceLoggingProvider);
 }
 
-std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target, bool perPixelAntiAlias)
+std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
 
 	ff::Vector<char> xamlFile8 = ff::StringToUTF8(xamlFile);
-	return CreateView(Noesis::GUI::LoadXaml<Noesis::FrameworkElement>(xamlFile8.ConstData()), target, perPixelAntiAlias);
+	return CreateView(Noesis::GUI::LoadXaml<Noesis::FrameworkElement>(xamlFile8.ConstData()), target, perPixelAntiAlias, subPixelRendering);
 }
 
-std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias)
+std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
 
 	assertRetVal(content, nullptr);
-	return std::make_shared<ff::XamlView11>(this, content, target, perPixelAntiAlias);
+	return std::make_shared<ff::XamlView11>(this, content, target, perPixelAntiAlias, subPixelRendering);
 }
 
 std::shared_ptr<ff::XamlViewState> ff::XamlGlobalState::CreateViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target)
@@ -561,9 +576,9 @@ void ff::XamlGlobalState::StaticSoftwareKeyboardCallback(void* user, Noesis::UIE
 
 void ff::XamlGlobalState::RegisterComponents()
 {
-	NsRegisterComponent<ff::BoolToCollapsedConverter>();
-	NsRegisterComponent<ff::BoolToObjectConverter>();
-	NsRegisterComponent<ff::BoolToVisibleConverter>();
+	Noesis::RegisterComponent<ff::BoolToCollapsedConverter>();
+	Noesis::RegisterComponent<ff::BoolToObjectConverter>();
+	Noesis::RegisterComponent<ff::BoolToVisibleConverter>();
 }
 
 void ff::XamlGlobalState::UpdateCursorCallback(Noesis::IView* view, Noesis::Cursor cursor)

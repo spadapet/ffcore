@@ -197,6 +197,14 @@
     "entry": "SpritePS"
   },
 
+  "SpritePalettePS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "ps_4_0",
+    "entry": "SpritePalettePS"
+  },
+
   "SpriteAlphaPS":
   {
     "res:type": "shader",

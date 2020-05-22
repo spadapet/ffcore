@@ -7,7 +7,7 @@
 #include "UI/XamlGlobalState.h"
 #include "UI/XamlView.h"
 
-ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias)
+ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
 	: _globals(globals)
 	, _focused(false)
 	, _enabled(true)
@@ -24,7 +24,7 @@ ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* conte
 
 	_globals->RegisterView(this);
 
-	_view->SetIsPPAAEnabled(perPixelAntiAlias);
+	_view->SetFlags((perPixelAntiAlias ? Noesis::RenderFlags_PPAA : 0) | (subPixelRendering ? Noesis::RenderFlags_LCD : 0));
 	_view->GetRenderer()->Init(_globals->GetRenderDevice());
 	_view->Deactivate();
 
@@ -201,11 +201,7 @@ void ff::XamlView::Advance()
 void ff::XamlView::PreRender()
 {
 	_view->GetRenderer()->UpdateRenderTree();
-
-	if (_view->GetRenderer()->NeedsOffscreen())
-	{
-		_view->GetRenderer()->RenderOffscreen();
-	}
+	_view->GetRenderer()->RenderOffscreen();
 }
 
 void ff::XamlView::Render(ff::IRenderTarget* target, ff::IRenderDepth* depth, const ff::RectFloat* viewRect)

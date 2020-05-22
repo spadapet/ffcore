@@ -13,6 +13,7 @@ namespace ff
 	public:
 		virtual void SetResources(const Dict& dict) = 0;
 		virtual Dict GetResources() const = 0;
+		virtual Vector<String> GetResourceNames() const = 0;
 		virtual void Clear() = 0;
 		virtual bool IsLoading() const = 0;
 
@@ -25,6 +26,7 @@ namespace ff
 	{
 	public:
 		virtual AutoResourceValue GetResource(StringRef name) = 0;
+		virtual Vector<String> GetResourceNames() const = 0;
 	};
 
 	UTIL_API bool CreateResources(AppGlobals* globals, const Dict& dict, IResources** obj);

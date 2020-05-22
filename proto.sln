@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{6D26D213
 		msbuild\cpp.xml = msbuild\cpp.xml
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.libpng", "core\libpng\libpng.vcxproj", "{20AD1CF4-69EF-49F3-B258-01903326BF25}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -58,6 +60,14 @@ Global
 		{88617B7D-BE22-4835-A8D3-140518425CE9}.Release|x64.Build.0 = Release|x64
 		{88617B7D-BE22-4835-A8D3-140518425CE9}.Release|x86.ActiveCfg = Release|Win32
 		{88617B7D-BE22-4835-A8D3-140518425CE9}.Release|x86.Build.0 = Release|Win32
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Debug|x64.ActiveCfg = Debug|x64
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Debug|x64.Build.0 = Debug|x64
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Debug|x86.ActiveCfg = Debug|Win32
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Debug|x86.Build.0 = Debug|Win32
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Release|x64.ActiveCfg = Release|x64
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Release|x64.Build.0 = Release|x64
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Release|x86.ActiveCfg = Release|Win32
+		{20AD1CF4-69EF-49F3-B258-01903326BF25}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

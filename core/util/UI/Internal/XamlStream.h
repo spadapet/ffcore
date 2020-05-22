@@ -19,6 +19,7 @@ namespace ff
 		virtual uint32_t GetPosition() const override;
 		virtual uint32_t GetLength() const override;
 		virtual uint32_t Read(void* buffer, uint32_t size) override;
+		virtual void Close() override;
 
 	private:
 		ff::AutoResourceValue _resource;

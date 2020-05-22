@@ -6,8 +6,8 @@
 #include "Graph/State/GraphContext11.h"
 #include "UI/XamlGlobalState.h"
 
-ff::XamlView11::XamlView11(XamlGlobalState* globals, Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias)
-	: XamlView(globals, content, target, perPixelAntiAlias)
+ff::XamlView11::XamlView11(XamlGlobalState* globals, Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
+	: XamlView(globals, content, target, perPixelAntiAlias, subPixelRendering)
 {
 }
 

@@ -13,7 +13,7 @@
 
     <Border BorderThickness="4" BorderBrush="Green" />
 
-    <Button x:Name="button" BorderThickness="4" BorderBrush="Red" Background="Blue" Width="200" Height="50" Margin="50" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5">
+    <Button x:Name="button" BorderThickness="4" BorderBrush="Red" Background="Blue" Foreground="White" Width="200" Height="50" Margin="50" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5">
         <Button.RenderTransform>
             <RotateTransform />
         </Button.RenderTransform>

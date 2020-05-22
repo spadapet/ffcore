@@ -1,9 +1,8 @@
 #include "pch.h"
 #include "UI/XamlConverters.h"
 
-NS_IMPLEMENT_REFLECTION(ff::BoolToVisibleConverter)
+NS_IMPLEMENT_REFLECTION(ff::BoolToVisibleConverter, "ff.BoolToVisibleConverter")
 {
-	NsMeta<Noesis::TypeId>("ff.BoolToVisibleConverter");
 }
 
 bool ff::BoolToVisibleConverter::TryConvert(Noesis::BaseComponent* value, const Noesis::Type* targetType, Noesis::BaseComponent* parameter, Noesis::Ptr<Noesis::BaseComponent>& result)
@@ -18,9 +17,8 @@ bool ff::BoolToVisibleConverter::TryConvert(Noesis::BaseComponent* value, const 
 	return false;
 }
 
-NS_IMPLEMENT_REFLECTION(ff::BoolToCollapsedConverter)
+NS_IMPLEMENT_REFLECTION(ff::BoolToCollapsedConverter, "ff.BoolToCollapsedConverter")
 {
-	NsMeta<Noesis::TypeId>("ff.BoolToCollapsedConverter");
 }
 
 bool ff::BoolToCollapsedConverter::TryConvert(Noesis::BaseComponent* value, const Noesis::Type* targetType, Noesis::BaseComponent* parameter, Noesis::Ptr<Noesis::BaseComponent>& result)
@@ -35,9 +33,8 @@ bool ff::BoolToCollapsedConverter::TryConvert(Noesis::BaseComponent* value, cons
 	return false;
 }
 
-NS_IMPLEMENT_REFLECTION(ff::BoolToObjectConverter)
+NS_IMPLEMENT_REFLECTION(ff::BoolToObjectConverter, "ff.BoolToObjectConverter")
 {
-	NsMeta<Noesis::TypeId>("ff.BoolToObjectConverter");
 	NsProp("TrueValue", &BoolToObjectConverter::GetTrueValue, &BoolToObjectConverter::SetTrueValue);
 	NsProp("FalseValue", &BoolToObjectConverter::GetFalseValue, &BoolToObjectConverter::SetFalseValue);
 }

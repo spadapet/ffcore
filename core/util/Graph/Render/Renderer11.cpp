@@ -340,7 +340,6 @@ private:
 
 	// Render state
 	ff::Vector<ff::ComPtr<ID3D11SamplerState>> _samplerStack;
-	ff::ComPtr<ID3D11SamplerState> _paletteSampler;
 	ff::GraphFixedState11 _opaqueState;
 	ff::GraphFixedState11 _alphaState;
 	ff::Vector<ff::CustomRenderContextFunc11> _customContextStack;
@@ -719,7 +718,7 @@ Renderer11::Renderer11(ff::IGraphDevice* device)
 	: _device(device)
 	, _worldMatrixStack(this)
 {
-	assert(_geometryBuckets.size() == 14);
+	assert(_geometryBuckets.size() == 16);
 
 	::InitGeometryBucket<ff::LineGeometryInput, GeometryBucketType::Lines>(_geometryBuckets);
 	::InitGeometryBucket<ff::LineScreenGeometryInput, GeometryBucketType::LinesScreen>(_geometryBuckets);
@@ -762,7 +761,6 @@ void Renderer11::Destroy()
 	_geometryConstantsHash1 = 0;
 
 	_samplerStack.Clear();
-	_paletteSampler = nullptr;
 	_opaqueState = ff::GraphFixedState11();
 	_alphaState = ff::GraphFixedState11();
 	_customContextStack.Clear();
@@ -845,7 +843,7 @@ bool Renderer11::Init()
 		false);
 
 	// Geometry buckets
-	assert(_geometryBuckets.size() == 14);
+	assert(_geometryBuckets.size() == 16);
 
 	GetGeometryBucket(GeometryBucketType::Lines).Reset(lineLayout, lineVS, lineGS, colorPS);
 	GetGeometryBucket(GeometryBucketType::LinesScreen).Reset(lineLayout, lineVS, lineScreenGS, colorPS);
@@ -866,8 +864,7 @@ bool Renderer11::Init()
 	GetGeometryBucket(GeometryBucketType::PaletteSpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS);
 
 	// States
-	_paletteSampler = ::GetTextureSamplerState(cache, D3D11_FILTER_MIN_MAG_MIP_POINT);
-	_samplerStack.Push(_paletteSampler);
+	_samplerStack.Push(::GetTextureSamplerState(cache, D3D11_FILTER_MIN_MAG_MIP_POINT));
 	_opaqueState = CreateOpaqueDrawState();
 	_alphaState = CreateAlphaDrawState();
 
@@ -1022,8 +1019,8 @@ void Renderer11::SetShaderInput(const ff::Vector<ff::ComPtr<ID3D11ShaderResource
 
 	context.SetConstantsGS(buffersGS.data(), 0, buffersGS.size());
 
-	ID3D11SamplerState* samplerStates[2] = { _samplerStack.GetLast(), _paletteSampler };
-	context.SetSamplersPS(samplerStates, 0, 2);
+	ID3D11SamplerState* samplerState = _samplerStack.GetLast();
+	context.SetSamplersPS(&samplerState, 0, 1);
 
 	if (texturesOverride)
 	{

@@ -31,10 +31,10 @@ namespace ff
 
 		static XamlGlobalState* Get();
 
-		UTIL_API bool Startup(ff::IResourceAccess* resources, ff::IValueAccess* values, ff::StringRef resourcesName, bool sRGB = false);
+		UTIL_API bool Startup(ff::StringRef noesisLicenseName, ff::StringRef noesisLicenseKey, ff::IResourceAccess* resources, ff::IValueAccess* values, ff::StringRef resourcesName, bool sRGB = false);
 		UTIL_API void Shutdown();
-		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false);
-		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false);
+		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
+		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlViewState> CreateViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target);
 		UTIL_API const ff::Vector<XamlView*>& GetInputViews() const;
 

@@ -1,2 +1,2 @@
-svn://svn.noesisengine.com/Noesis/NoesisSDK/branches/2.2/Native
-2.2.6 (r8609)
+svn://svn.noesisengine.com/Noesis/NoesisSDK/trunk/Native
+3.0.0 (r9323)

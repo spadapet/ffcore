@@ -18,7 +18,7 @@ namespace ff
 		virtual const Noesis::DeviceCaps& GetCaps() const override;
 		virtual Noesis::Ptr<Noesis::RenderTarget> CreateRenderTarget(const char* label, uint32_t width, uint32_t height, uint32_t sampleCount) override;
 		virtual Noesis::Ptr<Noesis::RenderTarget> CloneRenderTarget(const char* label, Noesis::RenderTarget* surface) override;
-		virtual Noesis::Ptr<Noesis::Texture> CreateTexture(const char* label, uint32_t width, uint32_t height, uint32_t numLevels, Noesis::TextureFormat::Enum format) override;
+		virtual Noesis::Ptr<Noesis::Texture> CreateTexture(const char* label, uint32_t width, uint32_t height, uint32_t numLevels, Noesis::TextureFormat::Enum format, const void** data) override;
 		virtual void UpdateTexture(Noesis::Texture* texture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* data) override;
 		virtual void BeginRender(bool offscreen) override;
 		virtual void SetRenderTarget(Noesis::RenderTarget* surface) override;
@@ -38,7 +38,7 @@ namespace ff
 
 	private:
 		enum class MsaaSamples { x1, x2, x4, x8, x16, Count };
-		enum class TextureSlot { Pattern, Ramps, Image, Glyphs, Count };
+		enum class TextureSlot { Pattern, Ramps, Image, Glyphs, Shadow, Count };
 
 		struct VertexStage
 		{
@@ -47,7 +47,13 @@ namespace ff
 			uint32_t stride;
 		};
 
-		void CreateVertexStage(uint8_t format, const char* label, const void* code, uint32_t size, VertexStage& stage);
+		struct Program
+		{
+			int8_t vertexShaderIndex;
+			int8_t pixelShaderIndex;
+		};
+
+		ff::ComPtr<ID3D11InputLayout> CreateLayout(uint32_t format, const void* code, uint32_t size);
 		void CreateBuffers();
 		void CreateStateObjects();
 		void CreateShaders();
@@ -72,13 +78,18 @@ namespace ff
 		ff::ComPtr<ff::IGraphBuffer> _bufferIndices;
 		ff::ComPtr<ff::IGraphBuffer> _bufferVertexCB;
 		ff::ComPtr<ff::IGraphBuffer> _bufferPixelCB;
+		ff::ComPtr<ff::IGraphBuffer> _effectCB;
+		ff::ComPtr<ff::IGraphBuffer> _texDimensionsCB;
 		uint32_t _vertexCBHash;
 		uint32_t _pixelCBHash;
+		uint32_t _effectCBHash;
+		uint32_t _texDimensionsCBHash;
 
 		// Shaders
-		VertexStage _vertexStages[7];
-		ff::ComPtr<ID3D11InputLayout> _resolveLayout;
-		ff::ComPtr<ID3D11PixelShader> _pixelShaders[18];
+		Program _programs[52];
+		VertexStage _vertexStages[11];
+		ff::ComPtr<ID3D11InputLayout> _layouts[9];
+		ff::ComPtr<ID3D11PixelShader> _pixelShaders[52];
 		ff::ComPtr<ID3D11VertexShader> _quadVS;
 		ff::ComPtr<ID3D11PixelShader> _clearPS;
 		ff::ComPtr<ID3D11PixelShader> _resolvePS[(size_t)MsaaSamples::Count - 1];

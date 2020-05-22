@@ -11,5 +11,54 @@
     "res:type": "file",
     "file": "file:Overlay.xaml",
     "compress": false
+  },
+
+  "NoesisTheme.Brushes.LightBlue.xaml":
+  {
+    "res:type": "file",
+    "file": "file:../../core/noesis/Theme/NoesisTheme.Brushes.LightBlue.xaml",
+    "compress": false
+  },
+
+  "NoesisTheme.Colors.Light.xaml":
+  {
+    "res:type": "file",
+    "file": "file:../../core/noesis/Theme/NoesisTheme.Colors.Light.xaml",
+    "compress": false
+  },
+
+  "NoesisTheme.Fonts.xaml":
+  {
+    "res:type": "file",
+    "file": "file:../../core/noesis/Theme/NoesisTheme.Fonts.xaml",
+    "compress": false
+  },
+
+  "NoesisTheme.LightBlue.xaml":
+  {
+    "res:type": "file",
+    "file": "file:../../core/noesis/Theme/NoesisTheme.LightBlue.xaml",
+    "compress": false
+  },
+
+  "NoesisTheme.Styles.xaml":
+  {
+    "res:type": "file",
+    "file": "file:../../core/noesis/Theme/NoesisTheme.Styles.xaml",
+    "compress": false
+  },
+
+  "#Fonts/PT Root UI_Regular.otf":
+  {
+    "res:type": "file",
+    "file": "file:../../core/noesis/Theme/Fonts/PT Root UI_Regular.otf",
+    "compress": "false"
+  },
+
+  "#Fonts/PT Root UI_Bold.otf":
+  {
+    "res:type": "file",
+    "file": "file:../../core/noesis/Theme/Fonts/PT Root UI_Bold.otf",
+    "compress": "false"
   }
 }
