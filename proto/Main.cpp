@@ -6,6 +6,7 @@
 #include "Resource/Resources.h"
 #include "State/States.h"
 #include "States/TestEntityState.h"
+#include "States/TestPaletteState.h"
 #include "States/TestUiState.h"
 #include "States/TitleState.h"
 #include "String/StringUtil.h"
@@ -24,10 +25,12 @@ class AppGlobalsHelper
 public:
 	virtual void OnGameThreadInitialized(ff::AppGlobals* globals) override
 	{
-		static ff::StaticString resName(L"ApplicationResources.xaml");
-
 		_uiGlobals = std::make_shared<ff::XamlGlobalState>(globals);
-		_uiGlobals->Startup(ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2"), ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV"), this, this, resName);
+		_uiGlobals->Startup(
+			ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2"),
+			ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV"),
+			this, this,
+			ff::String::from_static(L"ApplicationResources.xaml"));
 	}
 
 	virtual void OnGameThreadShutdown(ff::AppGlobals* globals) override
@@ -42,9 +45,10 @@ public:
 	virtual std::shared_ptr<ff::State> CreateInitialState(ff::AppGlobals* globals) override
 	{
 		auto states = std::make_shared<ff::States>();
-		states->AddTop(std::make_shared<TestUiState>(_uiGlobals.get()));
+		//states->AddTop(std::make_shared<TestUiState>(_uiGlobals.get()));
 		//states->AddTop(std::make_shared<TestEntityState>(globals));
-		//states->AddTop(std::make_shared<TitleState>(globals));
+		//states->AddTop(std::make_shared<TestPaletteState>(globals));
+		states->AddTop(std::make_shared<TitleState>(globals));
 		states->AddTop(_uiGlobals);
 		return states;
 	}

@@ -4,6 +4,7 @@
 #include "Graph/GraphFactory.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteType.h"
+#include "Graph/Texture/PaletteData.h"
 #include "Graph/Texture/PngImage.h"
 #include "Graph/Texture/Texture.h"
 #include "String/StringUtil.h"
@@ -87,6 +88,43 @@ const DirectX::XMFLOAT4X4& ff::GetIdentityMatrix()
 const DirectX::XMFLOAT3X3& ff::GetIdentityMatrix3x3()
 {
 	return *(DirectX::XMFLOAT3X3*)s_identityMatrix3x3;
+}
+
+void ff::GraphCounters::Reset()
+{
+	ff::ZeroObject(*this);
+}
+
+bool ff::IsCompressedFormat(TextureFormat format)
+{
+	switch (format)
+	{
+	default:
+		return false;
+
+	case ff::TextureFormat::BC1:
+	case ff::TextureFormat::BC2:
+	case ff::TextureFormat::BC3:
+	case ff::TextureFormat::BC1_SRGB:
+	case ff::TextureFormat::BC2_SRGB:
+	case ff::TextureFormat::BC3_SRGB:
+		return true;
+	}
+}
+
+bool ff::IsColorFormat(TextureFormat format)
+{
+	switch (format)
+	{
+	default:
+		return ff::IsCompressedFormat(format);
+
+	case ff::TextureFormat::RGBA32:
+	case ff::TextureFormat::BGRA32:
+	case ff::TextureFormat::RGBA32_SRGB:
+	case ff::TextureFormat::BGRA32_SRGB:
+		return true;
+	}
 }
 
 DXGI_FORMAT ff::ConvertTextureFormat(ff::TextureFormat format)
@@ -455,14 +493,19 @@ ff::SpriteType ff::GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, c
 	return newType;
 }
 
-static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips)
+static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::IPaletteData** paletteData)
 {
+	if (paletteData)
+	{
+		*paletteData = nullptr;
+	}
+
 	DirectX::ScratchImage scratchFinal;
 	assertRetVal(device, scratchFinal);
 
 	ff::ComPtr<ff::IData> pngData;
 	assertRetVal(ff::ReadWholeFileMemMapped(path, &pngData), scratchFinal);
-	ff::PngImage png(pngData->GetMem(), pngData->GetSize());
+	ff::PngImageReader png(pngData->GetMem(), pngData->GetSize());
 	{
 		std::unique_ptr<DirectX::ScratchImage> scratchTemp = png.Read(format);
 		if (scratchTemp)
@@ -478,6 +521,16 @@ static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::String
 	if (format == DXGI_FORMAT_UNKNOWN)
 	{
 		format = scratchFinal.GetMetadata().format;
+	}
+
+	if (format == DXGI_FORMAT_R8_UINT && paletteData)
+	{
+		ff::Vector<BYTE> colors = png.GetPalette();
+		if (!colors.IsEmpty())
+		{
+			ff::ComPtr<ff::IData> colorsData = ff::CreateDataVector(std::move(colors));
+			ff::CreatePaletteData(colorsData, paletteData);
+		}
 	}
 
 	if (DirectX::IsCompressed(format))
@@ -542,42 +595,14 @@ static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::String
 	return scratchFinal;
 }
 
-static DirectX::ScratchImage LoadTexturePal(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips)
-{
-	DirectX::ScratchImage scratchFinal;
-	assertRetVal(device && mips < 2, scratchFinal);
-
-	ff::ComPtr<ff::IData> data;
-	assertRetVal(ff::ReadWholeFileMemMapped(path, &data) && data->GetSize() && data->GetSize() % 3 == 0, scratchFinal);
-
-	assertHrRetVal(scratchFinal.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 256, 1, 1, 1), scratchFinal);
-	const DirectX::Image* image = scratchFinal.GetImages();
-	BYTE* dest = image->pixels;
-	std::memset(dest, 0, image->rowPitch);
-
-	for (const BYTE* start = data->GetMem(), *end = start + data->GetSize(), *cur = start; cur < end; cur += 3, dest += 4)
-	{
-		dest[0] = cur[0]; // R
-		dest[1] = cur[1]; // G
-		dest[2] = cur[2]; // B
-		dest[3] = 0xFF; // A
-	}
-
-	return scratchFinal;
-}
-
-DirectX::ScratchImage ff::LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips)
+DirectX::ScratchImage ff::LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, IPaletteData** paletteData)
 {
 	ff::String pathExt = ff::GetPathExtension(path);
 	ff::LowerCaseInPlace(pathExt);
 
-	if (pathExt == L"pal")
+	if (pathExt == L"png")
 	{
-		return ::LoadTexturePal(device, path, format, mips);
-	}
-	else if (pathExt == L"png")
-	{
-		return ::LoadTexturePng(device, path, format, mips);
+		return ::LoadTexturePng(device, path, format, mips, paletteData);
 	}
 	else
 	{

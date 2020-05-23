@@ -2,6 +2,7 @@
 #include "COM/ComAlloc.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/RenderTarget/RenderTarget.h"
+#include "Graph/State/GraphContext11.h"
 #include "Graph/Texture/Texture.h"
 #include "Module/ModuleFactory.h"
 
@@ -22,6 +23,7 @@ public:
 	virtual bool Reset() override;
 
 	// IRenderTarget
+	virtual ff::TextureFormat GetFormat() const override;
 	virtual ff::PointInt GetBufferSize() const override;
 	virtual ff::PointInt GetRotatedSize() const override;
 	virtual int GetRotatedDegrees() const override;
@@ -161,6 +163,11 @@ bool RenderTargetTexture11::Reset()
 	return true;
 }
 
+ff::TextureFormat RenderTargetTexture11::GetFormat() const
+{
+	return _texture->GetFormat();
+}
+
 ff::PointInt RenderTargetTexture11::GetBufferSize() const
 {
 	return _texture->GetSize();
@@ -175,10 +182,7 @@ void RenderTargetTexture11::Clear(const DirectX::XMFLOAT4* pColor)
 {
 	if (GetTarget())
 	{
-		static const DirectX::XMFLOAT4 defaultColor(0, 0, 0, 1);
-		const DirectX::XMFLOAT4* pUseColor = pColor ? pColor : &defaultColor;
-
-		_device->AsGraphDevice11()->GetContext()->ClearRenderTargetView(GetTarget(), &pUseColor->x);
+		_device->AsGraphDevice11()->GetStateContext().ClearRenderTarget(GetTarget(), pColor ? *pColor : ff::GetColorBlack());
 	}
 }
 

@@ -5,6 +5,7 @@
 #include "Data/DataWriterReader.h"
 #include "Dict/Dict.h"
 #include "Dict/DictPersist.h"
+#include "Dict/DictVisitor.h"
 #include "Dict/JsonPersist.h"
 #include "Globals/DesktopGlobals.h"
 #include "Globals/GlobalsScope.h"
@@ -35,6 +36,7 @@ static void ShowUsage()
 
 static bool TestLoadResources(const ff::Dict &dict)
 {
+#ifdef _DEBUG
 	dict.DebugDump();
 
 	ff::ComPtr<ff::IResources> resources;
@@ -61,6 +63,7 @@ static bool TestLoadResources(const ff::Dict &dict)
 			assertRetVal(false, false);
 		}
 	}
+#endif
 
 	return true;
 }
@@ -86,19 +89,78 @@ static bool CompileResourcePack(ff::StringRef inputFile, ff::StringRef outputFil
 	return true;
 }
 
-static int DumpFile(ff::StringRef dumpFile)
+class SaveTextureVisitor : public ff::DictVisitorBase
+{
+public:
+	SaveTextureVisitor()
+		: _path(ff::GetTempDirectory())
+	{
+		verify(_globals.Startup(ff::AppGlobalsFlags::GraphicsAndAudio));
+
+		ff::AppendPathTail(_path, ff::String(L"ResPackDump"));
+		verify(ff::CreateDirectory(_path));
+	}
+
+	~SaveTextureVisitor()
+	{
+		if (ff::DirectoryExists(_path))
+		{
+			::ShellExecute(nullptr, L"open", _path.c_str(), nullptr, _path.c_str(), SW_SHOWDEFAULT);
+		}
+	}
+
+protected:
+	virtual ff::ValuePtr TransformDict(const ff::Dict& dict) override
+	{
+		ff::ValuePtrT<ff::StringValue> typeValue = dict.GetValue(ff::RES_TYPE);
+		if (typeValue)
+		{
+			const ff::ModuleClassInfo* typeInfo = ff::ProcessGlobals::Get()->GetModules().FindClassInfo(typeValue.GetValue());
+			if (typeInfo)
+			{
+				ff::String name(L"value");
+				ff::Dict resourceDict;
+				resourceDict.Set<ff::DictValue>(name, ff::Dict(dict));
+
+				ff::ComPtr<ff::IResources> resources;
+				ff::ComPtr<ff::IResourceSaveFile> saver;
+				if (ff::CreateResources(&_globals, resourceDict, &resources) &&
+					resources->FlushResource(resources->GetResource(name))->QueryObject(__uuidof(ff::IResourceSaveFile), (void**)&saver))
+				{
+					ff::String file = _path;
+					ff::AppendPathTail(file, ff::CleanFileName(GetPath()) + saver->GetFileExtension());
+
+					std::wcout << L"Saving: " << file.c_str() << std::endl;
+
+					if (!saver->SaveToFile(file))
+					{
+						AddError(ff::String::format_new(L"Failed to save resource to file: %s", file.c_str()));
+					}
+				}
+			}
+		}
+
+		return ff::DictVisitorBase::TransformDict(dict);
+	}
+
+private:
+	ff::String _path;
+	ff::DesktopGlobals _globals;
+};
+
+static int DumpFile(ff::StringRef dumpFile, bool dumpBin)
 {
 	if (!ff::FileExists(dumpFile))
 	{
 		std::wcerr << L"File doesn't exist: " << dumpFile << std::endl;
-		return 2;
+		return 1;
 	}
 
 	ff::ComPtr<ff::IData> dumpData;
-	if (!ff::ReadWholeFile(dumpFile, &dumpData))
+	if (!ff::ReadWholeFileMemMapped(dumpFile, &dumpData))
 	{
 		std::wcerr << L"Can't read file: " << dumpFile << std::endl;
-		return 1;
+		return 2;
 	}
 
 	ff::Dict dumpDict;
@@ -106,13 +168,30 @@ static int DumpFile(ff::StringRef dumpFile)
 	if (!ff::CreateDataReader(dumpData, 0, &dumpReader) || !ff::LoadDict(dumpReader, dumpDict))
 	{
 		std::wcerr << L"Can't load file: " << dumpFile << std::endl;
-		return 1;
+		return 3;
 	}
 
 	ff::Log log;
 	log.SetConsoleOutput(true);
 
 	ff::DumpDict(dumpFile, dumpDict, &log, false);
+
+	if (dumpBin)
+	{
+		SaveTextureVisitor visitor;
+		ff::Vector<ff::String> errors;
+		visitor.VisitDict(dumpDict, errors);
+
+		if (errors.Size())
+		{
+			for (ff::StringRef error : errors)
+			{
+				std::wcerr << error.c_str() << std::endl;
+			}
+
+			return 4;
+		}
+	}
 
 	return 0;
 }
@@ -158,6 +237,7 @@ int wmain()
 	bool debug = false;
 	bool force = false;
 	bool verbose = false;
+	bool dumpBin = false;
 
 	for (size_t i = 1; i < args.Size(); i++)
 	{
@@ -179,8 +259,9 @@ int wmain()
 			ff::AppendPathTail(file, args[++i]);
 			refs.Push(file);
 		}
-		else if (arg == L"-dump" && i + 1 < args.Size())
+		else if ((arg == L"-dump" || arg == L"-dumpbin") && i + 1 < args.Size())
 		{
+			dumpBin = (arg == L"-dumpbin");
 			dumpFile = ff::GetCurrentDirectory();
 			ff::AppendPathTail(dumpFile, args[++i]);
 		}
@@ -211,7 +292,7 @@ int wmain()
 			return 1;
 		}
 
-		return DumpFile(dumpFile);
+		return DumpFile(dumpFile, dumpBin);
 	}
 
 	if (inputFile.empty())

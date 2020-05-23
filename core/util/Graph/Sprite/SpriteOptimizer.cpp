@@ -6,6 +6,8 @@
 #include "Graph/Sprite/SpriteType.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/RenderTarget/RenderTarget.h"
+#include "Graph/Texture/Palette.h"
+#include "Graph/Texture/PaletteData.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
 
@@ -182,22 +184,29 @@ ff::RectInt OptimizedTextureInfo::FindPlacement(ff::PointInt size)
 				{
 					x = _rowRight[y];
 
+#if FORCE_GAP
 					if (x)
 					{
 						// don't touch the previous sprite
 						x++;
 					}
+#endif
 				}
 				else
 				{
 					x = _rowLeft[y];
+#if FORCE_GAP
 					x -= cellSize.x + 1;
+#else
+					x -= cellSize.x;
+#endif
 				}
 
 				if (x >= 0 && x + cellSize.x <= _size.x / TEXTURE_GRID_SIZE)
 				{
 					bool found = true;
 
+#if FORCE_GAP
 					// Look for intersection with another sprite
 					for (int checkY = y + cellSize.y; checkY >= y - 1; checkY--)
 					{
@@ -212,6 +221,22 @@ ff::RectInt OptimizedTextureInfo::FindPlacement(ff::PointInt size)
 							break;
 						}
 					}
+#else
+					// Look for intersection with another sprite
+					for (int checkY = y + cellSize.y - 1; checkY >= y; checkY--)
+					{
+						if (checkY >= 0 &&
+							checkY < _size.y / TEXTURE_GRID_SIZE &&
+							checkY < _countof(_rowRight) &&
+							_rowRight[checkY] &&
+							_rowRight[checkY] > x &&
+							x + cellSize.x > _rowLeft[checkY])
+						{
+							found = false;
+							break;
+						}
+					}
+#endif
 
 					// Prefer positions further to the left
 					if (found && (destPos.x == -1 || destPos.x > x * TEXTURE_GRID_SIZE))
@@ -244,6 +269,7 @@ bool OptimizedTextureInfo::PlaceRect(ff::RectInt rect)
 
 	// Validate that the sprite doesn't overlap anything
 
+#if FORCE_GAP
 	for (int y = rectCells.top - 1; y <= rectCells.bottom; y++)
 	{
 		if (y >= 0 && y < _size.y / TEXTURE_GRID_SIZE && y < _countof(_rowRight))
@@ -254,6 +280,18 @@ bool OptimizedTextureInfo::PlaceRect(ff::RectInt rect)
 				rectCells.right + 1 <= _rowLeft[y], false);
 		}
 	}
+#else
+	for (int y = rectCells.top; y < rectCells.bottom; y++)
+	{
+		if (y >= 0 && y < _size.y / TEXTURE_GRID_SIZE && y < _countof(_rowRight))
+		{
+			// Must be a one cell gap between sprites
+			assertRetVal(!_rowRight[y] ||
+				_rowRight[y] <= rectCells.left ||
+				rectCells.right <= _rowLeft[y], false);
+		}
+	}
+#endif
 
 	// Invalidate the space taken up by the new sprite
 
@@ -360,15 +398,23 @@ static ff::Vector<OptimizedSpriteInfo> CreateSpriteInfos(ff::ISpriteList* origin
 	return spriteInfos;
 }
 
-static bool CreateOriginalTextures(const ff::Vector<OptimizedSpriteInfo>& spriteInfos, ff::Map<ff::ITexture*, OriginalTextureInfo>& originalTextures)
+static bool CreateOriginalTextures(ff::TextureFormat format, const ff::Vector<OptimizedSpriteInfo>& spriteInfos, ff::Map<ff::ITexture*, OriginalTextureInfo>& originalTextures, ff::ComPtr<ff::IPaletteData>& paletteData)
 {
 	for (const OptimizedSpriteInfo& spriteInfo : spriteInfos)
 	{
 		ff::ITexture* texture = spriteInfo._spriteData._textureView->GetTexture();
+		if (!paletteData && texture->GetPalette())
+		{
+			paletteData = texture->GetPalette()->GetData();
+		}
+
 		if (!originalTextures.KeyExists(texture))
 		{
+			assertRetVal((ff::IsColorFormat(texture->GetFormat()) && ff::IsColorFormat(format)) || texture->GetFormat() == format, false);
+			ff::TextureFormat captureFormat = ff::IsColorFormat(format) ? ff::TextureFormat::RGBA32 : format;
+
 			OriginalTextureInfo textureInfo;
-			textureInfo._rgbTexture = texture->Convert(ff::TextureFormat::RGBA32, 1);
+			textureInfo._rgbTexture = texture->Convert(captureFormat, 1);
 			assertRetVal(textureInfo._rgbTexture, false);
 
 			textureInfo._rgbScratch = textureInfo._rgbTexture->AsTextureDxgi()->Capture(textureInfo._rgbScratchData);
@@ -422,7 +468,7 @@ static bool ComputeOptimizedSprites(ff::Vector<OptimizedSpriteInfo>& sprites, ff
 
 static bool CreateOptimizedTextures(ff::TextureFormat format, ff::Vector<OptimizedTextureInfo>& textureInfos)
 {
-	format = (format == ff::TextureFormat::A8) ? format : ff::TextureFormat::RGBA32;
+	format = ff::IsColorFormat(format) ? ff::TextureFormat::RGBA32 : format;
 
 	for (OptimizedTextureInfo& texture : textureInfos)
 	{
@@ -449,7 +495,7 @@ static bool CopyOptimizedSprites(
 		OriginalTextureInfo& originalInfo = iter->GetEditableValue();
 		sprite._spriteData._type = ff::GetSpriteTypeForImage(*originalInfo._rgbScratch, &sprite._sourceRect.ToType<size_t>());
 
-		DirectX::CopyRectangle(
+		verifyHr(DirectX::CopyRectangle(
 			*originalInfo._rgbScratch->GetImages(),
 			DirectX::Rect(
 				sprite._sourceRect.left,
@@ -459,17 +505,17 @@ static bool CopyOptimizedSprites(
 			*destTexture._texture.GetImages(),
 			DirectX::TEX_FILTER_DEFAULT,
 			sprite._destRect.left,
-			sprite._destRect.top);
+			sprite._destRect.top));
 	}
 
 	return true;
 }
 
-static bool ConvertFinalTextures(ff::IGraphDevice* device, ff::TextureFormat format, size_t mipMapLevels, ff::Vector<OptimizedTextureInfo>& textureInfos)
+static bool ConvertFinalTextures(ff::IGraphDevice* device, ff::TextureFormat format, size_t mipMapLevels, ff::Vector<OptimizedTextureInfo>& textureInfos, ff::IPaletteData* paletteData)
 {
 	for (OptimizedTextureInfo& textureInfo : textureInfos)
 	{
-		ff::ComPtr<ff::ITexture> rgbTexture = device->AsGraphDeviceInternal()->CreateTexture(std::move(textureInfo._texture));
+		ff::ComPtr<ff::ITexture> rgbTexture = device->AsGraphDeviceInternal()->CreateTexture(std::move(textureInfo._texture), paletteData);
 		assertRetVal(rgbTexture, false);
 
 		textureInfo._finalTexture = rgbTexture->Convert(format, mipMapLevels);
@@ -508,14 +554,15 @@ static ff::ComPtr<ff::ISpriteList> CreateOutputSprites(ff::IGraphDevice* device,
 
 bool ff::OptimizeSprites(ISpriteList* originalSprites, TextureFormat format, size_t mipMapLevels, ISpriteList** outSprites)
 {
-	assertRetVal(originalSprites && outSprites, false);
+	assertRetVal(originalSprites && outSprites && (mipMapLevels == 1 || ff::IsColorFormat(format)), false);
 	ComPtr<ISpriteList> newSprites = ::CreateOutputSprites(originalSprites->GetDevice(), *outSprites);
 
 	Vector<OptimizedSpriteInfo> spriteInfos = ::CreateSpriteInfos(originalSprites);
 	std::sort(spriteInfos.begin(), spriteInfos.end());
 
 	Map<ITexture*, OriginalTextureInfo> originalTextures;
-	assertRetVal(::CreateOriginalTextures(spriteInfos, originalTextures), false);
+	ComPtr<IPaletteData> paletteData;
+	assertRetVal(::CreateOriginalTextures(format, spriteInfos, originalTextures, paletteData), false);
 
 	Vector<OptimizedTextureInfo> textureInfos;
 	assertRetVal(::ComputeOptimizedSprites(spriteInfos, textureInfos), false);
@@ -528,7 +575,7 @@ bool ff::OptimizeSprites(ISpriteList* originalSprites, TextureFormat format, siz
 		});
 
 	assertRetVal(::CopyOptimizedSprites(spriteInfos, originalTextures, textureInfos), false);
-	assertRetVal(::ConvertFinalTextures(originalSprites->GetDevice(), format, mipMapLevels, textureInfos), false);
+	assertRetVal(::ConvertFinalTextures(originalSprites->GetDevice(), format, mipMapLevels, textureInfos, paletteData), false);
 	assertRetVal(::CreateFinalSprites(spriteInfos, textureInfos, newSprites), false);
 
 	*outSprites = *outSprites ? *outSprites : newSprites.Detach();
@@ -536,12 +583,17 @@ bool ff::OptimizeSprites(ISpriteList* originalSprites, TextureFormat format, siz
 }
 
 static bool CreateOutlineSprites(
+	ff::TextureFormat format,
 	ff::Vector<OptimizedSpriteInfo>& spriteInfos,
 	const ff::Map<ff::ITexture*, OriginalTextureInfo>& originalTextures,
 	ff::Vector<ff::ComPtr<ff::ITexture>>& outlineTextures,
-	ff::ISpriteList* outlineSpriteList)
+	ff::ISpriteList* outlineSpriteList,
+	ff::IPaletteData* paletteData)
 {
 	assertRetVal(outlineSpriteList, false);
+	bool usePalette = (format == ff::TextureFormat::R8_UINT);
+	const int pixelSize = usePalette ? 1 : 4;
+	const int alphaOffset = usePalette ? 0 : 3;
 
 	for (OptimizedSpriteInfo& spriteInfo : spriteInfos)
 	{
@@ -555,7 +607,7 @@ static bool CreateOutlineSprites(
 
 		DirectX::ScratchImage outlineScratch;
 		assertHrRetVal(outlineScratch.Initialize2D(
-			DXGI_FORMAT_R8G8B8A8_UNORM,
+			usePalette ? DXGI_FORMAT_R8_UINT : DXGI_FORMAT_R8G8B8A8_UNORM,
 			srcRect.Width() + 2,
 			srcRect.Height() + 2,
 			1, 1), false);
@@ -566,31 +618,51 @@ static bool CreateOutlineSprites(
 
 		for (ff::PointInt xy(srcRect.left, srcRect.top), destXY = ff::PointInt::Zeros(); xy.y < srcRect.bottom; xy.y++, destXY.y++)
 		{
-			const uint8_t* srcRow = srcImage.pixels + srcImage.rowPitch * xy.y + srcRect.left * 4;
+			const uint8_t* srcRow = srcImage.pixels + srcImage.rowPitch * xy.y + srcRect.left * pixelSize;
 
-			for (xy.x = srcRect.left, destXY.x = 0; xy.x < srcRect.right; xy.x++, destXY.x++, srcRow += 4)
+			for (xy.x = srcRect.left, destXY.x = 0; xy.x < srcRect.right; xy.x++, destXY.x++, srcRow += pixelSize)
 			{
-				if (srcRow[3]) // alpha is set
+				if (srcRow[alphaOffset]) // alpha is set
 				{
-					const uint8_t* dest = destImage.pixels + destImage.rowPitch * destXY.y + destXY.x * 4;
-					((DWORD*)dest)[0] = 0xFFFFFFFF;
-					((DWORD*)dest)[1] = 0xFFFFFFFF;
-					((DWORD*)dest)[2] = 0xFFFFFFFF;
+					uint8_t* dest = destImage.pixels + destImage.rowPitch * destXY.y + destXY.x * pixelSize;
 
-					dest += destImage.rowPitch;
-					((DWORD*)dest)[0] = 0xFFFFFFFF;
-					((DWORD*)dest)[1] = 0xFFFFFFFF;
-					((DWORD*)dest)[2] = 0xFFFFFFFF;
+					if (usePalette)
+					{
+						dest[0] = 1;
+						dest[1] = 1;
+						dest[2] = 1;
 
-					dest += destImage.rowPitch;
-					((DWORD*)dest)[0] = 0xFFFFFFFF;
-					((DWORD*)dest)[1] = 0xFFFFFFFF;
-					((DWORD*)dest)[2] = 0xFFFFFFFF;
+						dest += destImage.rowPitch;
+						dest[0] = 1;
+						dest[1] = 1;
+						dest[2] = 1;
+
+						dest += destImage.rowPitch;
+						dest[0] = 1;
+						dest[1] = 1;
+						dest[2] = 1;
+					}
+					else
+					{
+						((DWORD*)dest)[0] = 0xFFFFFFFF;
+						((DWORD*)dest)[1] = 0xFFFFFFFF;
+						((DWORD*)dest)[2] = 0xFFFFFFFF;
+
+						dest += destImage.rowPitch;
+						((DWORD*)dest)[0] = 0xFFFFFFFF;
+						((DWORD*)dest)[1] = 0xFFFFFFFF;
+						((DWORD*)dest)[2] = 0xFFFFFFFF;
+
+						dest += destImage.rowPitch;
+						((DWORD*)dest)[0] = 0xFFFFFFFF;
+						((DWORD*)dest)[1] = 0xFFFFFFFF;
+						((DWORD*)dest)[2] = 0xFFFFFFFF;
+					}
 				}
 			}
 		}
 
-		ff::ComPtr<ff::ITexture> outlineTexture = originalTexture->GetDevice()->AsGraphDeviceInternal()->CreateTexture(std::move(outlineScratch));
+		ff::ComPtr<ff::ITexture> outlineTexture = originalTexture->GetDevice()->AsGraphDeviceInternal()->CreateTexture(std::move(outlineScratch), paletteData);
 		assertRetVal(outlineTexture, false);
 		outlineTextures.Push(outlineTexture);
 
@@ -607,15 +679,16 @@ static bool CreateOutlineSprites(
 
 bool ff::CreateOutlineSprites(ISpriteList* originalSprites, TextureFormat format, size_t mipMapLevels, ISpriteList** outSprites)
 {
-	assertRetVal(originalSprites && outSprites, false);
+	assertRetVal(originalSprites && outSprites && (ff::IsColorFormat(format) || format == ff::TextureFormat::R8_UINT), false);
 	ComPtr<ISpriteList> newSprites = ::CreateOutputSprites(originalSprites->GetDevice(), nullptr);
 	Vector<OptimizedSpriteInfo> spriteInfos = ::CreateSpriteInfos(originalSprites);
 
 	Map<ITexture*, OriginalTextureInfo> originalTextures;
-	assertRetVal(::CreateOriginalTextures(spriteInfos, originalTextures), false);
+	ComPtr<IPaletteData> paletteData;
+	assertRetVal(::CreateOriginalTextures(format, spriteInfos, originalTextures, paletteData), false);
 
 	Vector<ComPtr<ITexture>> outlineTextures;
-	assertRetVal(::CreateOutlineSprites(spriteInfos, originalTextures, outlineTextures, newSprites), false);
+	assertRetVal(::CreateOutlineSprites(format, spriteInfos, originalTextures, outlineTextures, newSprites, paletteData), false);
 
 	return ff::OptimizeSprites(newSprites, format, mipMapLevels, outSprites);
 }

@@ -2,6 +2,7 @@
 #include "COM/ComAlloc.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/RenderTarget/RenderDepth.h"
+#include "Graph/State/GraphContext11.h"
 #include "Module/ModuleFactory.h"
 
 static const DXGI_FORMAT DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -147,21 +148,21 @@ void RenderDepth11::Clear(float depth, BYTE stencil)
 
 	Discard();
 
-	_device->AsGraphDevice11()->GetContext()->ClearDepthStencilView(_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, depth, stencil);
+	_device->AsGraphDevice11()->GetStateContext().ClearDepthStencil(_view, true, true, depth, stencil);
 }
 
 void RenderDepth11::ClearDepth(float depth)
 {
 	assertRet(_view);
 
-	_device->AsGraphDevice11()->GetContext()->ClearDepthStencilView(_view, D3D11_CLEAR_DEPTH, depth, 0);
+	_device->AsGraphDevice11()->GetStateContext().ClearDepthStencil(_view, true, false, depth, 0);
 }
 
 void RenderDepth11::ClearStencil(BYTE stencil)
 {
 	assertRet(_view);
 
-	_device->AsGraphDevice11()->GetContext()->ClearDepthStencilView(_view, D3D11_CLEAR_STENCIL, 0, stencil);
+	_device->AsGraphDevice11()->GetStateContext().ClearDepthStencil(_view, false, true, 0, stencil);
 }
 
 void RenderDepth11::Discard()

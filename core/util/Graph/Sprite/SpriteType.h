@@ -10,6 +10,5 @@ namespace ff
 		Palette = 0x10,
 
 		OpaquePalette = Opaque | Palette,
-		TransparentPalette = Transparent | Palette,
 	};
 }

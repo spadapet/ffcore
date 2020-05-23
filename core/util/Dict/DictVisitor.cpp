@@ -243,6 +243,14 @@ ff::ValuePtr ff::DictVisitorBase::TransformValue(ff::ValuePtr value)
 	{
 		outputValue = TransformDict(value->GetValue<ff::DictValue>());
 	}
+	else if (value->IsType<ff::SavedDictValue>())
+	{
+		ff::ValuePtrT<ff::DictValue> dictValue = value;
+		if (dictValue)
+		{
+			outputValue = TransformDict(dictValue.GetValue());
+		}
+	}
 	else if (value->IsType<ff::ValueVectorValue>())
 	{
 		outputValue = TransformVector(value->GetValue<ff::ValueVectorValue>());

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "COM/ComAlloc.h"
 #include "Data/Data.h"
+#include "Data/DataFile.h"
+#include "Data/DataWriterReader.h"
 #include "Dict/Dict.h"
 #include "Graph/DataBlob.h"
 #include "Graph/DirectXUtil.h"
@@ -10,6 +12,10 @@
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteType.h"
+#include "Graph/State/GraphContext11.h"
+#include "Graph/Texture/Palette.h"
+#include "Graph/Texture/PaletteData.h"
+#include "Graph/Texture/PngImage.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
 #include "Module/ModuleFactory.h"
@@ -21,6 +27,7 @@ static ff::StaticString PROP_DATA(L"data");
 static ff::StaticString PROP_FILE(L"file");
 static ff::StaticString PROP_FORMAT(L"format");
 static ff::StaticString PROP_MIPS(L"mips");
+static ff::StaticString PROP_PALETTE(L"palette");
 static ff::StaticString PROP_SPRITE_TYPE(L"spriteType");
 
 class __declspec(uuid("67741046-5d2f-4bf6-a955-baa950401935"))
@@ -32,6 +39,7 @@ class __declspec(uuid("67741046-5d2f-4bf6-a955-baa950401935"))
 	, public ff::ITextureView
 	, public ff::ITextureView11
 	, public ff::IResourcePersist
+	, public ff::IResourceSaveFile
 	, public ff::ISprite
 	, public ff::IRenderAnimation
 {
@@ -39,7 +47,7 @@ public:
 	DECLARE_HEADER(StaticTexture11);
 
 	virtual HRESULT _Construct(IUnknown* unkOuter) override;
-	bool Init(DirectX::ScratchImage&& data);
+	bool Init(DirectX::ScratchImage&& data, ff::IPaletteData* paletteData);
 
 	// IGraphDeviceChild
 	virtual ff::IGraphDevice* GetDevice() const override;
@@ -57,6 +65,7 @@ public:
 	virtual size_t GetSampleCount() const override;
 	virtual ff::TextureFormat GetFormat() const override;
 	virtual ff::SpriteType GetSpriteType() const override;
+	virtual ff::IPalette* GetPalette() const override;
 	virtual ff::ComPtr<ff::ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) override;
 	virtual ff::ComPtr<ff::ITexture> Convert(ff::TextureFormat format, size_t mips) override;
 	virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat) override;
@@ -77,6 +86,10 @@ public:
 	virtual bool LoadFromCache(const ff::Dict& dict) override;
 	virtual bool SaveToCache(ff::Dict& dict) override;
 
+	// IResourceSaveFile
+	virtual ff::String GetFileExtension() const override;
+	virtual bool SaveToFile(ff::StringRef file) override;
+
 	// ISprite
 	virtual const ff::SpriteData& GetSpriteData() override;
 
@@ -96,6 +109,7 @@ private:
 	ff::ComPtr<ff::IGraphDevice> _device;
 	ff::ComPtr<ID3D11Texture2D> _texture;
 	ff::ComPtr<ID3D11ShaderResourceView> _view;
+	ff::ComPtr<ff::IPalette> _palette;
 	std::unique_ptr<ff::SpriteData> _spriteData;
 	DirectX::ScratchImage _originalData;
 	ff::SpriteType _spriteType;
@@ -105,6 +119,7 @@ BEGIN_INTERFACES(StaticTexture11)
 	HAS_INTERFACE(ff::ITexture)
 	HAS_INTERFACE(ff::ITextureView)
 	HAS_INTERFACE(ff::IResourcePersist)
+	HAS_INTERFACE(ff::IResourceSaveFile)
 	HAS_INTERFACE(ff::ISprite)
 	HAS_INTERFACE(ff::IRenderAnimation)
 END_INTERFACES()
@@ -114,13 +129,13 @@ static ff::ModuleStartup RegisterTexture([](ff::Module& module)
 		module.RegisterClassT<StaticTexture11>(L"texture");
 	});
 
-bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::ITexture** texture)
+bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::IPaletteData* paletteData, ff::ITexture** texture)
 {
 	assertRetVal(texture, false);
 
 	ff::ComPtr<StaticTexture11, ff::ITexture> obj;
 	assertHrRetVal(ff::ComAllocator<StaticTexture11>::CreateInstance(device, &obj), false);
-	assertRetVal(obj->Init(std::move(data)), false);
+	assertRetVal(obj->Init(std::move(data), paletteData), false);
 
 	*texture = obj.Detach();
 	return true;
@@ -130,11 +145,12 @@ bool CreateTexture11(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT f
 {
 	assertRetVal(texture, false);
 
-	DirectX::ScratchImage data = ff::LoadTextureData(device, path, format, mips);
+	ff::ComPtr<ff::IPaletteData> paletteData;
+	DirectX::ScratchImage data = ff::LoadTextureData(device, path, format, mips, &paletteData);
 	assertRetVal(data.GetImageCount(), false);
 
 	ff::ComPtr<ff::ITexture> obj;
-	assertRetVal(::CreateTexture11(device, std::move(data), &obj), false);
+	assertRetVal(::CreateTexture11(device, std::move(data), paletteData, &obj), false);
 
 	*texture = obj.Detach();
 	return true;
@@ -161,11 +177,16 @@ HRESULT StaticTexture11::_Construct(IUnknown* unkOuter)
 	return __super::_Construct(unkOuter);
 }
 
-bool StaticTexture11::Init(DirectX::ScratchImage&& data)
+bool StaticTexture11::Init(DirectX::ScratchImage&& data, ff::IPaletteData* paletteData)
 {
 	assertRetVal(data.GetImageCount(), false);
 	_originalData = std::move(data);
 	_spriteType = ff::GetSpriteTypeForImage(_originalData);
+
+	if (paletteData && GetDxgiFormat() == DXGI_FORMAT_R8_UINT)
+	{
+		ff::CreatePalette(_device, paletteData, &_palette);
+	}
 
 	return true;
 }
@@ -212,6 +233,11 @@ ff::TextureFormat StaticTexture11::GetFormat() const
 ff::SpriteType StaticTexture11::GetSpriteType() const
 {
 	return _spriteType;
+}
+
+ff::IPalette* StaticTexture11::GetPalette() const
+{
+	return _palette;
 }
 
 bool CreateTextureView11(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount, ff::ITextureView** obj);
@@ -295,7 +321,7 @@ ff::ComPtr<ff::ITexture> StaticTexture11::Convert(ff::TextureFormat format, size
 	}
 
 	DirectX::ScratchImage data = ff::ConvertTextureData(_originalData, dxgiFormat, mips);
-	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data));
+	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data), nullptr);
 }
 
 void StaticTexture11::Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat)
@@ -304,7 +330,7 @@ void StaticTexture11::Update(size_t arrayIndex, size_t mipIndex, const ff::RectS
 
 	CD3D11_BOX box((UINT)rect.left, (UINT)rect.top, 0, (UINT)rect.right, (UINT)rect.bottom, 0);
 	UINT subResource = ::D3D11CalcSubresource((UINT)mipIndex, (UINT)arrayIndex, (UINT)_originalData.GetMetadata().mipLevels);
-	_device->AsGraphDevice11()->GetContext()->UpdateSubresource(GetTexture2d(), subResource, &box, data, (UINT)rowPitch, 0);
+	_device->AsGraphDevice11()->GetStateContext().UpdateSubresource(GetTexture2d(), subResource, &box, data, (UINT)rowPitch, 0);
 }
 
 const DirectX::ScratchImage* StaticTexture11::Capture(DirectX::ScratchImage& tempHolder)
@@ -319,8 +345,9 @@ bool StaticTexture11::LoadFromSource(const ff::Dict& dict)
 	DXGI_FORMAT format = ff::ParseDxgiTextureFormat(dict.Get<ff::StringValue>(PROP_FORMAT, ff::String(L"rgba32")));
 	assertRetVal(format != DXGI_FORMAT_UNKNOWN, false);
 
-	DirectX::ScratchImage data = ff::LoadTextureData(_device, fullFile, format, mipsProp);
-	assertRetVal(Init(std::move(data)), false);
+	ff::ComPtr<ff::IPaletteData> paletteData;
+	DirectX::ScratchImage data = ff::LoadTextureData(_device, fullFile, format, mipsProp, &paletteData);
+	assertRetVal(Init(std::move(data), paletteData), false);
 
 	return true;
 }
@@ -329,6 +356,14 @@ bool StaticTexture11::LoadFromCache(const ff::Dict& dict)
 {
 	ff::ComPtr<ff::IData> data = dict.Get<ff::DataValue>(PROP_DATA);
 	_spriteType = (ff::SpriteType)dict.Get<ff::IntValue>(PROP_SPRITE_TYPE);
+
+	ff::ComPtr<ff::IData> paletteData = dict.Get<ff::DataValue>(PROP_PALETTE);
+	if (paletteData)
+	{
+		ff::ComPtr<ff::IPaletteData> paletteData2;
+		assertRetVal(ff::CreatePaletteData(paletteData, &paletteData2), false);
+		assertRetVal(ff::CreatePalette(_device, paletteData2, &_palette), false);
+	}
 
 	assertHrRetVal(DirectX::LoadFromDDSMemory(
 		data->GetMem(),
@@ -355,6 +390,44 @@ bool StaticTexture11::SaveToCache(ff::Dict& dict)
 
 	dict.Set<ff::DataValue>(PROP_DATA, blobData);
 	dict.Set<ff::IntValue>(PROP_SPRITE_TYPE, (int)_spriteType);
+
+	if (_palette)
+	{
+		dict.Set<ff::DataValue>(PROP_PALETTE, _palette->GetData()->GetColors());
+	}
+
+	return true;
+}
+
+ff::String StaticTexture11::GetFileExtension() const
+{
+	return ff::String::from_static(L".png");
+}
+
+bool StaticTexture11::SaveToFile(ff::StringRef file)
+{
+	DirectX::ScratchImage scratchHolder;
+	const DirectX::ScratchImage* scratchImage = Capture(scratchHolder);
+
+	if (scratchImage->GetMetadata().format != DXGI_FORMAT_R8_UINT)
+	{
+		scratchHolder = ff::ConvertTextureData(*scratchImage, DXGI_FORMAT_R8G8B8A8_UNORM, GetMipCount());
+		scratchImage = &scratchHolder;
+	}
+
+	for (size_t i = 0; i < scratchImage->GetImageCount(); i++)
+	{
+		ff::String file2 = file;
+		ff::ChangePathExtension(file2, ff::String::format_new(L".%lu.png", i));
+
+		ff::ComPtr<ff::IDataFile> dataFile;
+		ff::ComPtr<ff::IDataWriter> writer;
+		assertRetVal(ff::CreateDataFile(file2, false, &dataFile), false);
+		assertRetVal(ff::CreateDataWriter(dataFile, 0, &writer), false);
+
+		ff::PngImageWriter png(writer);
+		png.Write(scratchImage->GetImages()[i], _palette ? _palette->GetData()->GetColors() : nullptr);
+	}
 
 	return true;
 }

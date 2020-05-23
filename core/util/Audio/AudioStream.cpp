@@ -12,7 +12,10 @@
 
 static ff::StaticString PROP_DATA(L"data");
 static ff::StaticString PROP_FILE(L"file");
+static ff::StaticString PROP_MIME(L"mime");
 static ff::StaticString RES_COMPRESS(L"res:compress");
+
+static ff::StaticString s_defaultMimeType(L"audio/mpeg");
 
 class __declspec(uuid("3e93b56b-a835-4fc7-834e-83e0717ce24c"))
 	AudioStream
@@ -25,6 +28,7 @@ public:
 
 	// IAudioStream functions
 	virtual bool CreateReader(ff::IDataReader** obj) override;
+	virtual ff::StringRef GetMimeType() const override;
 
 	// IResourcePersist
 	virtual bool LoadFromSource(const ff::Dict& dict) override;
@@ -33,6 +37,7 @@ public:
 
 private:
 	ff::ComPtr<ff::ISavedData> _data;
+	ff::String _mimeType;
 };
 
 BEGIN_INTERFACES(AudioStream)
@@ -59,8 +64,15 @@ bool AudioStream::CreateReader(ff::IDataReader** obj)
 	return _data->CreateSavedDataReader(obj);
 }
 
+ff::StringRef AudioStream::GetMimeType() const
+{
+	return _mimeType;
+}
+
 bool AudioStream::LoadFromSource(const ff::Dict& dict)
 {
+	_mimeType = dict.Get<ff::StringValue>(PROP_MIME, s_defaultMimeType);
+
 	ff::ComPtr<ff::IDataFile> file;
 	ff::String fullFile = dict.Get<ff::StringValue>(PROP_FILE);
 	assertRetVal(ff::CreateDataFile(fullFile, false, &file), false);
@@ -71,6 +83,7 @@ bool AudioStream::LoadFromSource(const ff::Dict& dict)
 
 bool AudioStream::LoadFromCache(const ff::Dict& dict)
 {
+	_mimeType = dict.Get<ff::StringValue>(PROP_MIME, s_defaultMimeType);
 	_data = dict.Get<ff::SavedDataValue>(PROP_DATA);
 	assertRetVal(_data, false);
 
@@ -79,6 +92,7 @@ bool AudioStream::LoadFromCache(const ff::Dict& dict)
 
 bool AudioStream::SaveToCache(ff::Dict& dict)
 {
+	dict.Set<ff::StringValue>(PROP_MIME, _mimeType);
 	dict.Set<ff::SavedDataValue>(PROP_DATA, _data);
 	dict.Set<ff::BoolValue>(RES_COMPRESS, false);
 

@@ -355,6 +355,9 @@ AudioMusicPlaying::AudioMusicPlaying()
 {
 	_asyncEvent = ff::CreateEvent(true);
 	_stopEvent = ff::CreateEvent();
+
+	_mediaCallback = new ff::ComObject<AudioSourceReaderCallback>();
+	_mediaCallback->SetParent(this);
 }
 
 AudioMusicPlaying::~AudioMusicPlaying()
@@ -428,42 +431,51 @@ void AudioMusicPlaying::RunAsyncWork()
 
 bool AudioMusicPlaying::AsyncInit()
 {
-	assertRetVal(_stream && !_mediaCallback && !_source && !_mediaReader, false);
+	assertRetVal(_stream && _mediaCallback && !_source && !_mediaReader, false);
 
 	ff::ComPtr<ff::IDataReader> reader;
 	assertRetVal(_stream->CreateReader(&reader), false);
 
-	ff::ComPtr<IMFByteStream> mediaStream;
-	assertRetVal(ff::CreateReadStream(reader, &mediaStream), false);
+	ff::ComPtr<IMFByteStream> mediaByteStream;
+	assertRetVal(ff::CreateReadStream(reader, _stream->GetMimeType(), &mediaByteStream), false);
+
+	ff::ComPtr<IMFSourceResolver> sourceResolver;
+	assertHrRetVal(::MFCreateSourceResolver(&sourceResolver), false);
+
+	ff::ComPtr<IUnknown> mediaSourceUnknown;
+	MF_OBJECT_TYPE mediaSourceObjectType = MF_OBJECT_MEDIASOURCE;
+	DWORD mediaSourceFlags = MF_RESOLUTION_MEDIASOURCE | MF_RESOLUTION_READ | MF_RESOLUTION_DISABLE_LOCAL_PLUGINS;
+	assertHrRetVal(sourceResolver->CreateObjectFromByteStream(mediaByteStream, nullptr, mediaSourceFlags, nullptr, &mediaSourceObjectType, &mediaSourceUnknown), false);
+
+	ff::ComPtr<IMFMediaSource> mediaSource;
+	assertRetVal(mediaSource.QueryFrom(mediaSourceUnknown), false);
 
 	ff::ComPtr<IMFAttributes> mediaAttributes;
-	assertHrRetVal(MFCreateAttributes(&mediaAttributes, 1), false);
-
-	_mediaCallback = new ff::ComObject<AudioSourceReaderCallback>();
-	_mediaCallback->SetParent(this);
+	assertHrRetVal(::MFCreateAttributes(&mediaAttributes, 1), false);
 	assertHrRetVal(mediaAttributes->SetUnknown(MF_SOURCE_READER_ASYNC_CALLBACK, _mediaCallback.Interface()), false);
 
+	ff::ComPtr<IMFSourceReader> mediaReader;
+	assertHrRetVal(::MFCreateSourceReaderFromMediaSource(mediaSource, mediaAttributes, &mediaReader), false);
+	assertHrRetVal(mediaReader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, false), false);
+	assertHrRetVal(mediaReader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, true), false);
+
 	ff::ComPtr<IMFMediaType> mediaType;
-	assertHrRetVal(MFCreateMediaType(&mediaType), false);
+	assertHrRetVal(::MFCreateMediaType(&mediaType), false);
 	assertHrRetVal(mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio), false);
 	assertHrRetVal(mediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_Float), false);
-
-	ff::ComPtr<IMFSourceReader> mediaReader;
-	assertHrRetVal(MFCreateSourceReaderFromByteStream(mediaStream, mediaAttributes, &mediaReader), false);
 	assertHrRetVal(mediaReader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, mediaType), false);
 
-	mediaType = nullptr;
-	assertHrRetVal(mediaReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, &mediaType), false);
+	ff::ComPtr<IMFMediaType> actualMediaType;
+	assertHrRetVal(mediaReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, &actualMediaType), false);
+
+	WAVEFORMATEX* waveFormat = nullptr;
+	UINT waveFormatLength = 0;
+	assertHrRetVal(::MFCreateWaveFormatExFromMFMediaType(actualMediaType, &waveFormat, &waveFormatLength), false);
 
 	PROPVARIANT durationValue;
 	assertHrRetVal(mediaReader->GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &durationValue), false);
 
-	WAVEFORMATEX* waveFormat = nullptr;
-	UINT waveFormatLength = 0;
-	assertHrRetVal(MFCreateWaveFormatExFromMFMediaType(mediaType, &waveFormat, &waveFormatLength), false);
-
-	XAUDIO2_SEND_DESCRIPTOR sendDesc;
-	sendDesc.Flags = 0;
+	XAUDIO2_SEND_DESCRIPTOR sendDesc{ 0 };
 	sendDesc.pOutputVoice = _device->AsXAudioDevice()->GetVoice(ff::AudioVoiceType::MUSIC);
 
 	XAUDIO2_VOICE_SENDS sends;
@@ -479,9 +491,18 @@ bool AudioMusicPlaying::AsyncInit()
 		this, // callback,
 		&sends);
 
-	CoTaskMemFree(waveFormat);
+	::CoTaskMemFree(waveFormat);
 	waveFormat = nullptr;
-	assertHrRetVal(hr, false);
+
+	if (FAILED(hr))
+	{
+		if (source)
+		{
+			source->DestroyVoice();
+		}
+
+		assertHrRetVal(hr, false);
+	}
 
 	ff::LockMutex lock(_mutex);
 
@@ -1010,10 +1031,11 @@ void AudioMusicPlaying::StartReadSample()
 	HRESULT hr = E_FAIL;
 
 	noAssertRet(_mediaState == MediaState::None);
-	_mediaState = MediaState::Reading;
 
 	if (_mediaReader)
 	{
+		_mediaState = MediaState::Reading;
+
 		hr = _mediaReader->ReadSample(
 			MF_SOURCE_READER_FIRST_AUDIO_STREAM,
 			0, nullptr, nullptr, nullptr, nullptr);

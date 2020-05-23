@@ -51,6 +51,7 @@ public:
 
 	// ISpriteFont functions
 	virtual ff::PointFloat DrawText(ff::IRendererActive* render, ff::StringRef text, ff::PointFloat pos, ff::PointFloat scale, const DirectX::XMFLOAT4& color, const DirectX::XMFLOAT4& outlineColor) override;
+	virtual ff::PointFloat DrawPaletteText(ff::IRendererActive* render, ff::StringRef text, ff::PointFloat pos, ff::PointFloat scale, int color, int outlineColor) override;
 	virtual ff::PointFloat MeasureText(ff::StringRef text, ff::PointFloat scale) override;
 	virtual float GetLineSpacing() override;
 
@@ -347,7 +348,7 @@ bool SpriteFont::InitSprites()
 	ff::Vector<ff::ComPtr<ff::ITextureView>> textures;
 	for (DirectX::ScratchImage& scratch : stagingScratches)
 	{
-		ff::ComPtr<ff::ITexture> texture = _device->AsGraphDeviceInternal()->CreateTexture(std::move(scratch));
+		ff::ComPtr<ff::ITexture> texture = _device->AsGraphDeviceInternal()->CreateTexture(std::move(scratch), nullptr);
 		assertRetVal(texture && texture->AsTextureView(), false);
 		textures.Push(texture->AsTextureView());
 	}
@@ -439,6 +440,17 @@ ff::PointFloat SpriteFont::DrawText(ff::IRendererActive* render, ff::StringRef t
 	}
 
 	return InternalDrawText(render, _sprites, text, pos, scale, color);
+}
+
+// From Renderer11.cpp:
+void PaletteIndexToColor(int index, DirectX::XMFLOAT4& color);
+
+ff::PointFloat SpriteFont::DrawPaletteText(ff::IRendererActive* render, ff::StringRef text, ff::PointFloat pos, ff::PointFloat scale, int color, int outlineColor)
+{
+	DirectX::XMFLOAT4 color2, outlineColor2;
+	::PaletteIndexToColor(color, color2);
+	::PaletteIndexToColor(outlineColor, outlineColor2);
+	return DrawText(render, text, pos, scale, color2, outlineColor2);
 }
 
 ff::PointFloat SpriteFont::MeasureText(ff::StringRef text, ff::PointFloat scale)

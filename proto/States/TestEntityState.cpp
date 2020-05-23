@@ -6,6 +6,10 @@
 #include "Graph/RenderTarget/RenderTarget.h"
 #include "Graph/Render/Renderer.h"
 #include "Graph/Render/RendererActive.h"
+#include "Graph/Sprite/Sprite.h"
+#include "Graph/Sprite/SpriteList.h"
+#include "Graph/Texture/Palette.h"
+#include "Graph/Texture/PaletteData.h"
 #include "Input/Keyboard/KeyboardDevice.h"
 #include "States/TestEntityState.h"
 #include "Types/Timer.h"
@@ -24,6 +28,7 @@ struct VelocityComponent : public ff::Component
 
 struct VisualComponent : public ff::Component
 {
+	ff::ISprite* sprite;
 	DirectX::XMFLOAT4 color;
 	ff::PointFloat scale;
 	float rotate;
@@ -64,16 +69,18 @@ TestEntityState::TestEntityState(ff::AppGlobals* globals)
 	, _viewport(WORLD_RECT.Size())
 	, _updateEntityBucket(_domain.GetBucket<UpdateSystemEntry>())
 	, _renderEntityBucket(_domain.GetBucket<RenderSystemEntry>())
-	, _spriteResource(L"TestSprites.Player")
+	, _colorSpriteResource(L"TestSprites.Player")
+	, _paletteSpritesResource(L"TestPaletteSprites")
+	, _paletteResource(L"TestPalette")
 	, _fontResource(L"TestFont2")
 {
+	ff::CreatePalette(globals->GetGraph(), _paletteResource.Flush(), &_palette);
 }
 
 std::shared_ptr<ff::State> TestEntityState::Advance(ff::AppGlobals* globals)
 {
 	if (globals->GetKeys()->GetKeyPressCount(VK_DELETE))
 	{
-		ff::Timer timer;
 		_domain.DeleteEntities();
 	}
 
@@ -110,42 +117,43 @@ void TestEntityState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target,
 {
 	ff::RectFloat view = _viewport.GetView(target);
 	ff::RendererActive render = _render->BeginRender(target, depth, view, WORLD_RECT);
+	render->PushPalette(_palette);
 
-	ff::ISprite* sprite = _spriteResource.GetObject();
-	if (sprite)
+	for (const RenderSystemEntry& entry : _renderEntityBucket->GetEntries())
 	{
-		for (const RenderSystemEntry& entry : _renderEntityBucket->GetEntries())
-		{
-			render->DrawSprite(sprite,
-				entry.positionComponent->position,
-				entry.visualComponent->scale,
-				entry.visualComponent->rotate,
-				entry.visualComponent->color);
-		}
+		render->DrawSprite(
+			entry.visualComponent->sprite,
+			entry.positionComponent->position,
+			entry.visualComponent->scale,
+			entry.visualComponent->rotate,
+			entry.visualComponent->color);
 	}
 
-	ff::ISpriteFont* font = _fontResource.GetObject();
-	if (font)
-	{
-		ff::String text = ff::String::format_new(L"Entities:%lu", _renderEntityBucket->GetEntries().Size());
-		font->DrawText(render, text, ff::PointFloat(20, 1040), ff::PointFloat::Ones(), ff::GetColorWhite(), ff::GetColorBlack());
-	}
+	ff::ISpriteFont* font = _fontResource.Flush();
+	ff::String text = ff::String::format_new(L"Entities:%lu", _renderEntityBucket->GetEntries().Size());
+	font->DrawText(render, text, ff::PointFloat(20, 1040), ff::PointFloat::Ones(), ff::GetColorWhite(), ff::GetColorBlack());
 }
 
 void TestEntityState::AddEntities()
 {
+	ff::ISprite* colorSprite = _colorSpriteResource.Flush();
+	ff::ISpriteList* paletteSprites = _paletteSpritesResource.Flush();
+
 	for (int i = 0; i < 5000; i++)
 	{
 		ff::Entity entity = _domain.CreateEntity();
 		PositionComponent* positionComponent = entity->AddComponent<PositionComponent>();
 		VelocityComponent* velocityComponent = entity->AddComponent<VelocityComponent>();
 		VisualComponent* visualComponent = entity->AddComponent<VisualComponent>();
+		size_t sprite = (size_t)std::rand() % (paletteSprites->GetCount() * 4);
+		bool usePalette = sprite < paletteSprites->GetCount();
 
 		positionComponent->position = ff::PointFloat((float)(std::rand() % 1920), (float)(std::rand() % 1080));
 		velocityComponent->velocity = ff::PointFloat((std::rand() % 21 - 10) / 2.0f, (std::rand() % 21 - 10) / 2.0f);
-		visualComponent->scale = ff::PointFloat((std::rand() % 16) / 10.0f + 0.5f, (std::rand() % 16) / 10.0f + 0.5f);
-		visualComponent->color = DirectX::XMFLOAT4((std::rand() % 65) / 64.0f, (std::rand() % 65) / 64.0f, (std::rand() % 65) / 64.0f, 1.0f);
+		visualComponent->scale = usePalette ? ff::PointFloat(2, 2) : ff::PointFloat((std::rand() % 16) / 10.0f + 0.5f, (std::rand() % 16) / 10.0f + 0.5f);
+		visualComponent->color = usePalette ? ff::GetColorWhite() : DirectX::XMFLOAT4((std::rand() % 65) / 64.0f, (std::rand() % 65) / 64.0f, (std::rand() % 65) / 64.0f, 1.0f);
 		visualComponent->rotate = (std::rand() % 360) * ff::DEG_TO_RAD_F;
+		visualComponent->sprite = usePalette ? paletteSprites->Get(sprite) : colorSprite;
 
 		entity->Activate();
 	}

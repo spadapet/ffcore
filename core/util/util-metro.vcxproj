@@ -124,6 +124,8 @@
     <ClCompile Include="Graph\State\GraphContext11.cpp" />
     <ClCompile Include="Graph\State\GraphFixedState11.cpp" />
     <ClCompile Include="Graph\State\GraphStateCache11.cpp" />
+    <ClCompile Include="Graph\Texture\Palette.cpp" />
+    <ClCompile Include="Graph\Texture\PaletteData.cpp" />
     <ClCompile Include="Graph\Texture\PngImage.cpp" />
     <ClCompile Include="Graph\Texture\StagingTexture11.cpp" />
     <ClCompile Include="Graph\Texture\StaticTexture11.cpp" />
@@ -295,6 +297,8 @@
     <ClInclude Include="Graph\State\GraphContext11.h" />
     <ClInclude Include="Graph\State\GraphFixedState11.h" />
     <ClInclude Include="Graph\State\GraphStateCache11.h" />
+    <ClInclude Include="Graph\Texture\Palette.h" />
+    <ClInclude Include="Graph\Texture\PaletteData.h" />
     <ClInclude Include="Graph\Texture\PngImage.h" />
     <ClInclude Include="Graph\Texture\Texture.h" />
     <ClInclude Include="Graph\Texture\TextureFormat.h" />

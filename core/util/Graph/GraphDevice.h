@@ -19,6 +19,7 @@ namespace ff
 	class IGraphDeviceChild;
 	class IGraphDeviceDxgi;
 	class IGraphDeviceInternal;
+	class IPaletteData;
 	class IRenderDepth;
 	class IRenderer;
 	class IRenderTarget;
@@ -33,7 +34,7 @@ namespace ff
 	public:
 		virtual bool Reset() = 0;
 		virtual bool ResetIfNeeded() = 0;
-		virtual size_t ResetDrawCount() = 0;
+		virtual GraphCounters ResetDrawCount() = 0;
 
 		virtual IGraphDeviceDxgi* AsGraphDeviceDxgi() = 0;
 		virtual IGraphDevice11* AsGraphDevice11() = 0;
@@ -79,6 +80,6 @@ namespace ff
 	class IGraphDeviceInternal
 	{
 	public:
-		virtual ComPtr<ITexture> CreateTexture(DirectX::ScratchImage&& data) = 0;
+		virtual ComPtr<ITexture> CreateTexture(DirectX::ScratchImage&& data, IPaletteData* paletteData) = 0;
 	};
 }

@@ -32,7 +32,7 @@ public:
 	// IGraphDevice
 	virtual bool Reset() override;
 	virtual bool ResetIfNeeded() override;
-	virtual size_t ResetDrawCount() override;
+	virtual ff::GraphCounters ResetDrawCount() override;
 	virtual ff::IGraphDeviceDxgi* AsGraphDeviceDxgi() override;
 	virtual ff::IGraphDevice11* AsGraphDevice11() override;
 	virtual ff::IGraphDeviceInternal* AsGraphDeviceInternal() override;
@@ -65,7 +65,7 @@ public:
 	virtual ff::GraphStateCache11& GetStateCache() override;
 
 	// IGraphDeviceInternal
-	virtual ff::ComPtr<ff::ITexture> CreateTexture(DirectX::ScratchImage&& data) override;
+	virtual ff::ComPtr<ff::ITexture> CreateTexture(DirectX::ScratchImage&& data, ff::IPaletteData* paletteData) override;
 
 private:
 	ff::Mutex _mutex;
@@ -222,7 +222,7 @@ std::unique_ptr<ff::IRenderer> GraphDevice11::CreateRenderer()
 }
 
 bool CreateTexture11(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::ITexture** texture);
-bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::ITexture** texture);
+bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::IPaletteData* paletteData, ff::ITexture** texture);
 bool CreateTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, size_t mips, size_t count, size_t samples, ff::IData* initialData, ff::ITexture** texture);
 bool CreateStagingTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::IData* initialData, ff::ITexture** texture);
 bool CreateGraphBuffer11(ff::IGraphDevice* device, ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData, ff::IGraphBuffer** buffer);
@@ -239,10 +239,10 @@ ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::StringRef path, ff::Te
 	return ::CreateTexture11(this, path, ff::ConvertTextureFormat(format), mips, &obj) ? obj : nullptr;
 }
 
-ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(DirectX::ScratchImage&& data)
+ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(DirectX::ScratchImage&& data, ff::IPaletteData* paletteData)
 {
 	ff::ComPtr<ff::ITexture> obj;
-	return ::CreateTexture11(this, std::move(data), &obj) ? obj : nullptr;
+	return ::CreateTexture11(this, std::move(data), paletteData, &obj) ? obj : nullptr;
 }
 
 ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples, ff::IData* initialData)
@@ -366,7 +366,7 @@ bool GraphDevice11::ResetIfNeeded()
 	return true;
 }
 
-size_t GraphDevice11::ResetDrawCount()
+ff::GraphCounters GraphDevice11::ResetDrawCount()
 {
 	return _stateContext.ResetDrawCount();
 }

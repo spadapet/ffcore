@@ -12,8 +12,10 @@ namespace ff
 	{
 	public:
 		virtual void Advance() = 0;
-		virtual ITextureView* GetTextureView() = 0;
+		virtual IPaletteData* GetData() const = 0;
+		virtual hash_t GetTextureHash() const = 0;
+		virtual ITexture* GetTexture() = 0;
 	};
 
-	bool CreatePalette(IGraphDevice* device, IPaletteData* data, IPalette** obj);
+	UTIL_API bool CreatePalette(IGraphDevice* device, IPaletteData* data, IPalette** obj);
 }

@@ -14,7 +14,6 @@ namespace ff
 	{
 		String _name;
 		GUID _classId;
-		GUID _mainInterfaceId;
 		ClassFactoryFunc _factory;
 		const Module* _module;
 	};

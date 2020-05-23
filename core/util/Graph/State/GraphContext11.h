@@ -12,12 +12,16 @@ namespace ff
 		UTIL_API void Clear();
 		UTIL_API void Apply(GraphContext11& dest);
 		UTIL_API void Reset(ID3D11DeviceContext* context);
-		UTIL_API size_t ResetDrawCount();
+		UTIL_API GraphCounters ResetDrawCount();
 		UTIL_API void Draw(size_t count, size_t start);
 		UTIL_API void DrawIndexed(size_t indexCount, size_t indexStart, int vertexOffset);
 		UTIL_API void* Map(ID3D11Resource* buffer, D3D11_MAP type, D3D11_MAPPED_SUBRESOURCE* map = nullptr);
 		UTIL_API void Unmap(ID3D11Resource* buffer);
 		UTIL_API void UpdateDiscard(ID3D11Resource* buffer, const void* data, size_t size);
+		UTIL_API void ClearRenderTarget(ID3D11RenderTargetView* view, const DirectX::XMFLOAT4& color);
+		UTIL_API void ClearDepthStencil(ID3D11DepthStencilView* view, bool clearDepth, bool clearStencil, float depth, BYTE stencil);
+		UTIL_API void UpdateSubresource(ID3D11Resource* dest, UINT destSubresource, const D3D11_BOX* destBox, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch);
+		UTIL_API void CopySubresourceRegion(ID3D11Resource* destResource, UINT destSubresource, UINT destX, UINT destY, UINT destZ, ID3D11Resource* srcResource, UINT srcSubresource, const D3D11_BOX* srcBox);
 
 		UTIL_API void SetVertexIA(ID3D11Buffer* value, size_t stride, size_t offset);
 		UTIL_API void SetIndexIA(ID3D11Buffer* value, DXGI_FORMAT format, size_t offset);
@@ -98,7 +102,7 @@ namespace ff
 		// Stream out
 		ComPtr<ID3D11Buffer> _soTargets[D3D11_SO_STREAM_COUNT];
 
-		size_t _drawCount;
+		GraphCounters _counters;
 	};
 }
 

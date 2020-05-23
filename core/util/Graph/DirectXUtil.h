@@ -3,8 +3,22 @@
 namespace ff
 {
 	class IGraphDevice;
+	class IPaletteData;
 	enum class SpriteType;
 	enum class TextureFormat;
+
+	struct GraphCounters
+	{
+	public:
+		void Reset();
+
+		size_t _draw;
+		size_t _clear;
+		size_t _depthClear;
+		size_t _map; // CPU to GPU (indirect)
+		size_t _update; // CPU to GPU (direct)
+		size_t _copy; // GPU copy
+	};
 
 	UTIL_API const DirectX::XMFLOAT4& GetColorWhite();
 	UTIL_API const DirectX::XMFLOAT4& GetColorBlack();
@@ -18,10 +32,13 @@ namespace ff
 	UTIL_API const DirectX::XMFLOAT4X4& GetIdentityMatrix();
 	UTIL_API const DirectX::XMFLOAT3X3& GetIdentityMatrix3x3();
 
+	bool IsCompressedFormat(TextureFormat format);
+	bool IsColorFormat(TextureFormat format);
 	DXGI_FORMAT ConvertTextureFormat(TextureFormat format);
 	TextureFormat ConvertTextureFormat(DXGI_FORMAT format);
 	UTIL_API DXGI_FORMAT ParseDxgiTextureFormat(StringRef szFormat);
 	UTIL_API TextureFormat ParseTextureFormat(StringRef szFormat);
+
 	bool IsSoftwareAdapter(IDXGIAdapterX* adapter);
 	bool IsFactoryCurrent(IDXGIFactoryX* factory);
 	ff::Vector<ff::ComPtr<IDXGIOutputX>> GetAdapterOutputs(IDXGIFactoryX* dxgi, IDXGIAdapterX* card);
@@ -51,7 +68,7 @@ namespace ff
 
 #ifdef UTIL_DLL
 	ff::ComPtr<ID3D11ShaderResourceView> CreateDefaultTextureView(ID3D11DeviceX* device, ID3D11Texture2D* texture);
-	DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips);
+	DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, IPaletteData** paletteData);
 	DirectX::ScratchImage ConvertTextureData(const DirectX::ScratchImage& data, DXGI_FORMAT format, size_t mips);
 	ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect = nullptr);
 #endif

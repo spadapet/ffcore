@@ -44,7 +44,7 @@ namespace ff
 
 	private:
 		void UpdateStats(AppGlobals* globals);
-		void RenderText(AppGlobals* globals, IRenderTarget* target);
+		void RenderText(AppGlobals* globals, IRenderTarget* target, IRenderDepth* depth);
 		void RenderCharts(AppGlobals* globals, IRenderTarget* target);
 		void Toggle(size_t index);
 		size_t GetTotalPageCount() const;
@@ -68,7 +68,7 @@ namespace ff
 		size_t _fastNumberCounter;
 		size_t _apsCounter;
 		size_t _rpsCounter;
-		size_t _drawCount;
+		GraphCounters _graphCounters;
 		double _lastAps;
 		double _lastRps;
 		double _totalSeconds;

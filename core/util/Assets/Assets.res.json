@@ -109,14 +109,6 @@
     "entry": "SpriteVS"
   },
 
-  "MultiSpriteVS":
-  {
-    "res:type": "shader",
-    "file": "file:Renderer.hlsl",
-    "target": "vs_4_0",
-    "entry": "MultiSpriteVS"
-  },
-
   "LineGS":
   {
     "res:type": "shader",
@@ -125,36 +117,12 @@
     "entry": "LineGS"
   },
 
-  "LineScreenGS":
-  {
-    "res:type": "shader",
-    "file": "file:Renderer.hlsl",
-    "target": "gs_4_0",
-    "entry": "LineGS",
-    "defines":
-    {
-      "SCREEN_SPACE": "1"
-    }
-  },
-
   "CircleGS":
   {
     "res:type": "shader",
     "file": "file:Renderer.hlsl",
     "target": "gs_4_0",
     "entry": "CircleGS"
-  },
-
-  "CircleScreenGS":
-  {
-    "res:type": "shader",
-    "file": "file:Renderer.hlsl",
-    "target": "gs_4_0",
-    "entry": "CircleGS",
-    "defines":
-    {
-      "SCREEN_SPACE": "1"
-    }
   },
 
   "TriangleGS":
@@ -173,20 +141,20 @@
     "entry": "SpriteGS"
   },
 
-  "MultiSpriteGS":
-  {
-    "res:type": "shader",
-    "file": "file:Renderer.hlsl",
-    "target": "gs_4_0",
-    "entry": "MultiSpriteGS"
-  },
-
   "ColorPS":
   {
     "res:type": "shader",
     "file": "file:Renderer.hlsl",
     "target": "ps_4_0",
     "entry": "ColorPS"
+  },
+
+  "PaletteOutColorPS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "ps_4_0",
+    "entry": "PaletteOutColorPS"
   },
 
   "SpritePS":
@@ -213,11 +181,19 @@
     "entry": "SpriteAlphaPS"
   },
 
-  "MultiSpritePS":
+  "PaletteOutSpritePS":
   {
     "res:type": "shader",
     "file": "file:Renderer.hlsl",
     "target": "ps_4_0",
-    "entry": "MultiSpritePS"
+    "entry": "PaletteOutSpritePS"
+  },
+
+  "PaletteOutSpritePalettePS":
+  {
+    "res:type": "shader",
+    "file": "file:Renderer.hlsl",
+    "target": "ps_4_0",
+    "entry": "PaletteOutSpritePalettePS"
   }
 }

@@ -49,6 +49,14 @@ namespace ff
 		virtual ff::Dict GetSiblingResources(ff::SharedResourceValue parentValue) = 0;
 	};
 
+	class __declspec(uuid("eee78975-0c81-49f9-a380-3ac3c1a650f8")) __declspec(novtable)
+		IResourceSaveFile : public IUnknown
+	{
+	public:
+		virtual ff::String GetFileExtension() const = 0;
+		virtual bool SaveToFile(ff::StringRef file) = 0;
+	};
+
 	class __declspec(uuid("e3d6c9aa-9de7-4537-b930-effec5f760c6")) __declspec(novtable)
 		IResourceGetClone : public IUnknown
 	{

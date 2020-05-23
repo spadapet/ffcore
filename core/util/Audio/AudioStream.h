@@ -9,5 +9,6 @@ namespace ff
 	{
 	public:
 		virtual bool CreateReader(IDataReader** obj) = 0;
+		virtual ff::StringRef GetMimeType() const = 0;
 	};
 }

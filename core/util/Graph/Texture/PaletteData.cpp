@@ -20,6 +20,8 @@ class __declspec(uuid("d1176b8c-4ebb-40a6-9f6a-f92044187a37"))
 public:
 	DECLARE_HEADER(PaletteData);
 
+	bool Init(ff::IData* colors);
+
 	// IPaletteData functions
 	virtual ff::IData* GetColors() const override;
 
@@ -42,12 +44,32 @@ static ff::ModuleStartup Register([](ff::Module& module)
 		module.RegisterClassT<PaletteData>(L"palette");
 	});
 
+bool ff::CreatePaletteData(IData* colors, IPaletteData** obj)
+{
+	assertRetVal(obj, false);
+	*obj = nullptr;
+
+	ff::ComPtr<PaletteData, IPaletteData> newObj;
+	assertHrRetVal(ff::ComAllocator<PaletteData>::CreateInstance(&newObj), false);
+	assertRetVal(newObj->Init(colors), false);
+
+	*obj = newObj.Detach();
+	return true;
+}
+
 PaletteData::PaletteData()
 {
 }
 
 PaletteData::~PaletteData()
 {
+}
+
+bool PaletteData::Init(ff::IData* colors)
+{
+	assertRetVal(colors, false);
+	_colors = colors;
+	return true;
 }
 
 ff::IData* PaletteData::GetColors() const
@@ -69,7 +91,7 @@ bool PaletteData::LoadFromSource(const ff::Dict& dict)
 
 		BYTE* dest = colors.Data();
 		for (const BYTE* start = fileData->GetMem(), *end = start + fileData->GetSize(), *cur = start;
-			cur < end && cur - start < ff::PALETTE_SIZE; cur += 3, dest += 4)
+			cur < end && cur - start < ff::PALETTE_SIZE * 3; cur += 3, dest += 4)
 		{
 			dest[0] = cur[0]; // R
 			dest[1] = cur[1]; // G

@@ -1,5 +1,3 @@
-#define NO_TEXTURE_ID 0xFFFFFFFF
-
 static const float PI_F = 3.1415926535897932384626433832795f;
 static const float PI2_F = PI_F * 2;
 
@@ -51,24 +49,6 @@ struct SpriteGeometry
 	uint world : MATRIX;
 };
 
-struct MultiSpriteGeometry
-{
-	float4 rect : RECT;
-	float4 uvrect0 : TEXCOORD0;
-	float4 uvrect1 : TEXCOORD1;
-	float4 uvrect2 : TEXCOORD2;
-	float4 uvrect3 : TEXCOORD3;
-	float4 color0 : COLOR0;
-	float4 color1 : COLOR1;
-	float4 color2 : COLOR2;
-	float4 color3 : COLOR3;
-	float2 scale : SCALE;
-	float3 pos : POSITION;
-	float rotate : ROTATE;
-	uint4 tex : TEXINDEX;
-	uint world : MATRIX;
-};
-
 struct ColorPixel
 {
 	float4 pos : SV_POSITION0;
@@ -81,20 +61,6 @@ struct SpritePixel
 	float4 color : COLOR0;
 	float2 uv : TEXCOORD0;
 	uint tex : TEXINDEX0;
-};
-
-struct MultiSpritePixel
-{
-	float4 pos : SV_POSITION0;
-	float4 color0 : COLOR0;
-	float4 color1 : COLOR1;
-	float4 color2 : COLOR2;
-	float4 color3 : COLOR3;
-	float2 uv0 : TEXCOORD0;
-	float2 uv1 : TEXCOORD1;
-	float2 uv2 : TEXCOORD2;
-	float2 uv3 : TEXCOORD3;
-	uint4 tex0 : TEXINDEX0;
 };
 
 cbuffer GeometryShaderConstants0 : register(b0)
@@ -110,9 +76,14 @@ cbuffer GeometryShaderConstants1 : register(b1)
 	matrix _model[1024];
 };
 
+cbuffer PixelShaderConstants0 : register(b0)
+{
+	float4 _texturePaletteSizes[32];
+};
+
 Texture2D _textures[32] : register(t0);
-Texture2D<uint> _texturesPalette[32] : register(t0);
-Texture2D _palette : register(t32);
+Texture2D<uint> _texturesPalette[32] : register(t32);
+Texture2D _palette : register(t64);
 SamplerState _sampler : register(s0);
 
 LineGeometry LineVS(LineGeometry input)
@@ -135,11 +106,6 @@ SpriteGeometry SpriteVS(SpriteGeometry input)
 	return input;
 }
 
-MultiSpriteGeometry MultiSpriteVS(MultiSpriteGeometry input)
-{
-	return input;
-}
-
 bool MitersOnSameSideOfLine(float2 dirLine, float2 miter1, float2 miter2)
 {
 	float3 lineDir_3 = float3(dirLine, 0);
@@ -157,13 +123,18 @@ void LineGS(point LineGeometry input[1], inout TriangleStream<ColorPixel> output
 {
 	ColorPixel vertex;
 
-#ifdef SCREEN_SPACE
-	float thicknessScale = _viewScale.y;
-	float2 aspect = float2(_viewScale.y / _viewScale.x, 1);
-#else
-	float thicknessScale = 1;
-	float2 aspect = float2(1, 1);
-#endif
+	float thicknessScale;
+	float2 aspect;
+	if (input[0].thick0 < 0)
+	{
+		thicknessScale = -_viewScale.y;
+		aspect = float2(_viewScale.y / _viewScale.x, 1);
+	}
+	else
+	{
+		thicknessScale = 1;
+		aspect = float2(1, 1);
+	}
 
 	float2 pos0 = input[0].pos0;
 	float2 pos1 = input[0].pos1;
@@ -234,11 +205,15 @@ void CircleGS(point CircleGeometry input[1], inout TriangleStream<ColorPixel> ou
 {
 	ColorPixel vertex;
 
-#ifdef SCREEN_SPACE
-	float2 thickness = input[0].thickness * _viewScale;
-#else
-	float2 thickness = float2(input[0].thickness, input[0].thickness);
-#endif
+	float2 thickness;
+	if (input[0].thickness < 0)
+	{
+		thickness = input[0].thickness * -_viewScale;
+	}
+	else
+	{
+		thickness = float2(input[0].thickness, input[0].thickness);
+	}
 
 	float z = input[0].pos.z + _zoffset;
 	float2 center = input[0].pos.xy;
@@ -348,69 +323,6 @@ void SpriteGS(point SpriteGeometry input[1], inout TriangleStream<SpritePixel> o
 	output.RestartStrip();
 }
 
-[maxvertexcount(4)]
-void MultiSpriteGS(point MultiSpriteGeometry input[1], inout TriangleStream<MultiSpritePixel> output)
-{
-	MultiSpritePixel vertex;
-	vertex.color0 = input[0].color0;
-	vertex.color1 = input[0].color1;
-	vertex.color2 = input[0].color2;
-	vertex.color3 = input[0].color3;
-	vertex.tex0 = input[0].tex;
-
-	float rotateSin, rotateCos;
-	sincos(input[0].rotate, rotateSin, rotateCos);
-
-	float2x2 rotateMatrix =
-	{
-		rotateCos, -rotateSin,
-		rotateSin, rotateCos,
-	};
-
-	float4 rect = input[0].rect * float4(input[0].scale, input[0].scale);
-	float z = input[0].pos.z + _zoffset;
-	float4 tl = float4(mul(rect.xy, rotateMatrix) + input[0].pos.xy, z, 1);
-	float4 tr = float4(mul(rect.zy, rotateMatrix) + input[0].pos.xy, z, 1);
-	float4 br = float4(mul(rect.zw, rotateMatrix) + input[0].pos.xy, z, 1);
-	float4 bl = float4(mul(rect.xw, rotateMatrix) + input[0].pos.xy, z, 1);
-
-	matrix transformMatrix = mul(_model[input[0].world], _projection);
-	tl = mul(tl, transformMatrix);
-	tr = mul(tr, transformMatrix);
-	br = mul(br, transformMatrix);
-	bl = mul(bl, transformMatrix);
-
-	vertex.pos = bl;
-	vertex.uv0 = input[0].uvrect0.xw;
-	vertex.uv1 = input[0].uvrect1.xw;
-	vertex.uv2 = input[0].uvrect2.xw;
-	vertex.uv3 = input[0].uvrect3.xw;
-	output.Append(vertex);
-
-	vertex.pos = tl;
-	vertex.uv0 = input[0].uvrect0.xy;
-	vertex.uv1 = input[0].uvrect1.xy;
-	vertex.uv2 = input[0].uvrect2.xy;
-	vertex.uv3 = input[0].uvrect3.xy;
-	output.Append(vertex);
-
-	vertex.pos = br;
-	vertex.uv0 = input[0].uvrect0.zw;
-	vertex.uv1 = input[0].uvrect1.zw;
-	vertex.uv2 = input[0].uvrect2.zw;
-	vertex.uv3 = input[0].uvrect3.zw;
-	output.Append(vertex);
-
-	vertex.pos = tr;
-	vertex.uv0 = input[0].uvrect0.zy;
-	vertex.uv1 = input[0].uvrect1.zy;
-	vertex.uv2 = input[0].uvrect2.zy;
-	vertex.uv3 = input[0].uvrect3.zy;
-	output.Append(vertex);
-
-	output.RestartStrip();
-}
-
 float4 ColorPS(ColorPixel input) : SV_TARGET
 {
 	if (input.color.w == 0)
@@ -421,11 +333,22 @@ float4 ColorPS(ColorPixel input) : SV_TARGET
 	return input.color;
 }
 
+uint PaletteOutColorPS(ColorPixel input) : SV_TARGET
+{
+	uint color = (uint)(input.color.r * 256);
+
+	if (color == 0)
+	{
+		discard;
+	}
+
+	return color;
+}
+
 float4 SampleSpriteTexture(float2 tex, uint ntex)
 {
 	switch (ntex)
 	{
-	case NO_TEXTURE_ID: return float4(1, 1, 1, 1);
 	case 0: return _textures[0].Sample(_sampler, tex);
 	case 1: return _textures[1].Sample(_sampler, tex);
 	case 2: return _textures[2].Sample(_sampler, tex);
@@ -457,6 +380,7 @@ float4 SampleSpriteTexture(float2 tex, uint ntex)
 	case 28: return _textures[28].Sample(_sampler, tex);
 	case 29: return _textures[29].Sample(_sampler, tex);
 	case 30: return _textures[30].Sample(_sampler, tex);
+	case 31: return _textures[31].Sample(_sampler, tex);
 	default: return (float4)0;
 	}
 }
@@ -496,6 +420,7 @@ uint SamplePaletteSpriteTexture(int3 tex, uint ntex)
 	case 28: return _texturesPalette[28].Load(tex);
 	case 29: return _texturesPalette[29].Load(tex);
 	case 30: return _texturesPalette[30].Load(tex);
+	case 31: return _texturesPalette[31].Load(tex);
 	default: return 0;
 	}
 }
@@ -514,8 +439,11 @@ float4 SpritePS(SpritePixel input) : SV_TARGET
 
 float4 SpritePalettePS(SpritePixel input) : SV_TARGET
 {
-	int index = (int)SamplePaletteSpriteTexture(int3(input.uv, 0), input.tex);
-	float4 color = input.color * _palette.Load(int3(index, 0, 0));
+	uint textureIndex = input.tex & 0xFF;
+	uint paletteIndex = input.tex >> 8;
+
+	uint index = SamplePaletteSpriteTexture(int3(input.uv * _texturePaletteSizes[textureIndex].xy, 0), textureIndex);
+	float4 color = input.color * _palette.Load(int3(index, paletteIndex, 0));
 
 	if (color.a == 0)
 	{
@@ -537,33 +465,27 @@ float4 SpriteAlphaPS(SpritePixel input) : SV_TARGET
 	return color;
 }
 
-float4 GetMultiSpriteColor(MultiSpritePixel input)
+uint PaletteOutSpritePS(SpritePixel input) : SV_TARGET
 {
-	float4 colors[4] =
-	{
-		input.color0 * SampleSpriteTexture(input.uv0, input.tex0.x),
-		input.color1 * SampleSpriteTexture(input.uv1, input.tex0.y),
-		input.color2 * SampleSpriteTexture(input.uv2, input.tex0.z),
-		input.color3 * SampleSpriteTexture(input.uv3, input.tex0.w)
-	};
+	float4 color = SampleSpriteTexture(input.uv, input.tex);
+	uint index = (uint)(input.color.r * 256) * (uint)(color.a != 0);
 
-	for (int i = 1; i < 4; i++)
-	{
-		float blank = colors[0].a == 0;
-		colors[0] = (1 - blank) * lerp(colors[0], float4(colors[i].rgb, 1), colors[i].aaaa) + blank * colors[i];
-	}
-
-	return colors[0];
-}
-
-float4 MultiSpritePS(MultiSpritePixel input) : SV_TARGET
-{
-	float4 color = GetMultiSpriteColor(input);
-
-	if (color.a == 0)
+	if (index == 0)
 	{
 		discard;
 	}
 
-	return color;
+	return index;
+}
+
+uint PaletteOutSpritePalettePS(SpritePixel input) : SV_TARGET
+{
+	uint index = SamplePaletteSpriteTexture(int3(input.uv * _texturePaletteSizes[input.tex].xy, 0), input.tex);
+
+	if (index == 0)
+	{
+		discard;
+	}
+
+	return index;
 }

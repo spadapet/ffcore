@@ -15,6 +15,9 @@
     <ClCompile Include="States\TestUiState.cpp">
       <Filter>States</Filter>
     </ClCompile>
+    <ClCompile Include="States\TestPaletteState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -31,6 +34,9 @@
       <Filter>Assets</Filter>
     </ClInclude>
     <ClInclude Include="States\TestUiState.h">
+      <Filter>States</Filter>
+    </ClInclude>
+    <ClInclude Include="States\TestPaletteState.h">
       <Filter>States</Filter>
     </ClInclude>
   </ItemGroup>

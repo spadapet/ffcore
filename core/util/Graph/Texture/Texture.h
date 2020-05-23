@@ -10,6 +10,7 @@ namespace DirectX
 
 namespace ff
 {
+	class IPalette;
 	class ISprite;
 	class ITexture11;
 	class ITextureDxgi;
@@ -27,6 +28,7 @@ namespace ff
 		virtual size_t GetSampleCount() const = 0;
 		virtual TextureFormat GetFormat() const = 0;
 		virtual SpriteType GetSpriteType() const = 0;
+		virtual IPalette* GetPalette() const = 0;
 		virtual ComPtr<ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) = 0;
 		virtual ComPtr<ITexture> Convert(TextureFormat format, size_t mips) = 0;
 		virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, TextureFormat dataFormat) = 0;

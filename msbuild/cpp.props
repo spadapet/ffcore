@@ -121,6 +121,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories Condition=" '$(AppType)' == 'Desktop' ">$(MSBuildProjectDirectory);$(GeneratedFilesDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj /Wv:18 %(AdditionalOptions)</AdditionalOptions>
+      <BufferSecurityCheck Condition=" '$(Configuration)' != 'Debug' ">false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FunctionLevelLinking Condition=" '$(Configuration)' != 'Debug' ">true</FunctionLevelLinking>
       <IntrinsicFunctions Condition=" '$(Configuration)' != 'Debug' ">true</IntrinsicFunctions>

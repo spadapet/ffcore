@@ -12,4 +12,6 @@ namespace ff
 	public:
 		virtual IData* GetColors() const = 0; // 256 R8G8B8A8_UNORM colors
 	};
+
+	bool CreatePaletteData(IData* colors, IPaletteData** obj);
 }

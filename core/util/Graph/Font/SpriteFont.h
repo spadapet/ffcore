@@ -17,6 +17,15 @@ namespace ff
 			PointFloat scale,
 			const DirectX::XMFLOAT4& color,
 			const DirectX::XMFLOAT4& outlineColor = ff::GetColorNone()) = 0;
+
+		virtual PointFloat DrawPaletteText(
+			IRendererActive* render,
+			StringRef text,
+			PointFloat pos,
+			PointFloat scale,
+			int color,
+			int outlineColor = 0) = 0;
+
 		virtual PointFloat MeasureText(StringRef text, PointFloat scale) = 0;
 		virtual float GetLineSpacing() = 0;
 	};

@@ -241,6 +241,29 @@ bool SpriteList::LoadFromSource(const ff::Dict& dict)
 	ff::TextureFormat format = ff::ParseTextureFormat(formatProp);
 	assertRetVal(format != ff::TextureFormat::Unknown, nullptr);
 
+	ff::ComPtr<ff::IResourceLoadListener> loadListener;
+	loadListener.QueryFrom(dict.Get<ff::ObjectValue>(ff::RES_LOAD_LISTENER));
+
+	if (mips > 1 && !ff::IsColorFormat(format))
+	{
+		if (loadListener)
+		{
+			loadListener->AddError(ff::String::from_static(L"MipMaps are only supported for color textures"));
+		}
+		
+		assertRetVal(false, false);
+	}
+
+	if (optimize && !ff::IsColorFormat(format) && format != ff::TextureFormat::R8_UINT)
+	{
+		if (loadListener)
+		{
+			loadListener->AddError(ff::String::format_new(L"Can only optimize full color or palette textures, not '%s'", formatProp.c_str()));
+		}
+
+		assertRetVal(false, false);
+	}
+
 	ff::Dict spritesDict = dict.Get<ff::DictValue>(PROP_SPRITES);
 	ff::Vector<ff::String> names = spritesDict.GetAllNames(true);
 	ff::Map<ff::String, ff::ComPtr<ff::ITextureView>> textureViews;
@@ -281,9 +304,18 @@ bool SpriteList::LoadFromSource(const ff::Dict& dict)
 		else
 		{
 			ff::ComPtr<ff::ITexture> texture = _device->CreateTexture(fullFile,
-				optimize ? ff::TextureFormat::RGBA32 : format,
+				(optimize && ff::IsColorFormat(format)) ? ff::TextureFormat::RGBA32 : format,
 				optimize ? 1 : mips);
-			assertRetVal(texture, false);
+
+			if (!texture)
+			{
+				if (loadListener)
+				{
+					loadListener->AddError(ff::String::format_new(L"Failed to load texture file: %s", fullFile.c_str()));
+				}
+
+				assertRetVal(false, false);
+			}
 
 			textureView = texture->AsTextureView();
 			assertRetVal(textureView, false);

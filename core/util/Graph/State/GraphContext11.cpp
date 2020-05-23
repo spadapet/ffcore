@@ -61,7 +61,7 @@ void ff::GraphContext11::Apply(GraphContext11& dest)
 void ff::GraphContext11::Reset(ID3D11DeviceContext* context)
 {
 	_context = context;
-	_drawCount = 0;
+	_counters.Reset();
 
 	_vs.Reset();
 	_gs.Reset();
@@ -145,25 +145,25 @@ void ff::GraphContext11::Reset(ID3D11DeviceContext* context)
 	_scissorCount = count;
 }
 
-size_t ff::GraphContext11::ResetDrawCount()
+ff::GraphCounters ff::GraphContext11::ResetDrawCount()
 {
-	size_t count = _drawCount;
-	_drawCount = 0;
-	return count;
+	GraphCounters counters = _counters;
+	_counters.Reset();
+	return counters;
 }
 
 void ff::GraphContext11::Draw(size_t count, size_t start)
 {
 	assertRet(_context);
 	_context->Draw((UINT)count, (UINT)start);
-	_drawCount++;
+	_counters._draw++;
 }
 
 void ff::GraphContext11::DrawIndexed(size_t indexCount, size_t indexStart, int vertexOffset)
 {
 	assertRet(_context);
 	_context->DrawIndexed((UINT)indexCount, (UINT)indexStart, vertexOffset);
-	_drawCount++;
+	_counters._draw++;
 }
 
 void* ff::GraphContext11::Map(ID3D11Resource* buffer, D3D11_MAP type, D3D11_MAPPED_SUBRESOURCE* map)
@@ -171,7 +171,10 @@ void* ff::GraphContext11::Map(ID3D11Resource* buffer, D3D11_MAP type, D3D11_MAPP
 	assertRetVal(_context && buffer, nullptr);
 	D3D11_MAPPED_SUBRESOURCE stackMap;
 	map = map ? map : &stackMap;
+
 	_context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, map);
+	_counters._map++;
+
 	return map->pData;
 }
 
@@ -191,6 +194,30 @@ void ff::GraphContext11::UpdateDiscard(ID3D11Resource* buffer, const void* data,
 	::memcpy(dest, data, size);
 
 	Unmap(buffer);
+}
+
+void ff::GraphContext11::ClearRenderTarget(ID3D11RenderTargetView* view, const DirectX::XMFLOAT4& color)
+{
+	_context->ClearRenderTargetView(view, &color.x);
+	_counters._clear++;
+}
+
+void ff::GraphContext11::ClearDepthStencil(ID3D11DepthStencilView* view, bool clearDepth, bool clearStencil, float depth, BYTE stencil)
+{
+	_context->ClearDepthStencilView(view, (clearDepth ? D3D11_CLEAR_DEPTH : 0) | (clearStencil ? D3D11_CLEAR_STENCIL : 0), depth, stencil);
+	_counters._depthClear++;
+}
+
+void ff::GraphContext11::UpdateSubresource(ID3D11Resource* dest, UINT destSubresource, const D3D11_BOX* destBox, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch)
+{
+	_context->UpdateSubresource(dest, destSubresource, destBox, srcData, srcRowPitch, srcDepthPitch);
+	_counters._update++;
+}
+
+void ff::GraphContext11::CopySubresourceRegion(ID3D11Resource* destResource, UINT destSubresource, UINT destX, UINT destY, UINT destZ, ID3D11Resource* srcResource, UINT srcSubresource, const D3D11_BOX* srcBox)
+{
+	_context->CopySubresourceRegion(destResource, destSubresource, destX, destY, destZ, srcResource, srcSubresource, srcBox);
+	_counters._copy++;
 }
 
 void ff::GraphContext11::SetVertexIA(ID3D11Buffer* value, size_t stride, size_t offset)

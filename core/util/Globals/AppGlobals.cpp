@@ -1067,7 +1067,7 @@ void ff::AppGlobals::FrameRender(AdvanceType advanceType)
 	_gameState->Render(this, _target, _depth);
 
 	_frameTime._renderTime = _timer.GetCurrentStoredRawTime();
-	_frameTime._drawCount = _graph->ResetDrawCount();
+	_frameTime._graphCounters = _graph->ResetDrawCount();
 	_globalTime._renderCount++;
 
 	_gameState->OnFrameRendered(this, advanceType, _target, _depth);

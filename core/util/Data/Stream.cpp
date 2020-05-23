@@ -125,7 +125,7 @@ bool ff::CreateReadStream(ff::IDataReader* reader, IStream** obj)
 	return true;
 }
 
-bool ff::CreateReadStream(ff::IDataReader* reader, IMFByteStream** obj)
+bool ff::CreateReadStream(ff::IDataReader* reader, StringRef mimeType, IMFByteStream** obj)
 {
 	assertRetVal(obj, false);
 	*obj = nullptr;
@@ -134,26 +134,31 @@ bool ff::CreateReadStream(ff::IDataReader* reader, IMFByteStream** obj)
 	// Use the Windows stream implementation when possible
 	{
 		Windows::Storage::Streams::IRandomAccessStream^ stream = ff::GetRandomAccessStream(reader);
-		if (stream && SUCCEEDED(MFCreateMFByteStreamOnStreamEx((IUnknown*)stream, obj)))
+		if (stream)
 		{
-			return true;
+			assertHrRetVal(::MFCreateMFByteStreamOnStreamEx((IUnknown*)stream, obj), false);
 		}
-	}
-
-	// Use IStream
-	{
-		ff::ComPtr<IStream> stream;
-		assertRetVal(ff::CreateReadStream(reader, &stream), false);
-		assertHrRetVal(MFCreateMFByteStreamOnStreamEx(stream, obj), false);
+		else // Use IStream
+		{
+			ff::ComPtr<IStream> stream;
+			assertRetVal(ff::CreateReadStream(reader, &stream), false);
+			assertHrRetVal(::MFCreateMFByteStreamOnStreamEx(stream, obj), false);
+		}
 	}
 #else
 	// Use IStream
 	{
 		ff::ComPtr<IStream> stream;
 		assertRetVal(ff::CreateReadStream(reader, &stream), false);
-		assertHrRetVal(MFCreateMFByteStreamOnStream(stream, obj), false);
+		assertHrRetVal(::MFCreateMFByteStreamOnStream(stream, obj), false);
 	}
 #endif
+
+	ff::ComPtr<IMFAttributes> streamAttributes;
+	if (mimeType.size() && streamAttributes.QueryFrom(*obj))
+	{
+		streamAttributes->SetString(MF_BYTESTREAM_CONTENT_TYPE, mimeType.c_str());
+	}
 
 	return true;
 }

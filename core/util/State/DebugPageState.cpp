@@ -42,7 +42,7 @@ ff::DebugPageState::DebugPageState(AppGlobals* globals)
 	, _fastNumberCounter(0)
 	, _apsCounter(0)
 	, _rpsCounter(0)
-	, _drawCount(0)
+	, _graphCounters{ 0 }
 	, _lastAps(0)
 	, _lastRps(0)
 	, _advanceTimeTotal(0)
@@ -190,7 +190,7 @@ void ff::DebugPageState::OnFrameRendered(AppGlobals* globals, AdvanceType type, 
 			UpdateStats(globals);
 		}
 
-		RenderText(globals, target);
+		RenderText(globals, target, depth);
 
 		if (_enabledCharts)
 		{
@@ -234,7 +234,7 @@ void ff::DebugPageState::UpdateStats(AppGlobals* globals)
 		_flipTime = ft._flipTime / ft._freqD;
 		_bankTime = gt._bankSeconds;
 		_bankPercent = _bankTime / gt._secondsPerAdvance;
-		_drawCount = ft._drawCount;
+		_graphCounters = ft._graphCounters;
 	}
 
 	FrameInfo frameInfo;
@@ -278,9 +278,9 @@ ff::String ff::DebugPageState::GetDebugName(size_t page) const
 size_t ff::DebugPageState::GetDebugInfoCount(size_t page) const
 {
 #ifdef _DEBUG
-	return 6;
+	return 7;
 #else
-	return 4;
+	return 5;
 #endif
 }
 
@@ -294,15 +294,24 @@ ff::String ff::DebugPageState::GetDebugInfo(size_t page, size_t index, DirectX::
 
 	case 1:
 		color = ff::GetColorGreen();
-		return String::format_new(L"Render:%.2fms/%.fHz, Draws:%lu", _renderTime * 1000.0, _lastRps, _drawCount);
+		return String::format_new(L"Render:%.2fms/%.fHz", _renderTime * 1000.0, _lastRps);
 
 	case 2:
-		return String::format_new(L"Present:%.2fms", _flipTime * 1000.0);
+		color = ff::GetColorGreen();
+		return String::format_new(L"Clear:%lu, DepthClear:%lu, Draw:%lu, CpuCopy:%lu, GpuCopy:%lu",
+			_graphCounters._clear,
+			_graphCounters._depthClear, 
+			_graphCounters._draw,
+			_graphCounters._map + _graphCounters._update,
+			_graphCounters._copy);
 
 	case 3:
+		return String::format_new(L"Present:%.2fms", _flipTime * 1000.0);
+
+	case 4:
 		return String::format_new(L"Total:%.2fms\n", (_advanceTimeTotal + _renderTime + _flipTime) * 1000.0);
 
-	case 5:
+	case 6:
 		color = DirectX::XMFLOAT4(.5, .5, .5, 1);
 		return String::format_new(L"Memory:%.3f MB (#%lu)", _memStats.current / 1000000.0, _memStats.count);
 
@@ -344,7 +353,7 @@ ff::Event<void>& ff::DebugPageState::CustomDebugEvent()
 	return _customDebugEvent;
 }
 
-void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target)
+void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, IRenderDepth* depth)
 {
 	ff::ISpriteFont* font = _font.GetObject();
 	noAssertRet(font);
@@ -356,7 +365,7 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target)
 	ff::PointFloat targetSize = target->GetRotatedSize().ToType<float>();
 	ff::RectFloat targetRect(targetSize);
 
-	ff::RendererActive render = _render->BeginRender(target, nullptr, targetRect, targetRect / (float)target->GetDpiScale());
+	ff::RendererActive render = _render->BeginRender(target, depth, targetRect, targetRect / (float)target->GetDpiScale());
 	if (render)
 	{
 		render->PushNoOverlap();

@@ -202,19 +202,10 @@ void SpriteAnimation::Render(
 			ff::PointFloat realPos(vectorPos.x, vectorPos.y);
 			ff::PointFloat realScale(vectorScale.x, vectorScale.y);
 
-			if (nSprites == 1)
+			for (size_t h = 0; h < nSprites; h++)
 			{
-				render->DrawSprite(pSprites[0], realPos, realScale, realRotate, realColors[0]);
-				pSprites[0]->Release();
-			}
-			else
-			{
-				render->DrawMultiSprite(pSprites, &realColors[0], nSprites, realPos, realScale, realRotate);
-
-				for (size_t h = 0; h < nSprites; h++)
-				{
-					pSprites[h]->Release();
-				}
+				render->DrawSprite(pSprites[h], realPos, realScale, realRotate, realColors[h]);
+				pSprites[h]->Release();
 			}
 		}
 	}

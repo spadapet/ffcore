@@ -1,7 +1,9 @@
 #include "pch.h"
+#include "Data/Data.h"
+#include "Data/DataWriterReader.h"
 #include "Graph/Texture/PngImage.h"
 
-ff::PngImage::PngImage(const unsigned char* bytes, size_t size)
+ff::PngImageReader::PngImageReader(const unsigned char* bytes, size_t size)
 	: _png(nullptr)
 	, _info(nullptr)
 	, _endInfo(nullptr)
@@ -20,17 +22,17 @@ ff::PngImage::PngImage(const unsigned char* bytes, size_t size)
 	, _transPaletteSize(0)
 	, _transColor(nullptr)
 {
-	_png = ::png_create_read_struct(PNG_LIBPNG_VER_STRING, this, &PngImage::PngErrorCallback, &PngImage::PngWarningCallback);
+	_png = ::png_create_read_struct(PNG_LIBPNG_VER_STRING, this, &PngImageReader::PngErrorCallback, &PngImageReader::PngWarningCallback);
 	_info = ::png_create_info_struct(_png);
 	_endInfo = ::png_create_info_struct(_png);
 }
 
-ff::PngImage::~PngImage()
+ff::PngImageReader::~PngImageReader()
 {
 	::png_destroy_read_struct(&_png, &_info, &_endInfo);
 }
 
-std::unique_ptr<DirectX::ScratchImage> ff::PngImage::Read(DXGI_FORMAT requestedFormat)
+std::unique_ptr<DirectX::ScratchImage> ff::PngImageReader::Read(DXGI_FORMAT requestedFormat)
 {
 	std::unique_ptr<DirectX::ScratchImage> scratch;
 
@@ -50,45 +52,40 @@ std::unique_ptr<DirectX::ScratchImage> ff::PngImage::Read(DXGI_FORMAT requestedF
 	return scratch;
 }
 
-std::unique_ptr<DirectX::ScratchImage> ff::PngImage::GetPalette() const
+ff::Vector<BYTE> ff::PngImageReader::GetPalette() const
 {
-	std::unique_ptr<DirectX::ScratchImage> scratch;
+	ff::Vector<BYTE> colors;
 
 	if (_hasPalette)
 	{
-		scratch = std::make_unique<DirectX::ScratchImage>();
+		colors.Resize(256 * 4);
+		std::memset(colors.Data(), 0, colors.ByteSize());
 
-		if (FAILED(scratch->Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 256, 1, 1, 1)))
+		for (size_t i = 0; i < (size_t)_paletteSize; i++)
 		{
-			return nullptr;
-		}
-
-		BYTE* pixels = scratch->GetPixels();
-		for (size_t i = 0; i < _paletteSize; i++, pixels += 4)
-		{
-			pixels[0] = _palette[i].red;
-			pixels[1] = _palette[i].green;
-			pixels[2] = _palette[i].blue;
-			pixels[3] = (_hasTransPalette && i < _transPaletteSize) ? _transPalette[i] : 0xFF;
+			colors[i * 4 + 0] = _palette[i].red;
+			colors[i * 4 + 1] = _palette[i].green;
+			colors[i * 4 + 2] = _palette[i].blue;
+			colors[i * 4 + 3] = (_hasTransPalette && i < (size_t)_transPaletteSize) ? _transPalette[i] : 0xFF;
 		}
 	}
 
-	return scratch;
+	return colors;
 }
 
-ff::StringRef ff::PngImage::GetError() const
+ff::StringRef ff::PngImageReader::GetError() const
 {
 	return _errorText;
 }
 
-std::unique_ptr<DirectX::ScratchImage> ff::PngImage::InternalRead(DXGI_FORMAT requestedFormat)
+std::unique_ptr<DirectX::ScratchImage> ff::PngImageReader::InternalRead(DXGI_FORMAT requestedFormat)
 {
 	if (::png_sig_cmp(_readPos, 0, _endPos - _readPos) != 0)
 	{
 		return nullptr;
 	}
 
-	::png_set_read_fn(_png, this, &PngImage::PngReadCallback);
+	::png_set_read_fn(_png, this, &PngImageReader::PngReadCallback);
 	::png_set_keep_unknown_chunks(_png, PNG_HANDLE_CHUNK_NEVER, nullptr, 0);
 	::png_read_info(_png, _info);
 
@@ -176,7 +173,7 @@ std::unique_ptr<DirectX::ScratchImage> ff::PngImage::InternalRead(DXGI_FORMAT re
 		return nullptr;
 	}
 
-	_rows.resize(_height);
+	_rows.Resize(_height);
 	{
 		const DirectX::Image& image = *scratch->GetImage(0, 0, 0);
 		BYTE* imagePixels = image.pixels;
@@ -187,46 +184,196 @@ std::unique_ptr<DirectX::ScratchImage> ff::PngImage::InternalRead(DXGI_FORMAT re
 		}
 	}
 
-	::png_read_image(_png, (unsigned char**)_rows.data());
+	::png_read_image(_png, _rows.Data());
 	::png_read_end(_png, _endInfo);
 
 	return scratch;
 }
 
-void ff::PngImage::PngErrorCallback(png_struct* png, const char* text)
+void ff::PngImageReader::PngErrorCallback(png_struct* png, const char* text)
 {
-	PngImage* info = (PngImage*)::png_get_error_ptr(png);
+	PngImageReader* info = (PngImageReader*)::png_get_error_ptr(png);
 	info->OnPngError(text);
 }
 
-void ff::PngImage::PngWarningCallback(png_struct* png, const char* text)
+void ff::PngImageReader::PngWarningCallback(png_struct* png, const char* text)
 {
-	PngImage* info = (PngImage*)::png_get_error_ptr(png);
+	PngImageReader* info = (PngImageReader*)::png_get_error_ptr(png);
 	info->OnPngWarning(text);
 }
 
-void ff::PngImage::PngReadCallback(png_struct* png, unsigned char* data, size_t size)
+void ff::PngImageReader::PngReadCallback(png_struct* png, unsigned char* data, size_t size)
 {
-	PngImage* info = (PngImage*)::png_get_io_ptr(png);
+	PngImageReader* info = (PngImageReader*)::png_get_io_ptr(png);
 	info->OnPngRead(data, size);
 }
 
-void ff::PngImage::OnPngError(const char* text)
+void ff::PngImageReader::OnPngError(const char* text)
 {
 	ff::String wtext = ff::String::from_utf8(text);
 	assertSz(false, wtext.c_str());
 	throw wtext;
 }
 
-void ff::PngImage::OnPngWarning(const char* text)
+void ff::PngImageReader::OnPngWarning(const char* text)
 {
 	ff::String wtext = ff::String::from_utf8(text);
 	assertSz(false, wtext.c_str());
 }
 
-void ff::PngImage::OnPngRead(unsigned char* data, size_t size)
+void ff::PngImageReader::OnPngRead(unsigned char* data, size_t size)
 {
 	size = std::min<size_t>(size, _endPos - _readPos);
 	::memcpy(data, _readPos, size);
 	_readPos += size;
+}
+
+ff::PngImageWriter::PngImageWriter(ff::IDataWriter* writer)
+	: _writer(writer)
+{
+	_png = ::png_create_write_struct(PNG_LIBPNG_VER_STRING, this, &PngImageWriter::PngErrorCallback, &PngImageWriter::PngWarningCallback);
+	_info = ::png_create_info_struct(_png);
+}
+
+ff::PngImageWriter::~PngImageWriter()
+{
+	::png_destroy_write_struct(&_png, &_info);
+}
+
+bool ff::PngImageWriter::Write(const DirectX::Image& image, ff::IData* palette)
+{
+	try
+	{
+		return InternalWrite(image, palette);
+	}
+	catch (ff::String errorText)
+	{
+		_errorText = !errorText.empty() ? errorText : ff::String(L"Failed to write PNG data");
+		return false;
+	}
+}
+
+ff::StringRef ff::PngImageWriter::GetError() const
+{
+	return _errorText;
+}
+
+bool ff::PngImageWriter::InternalWrite(const DirectX::Image& image, IData* palette)
+{
+	int bitDepth = 8;
+	int colorType;
+
+	switch (image.format)
+	{
+	case DXGI_FORMAT_R8_UINT:
+		colorType = PNG_COLOR_TYPE_PALETTE;
+		break;
+
+	case DXGI_FORMAT_R8G8B8A8_UNORM:
+		colorType = PNG_COLOR_TYPE_RGB_ALPHA;
+		break;
+
+	default:
+		_errorText = L"Unsupported texture format for saving to PNG";
+		break;
+	}
+
+	::png_set_write_fn(_png, this, &PngImageWriter::PngWriteCallback, &PngImageWriter::PngFlushCallback);
+
+	::png_set_IHDR(
+		_png,
+		_info,
+		(unsigned int)image.width,
+		(unsigned int)image.height,
+		bitDepth,
+		colorType,
+		PNG_INTERLACE_NONE,
+		PNG_COMPRESSION_TYPE_DEFAULT,
+		PNG_FILTER_TYPE_DEFAULT);
+
+	if (palette)
+	{
+		size_t colorCount = palette->GetSize() / 4;
+		::png_color_16 transColor{ 0 };
+		bool foundTrans = false;
+
+		ff::Vector<::png_color> colors;
+		colors.Resize(colorCount);
+
+		ff::Vector<BYTE> trans;
+		trans.Resize(colorCount);
+
+		const BYTE* src = palette->GetMem();
+		for (size_t i = 0; i < colorCount; i++, src += 4)
+		{
+			colors[i].red = src[0];
+			colors[i].green = src[1];
+			colors[i].blue = src[2];
+
+			if (colorType == PNG_COLOR_TYPE_PALETTE)
+			{
+				trans[i] = src[3];
+			}
+		}
+
+		::png_set_PLTE(_png, _info, colors.Data(), (int)colors.Size());
+
+		if (foundTrans && colorType == PNG_COLOR_TYPE_PALETTE)
+		{
+			::png_set_tRNS(_png, _info, trans.Data(), (int)trans.Size(), &transColor);
+		}
+	}
+
+	_rows.Resize(image.height);
+
+	for (size_t i = 0; i < image.height; i++)
+	{
+		_rows[i] = &image.pixels[i * image.rowPitch];
+	}
+
+	::png_set_rows(_png, _info, _rows.Data());
+	::png_write_png(_png, _info, PNG_TRANSFORM_IDENTITY, nullptr);
+
+	return true;
+}
+
+void ff::PngImageWriter::PngErrorCallback(png_struct* png, const char* text)
+{
+	PngImageWriter* info = (PngImageWriter*)::png_get_error_ptr(png);
+	info->OnPngError(text);
+}
+
+void ff::PngImageWriter::PngWarningCallback(png_struct* png, const char* text)
+{
+	PngImageWriter* info = (PngImageWriter*)::png_get_error_ptr(png);
+	info->OnPngWarning(text);
+}
+
+void ff::PngImageWriter::PngWriteCallback(png_struct* png, unsigned char* data, size_t size)
+{
+	PngImageWriter* info = (PngImageWriter*)::png_get_io_ptr(png);
+	info->OnPngWrite(data, size);
+}
+
+void ff::PngImageWriter::PngFlushCallback(png_struct* png)
+{
+	// not needed
+}
+
+void ff::PngImageWriter::OnPngError(const char* text)
+{
+	ff::String wtext = ff::String::from_utf8(text);
+	assertSz(false, wtext.c_str());
+	throw wtext;
+}
+
+void ff::PngImageWriter::OnPngWarning(const char* text)
+{
+	ff::String wtext = ff::String::from_utf8(text);
+	assertSz(false, wtext.c_str());
+}
+
+void ff::PngImageWriter::OnPngWrite(const unsigned char* data, size_t size)
+{
+	_writer->Write(data, size);
 }

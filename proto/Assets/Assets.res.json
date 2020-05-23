@@ -344,5 +344,40 @@
         ]
       }
     ]
+  },
+
+  "TestPalette":
+  {
+    "res:type": "palette",
+    "file": "file:palette.pal"
+  },
+
+  "TestPaletteSprites":
+  {
+    "res:type": "sprites",
+    "format": "pal",
+    "sprites":
+    {
+      "Dirt":
+      {
+        "file": "file:using palette.png",
+        "pos":
+        [
+          16,
+          0
+        ],
+        "size":
+        [
+          16,
+          16
+        ],
+        "handle":
+        [
+          8,
+          8
+        ],
+        "repeat": 5
+      }
+    }
   }
 }

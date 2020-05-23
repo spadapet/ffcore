@@ -4,11 +4,11 @@ namespace ff
 {
 	class GraphContext11;
 	class IRendererActive11;
+	class IPalette;
 	class ISprite;
-	class ITextureView;
 	class MatrixStack;
 
-	typedef std::function<bool(GraphContext11 & context, const std::type_info & vertexType, bool opaqueOnly)> CustomRenderContextFunc11;
+	typedef std::function<bool(GraphContext11& context, const std::type_info& vertexType, bool opaqueOnly)> CustomRenderContextFunc11;
 
 	class IRendererActive
 	{
@@ -17,8 +17,7 @@ namespace ff
 		virtual MatrixStack& GetWorldMatrixStack() = 0;
 		virtual IRendererActive11* AsRendererActive11() = 0;
 
-		virtual void DrawSprite(ISprite* sprite, PointFloat pos, PointFloat scale, const float rotate, const DirectX::XMFLOAT4& color) = 0;
-		virtual void DrawMultiSprite(ISprite** sprites, const DirectX::XMFLOAT4* colors, size_t count, PointFloat pos, PointFloat scale, const float rotate) = 0;
+		virtual void DrawSprite(ISprite* sprite, PointFloat pos, PointFloat scale, const float rotate, const DirectX::XMFLOAT4& color = ff::GetColorWhite()) = 0;
 		virtual void DrawFont(ISprite* sprite, PointFloat pos, PointFloat scale, const DirectX::XMFLOAT4& color) = 0;
 		virtual void DrawLineStrip(const PointFloat* points, const DirectX::XMFLOAT4* colors, size_t count, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawLineStrip(const PointFloat* points, size_t count, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
@@ -32,7 +31,20 @@ namespace ff
 		virtual void DrawOutlineCircle(PointFloat center, float radius, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawOutlineCircle(PointFloat center, float radius, const DirectX::XMFLOAT4& insideColor, const DirectX::XMFLOAT4& outsideColor, float thickness, bool pixelThickness = false) = 0;
 
-		virtual void PushPalette(ITextureView* palette) = 0;
+		virtual void DrawPaletteFont(ISprite* sprite, PointFloat pos, PointFloat scale, int color) = 0;
+		virtual void DrawPaletteLineStrip(const PointFloat* points, const int* colors, size_t count, float thickness, bool pixelThickness = false) = 0;
+		virtual void DrawPaletteLineStrip(const PointFloat* points, size_t count, int color, float thickness, bool pixelThickness = false) = 0;
+		virtual void DrawPaletteLine(PointFloat start, PointFloat end, int color, float thickness, bool pixelThickness = false) = 0;
+		virtual void DrawPaletteFilledRectangle(RectFloat rect, const int* colors) = 0;
+		virtual void DrawPaletteFilledRectangle(RectFloat rect, int color) = 0;
+		virtual void DrawPaletteFilledTriangles(const PointFloat* points, const int* colors, size_t count) = 0;
+		virtual void DrawPaletteFilledCircle(PointFloat center, float radius, int color) = 0;
+		virtual void DrawPaletteFilledCircle(PointFloat center, float radius, int insideColor, int outsideColor) = 0;
+		virtual void DrawPaletteOutlineRectangle(RectFloat rect, int color, float thickness, bool pixelThickness = false) = 0;
+		virtual void DrawPaletteOutlineCircle(PointFloat center, float radius, int color, float thickness, bool pixelThickness = false) = 0;
+		virtual void DrawPaletteOutlineCircle(PointFloat center, float radius, int insideColor, int outsideColor, float thickness, bool pixelThickness = false) = 0;
+
+		virtual void PushPalette(IPalette* palette) = 0;
 		virtual void PopPalette() = 0;
 		virtual void PushNoOverlap() = 0;
 		virtual void PopNoOverlap() = 0;

@@ -26,7 +26,7 @@ namespace ff
 		static const size_t MAX_ADVANCE_COUNT = 4;
 		static const size_t MAX_ADVANCE_MULTIPLIER = 4;
 
-		size_t _drawCount;
+		GraphCounters _graphCounters;
 		size_t _advanceCount;
 		std::array<INT64, MAX_ADVANCE_COUNT * MAX_ADVANCE_MULTIPLIER> _advanceTime;
 		INT64 _renderTime;

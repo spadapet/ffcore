@@ -4,6 +4,7 @@
 
 namespace ff
 {
+	enum class TextureFormat;
 	class IRenderTarget11;
 	class IRenderTarget12;
 	class ITexture;
@@ -12,6 +13,7 @@ namespace ff
 		IRenderTarget : public IUnknown, public IGraphDeviceChild
 	{
 	public:
+		virtual TextureFormat GetFormat() const = 0;
 		virtual PointInt GetBufferSize() const = 0;
 		virtual PointInt GetRotatedSize() const = 0;
 		virtual int GetRotatedDegrees() const = 0;

@@ -24,7 +24,9 @@ public:
 
 	// IPalette functions
 	virtual void Advance() override;
-	virtual ff::ITextureView* GetTextureView() override;
+	virtual ff::IPaletteData* GetData() const override;
+	virtual ff::hash_t GetTextureHash() const override;
+	virtual ff::ITexture* GetTexture() override;
 
 private:
 	ff::ComPtr<ff::IGraphDevice> _device;
@@ -76,13 +78,11 @@ HRESULT Palette::_Construct(IUnknown* unkOuter)
 
 bool Palette::Init(ff::IPaletteData* data)
 {
-	assertRetVal(data && data->GetColors()->GetSize() == _colors.size() * 4, false);
-	std::memcpy(_colors.data(), data->GetColors()->GetMem(), data->GetColors()->GetSize());
+	assertRetVal(data && data->GetColors() && data->GetColors()->GetSize() == _colors.size() * 4, false);
 
 	_data = data;
-	_texture = _device->CreateTexture(ff::PointInt((int)ff::PALETTE_SIZE, 1), ff::TextureFormat::RGBA32, 1, 1, 1, _data->GetColors());
 	_colorsHash = ff::HashBytes(_data->GetColors()->GetMem(), _data->GetColors()->GetSize());
-	_textureHash = _colorsHash;
+	std::memcpy(_colors.data(), _data->GetColors()->GetMem(), _data->GetColors()->GetSize());
 
 	return true;
 }
@@ -94,22 +94,40 @@ ff::IGraphDevice* Palette::GetDevice() const
 
 bool Palette::Reset()
 {
-	_texture->Update(0, 0, ff::RectSize(0, 0, ff::PALETTE_SIZE, 1), _colors.data(), ff::PALETTE_SIZE * 4, ff::TextureFormat::RGBA32);
+	_texture = nullptr;
+	_textureHash = 0;
+
 	return true;
 }
 
 void Palette::Advance()
 {
 	// ...update _colors and _colorsHash
+}
+
+ff::IPaletteData* Palette::GetData() const
+{
+	return _data;
+}
+
+ff::hash_t Palette::GetTextureHash() const
+{
+	return _colorsHash;
+}
+
+ff::ITexture* Palette::GetTexture()
+{
+	if (_texture == nullptr)
+	{
+		_texture = _device->CreateTexture(ff::PointInt((int)ff::PALETTE_SIZE, 1), ff::TextureFormat::RGBA32, 1, 1, 1, _data->GetColors());
+		_textureHash = ff::HashBytes(_data->GetColors()->GetMem(), _data->GetColors()->GetSize());
+	}
 
 	if (_textureHash != _colorsHash)
 	{
 		_texture->Update(0, 0, ff::RectSize(0, 0, ff::PALETTE_SIZE, 1), _colors.data(), ff::PALETTE_SIZE * 4, ff::TextureFormat::RGBA32);
 		_textureHash = _colorsHash;
 	}
-}
 
-ff::ITextureView* Palette::GetTextureView()
-{
-	return _texture->AsTextureView();
+	return _texture;
 }

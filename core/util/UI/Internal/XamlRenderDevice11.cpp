@@ -174,7 +174,7 @@ Noesis::Ptr<Noesis::Texture> ff::XamlRenderDevice11::CreateTexture(const char* l
 			}
 		}
 
-		texture = _graph->AsGraphDeviceInternal()->CreateTexture(std::move(scratch));
+		texture = _graph->AsGraphDeviceInternal()->CreateTexture(std::move(scratch), nullptr);
 	}
 
 	return *new XamlTexture(texture, name);
@@ -202,7 +202,7 @@ void ff::XamlRenderDevice11::UpdateTexture(Noesis::Texture* texture, uint32_t le
 	box.back = 1;
 
 	unsigned int pitch = (desc.Format == DXGI_FORMAT_R8_UNORM) ? width : width * 4;
-	_graph->AsGraphDevice11()->GetContext()->UpdateSubresource(resource, 0, &box, data, pitch, 0);
+	_graph->AsGraphDevice11()->GetStateContext().UpdateSubresource(resource, 0, &box, data, pitch, 0);
 }
 
 void ff::XamlRenderDevice11::BeginRender(bool offscreen)

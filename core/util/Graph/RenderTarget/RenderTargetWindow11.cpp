@@ -34,6 +34,7 @@ public:
 	virtual bool Reset() override;
 
 	// IRenderTarget
+	virtual ff::TextureFormat GetFormat() const override;
 	virtual ff::PointInt GetBufferSize() const override;
 	virtual ff::PointInt GetRotatedSize() const override;
 	virtual int GetRotatedDegrees() const override;
@@ -289,6 +290,11 @@ bool RenderTargetWindow11::Reset()
 	return true;
 }
 
+ff::TextureFormat RenderTargetWindow11::GetFormat() const
+{
+	return ff::TextureFormat::BGRA32;
+}
+
 ff::PointInt RenderTargetWindow11::GetBufferSize() const
 {
 	assertRetVal(_swapChain, ff::PointInt(0, 0));
@@ -332,10 +338,7 @@ double RenderTargetWindow11::GetDpiScale() const
 void RenderTargetWindow11::Clear(const DirectX::XMFLOAT4* pColor)
 {
 	assertRet(_target);
-
-	static const DirectX::XMFLOAT4 defaultColor(0, 0, 0, 1);
-	const DirectX::XMFLOAT4* useColor = pColor ? pColor : &defaultColor;
-	_device->AsGraphDevice11()->GetContext()->ClearRenderTargetView(_target, &useColor->x);
+	_device->AsGraphDevice11()->GetStateContext().ClearRenderTarget(_target, pColor ? *pColor : ff::GetColorBlack());
 }
 
 ff::IRenderTarget11* RenderTargetWindow11::AsRenderTarget11()

@@ -29,12 +29,14 @@
     </ClCompile>
     <ClCompile Include="States\TestEntityState.cpp" />
     <ClCompile Include="States\TestFontState.cpp" />
+    <ClCompile Include="States\TestPaletteState.cpp" />
     <ClCompile Include="States\TestUiState.cpp" />
     <ClCompile Include="States\TitleState.cpp" />
     <ClInclude Include="Assets\resource.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="States\TestEntityState.h" />
     <ClInclude Include="States\TestFontState.h" />
+    <ClInclude Include="States\TestPaletteState.h" />
     <ClInclude Include="States\TestUiState.h" />
     <ClInclude Include="States\TitleState.h" />
   </ItemGroup>

@@ -14,15 +14,19 @@ namespace ff
 	class ISprite;
 	class ISpriteFont;
 	class ISpriteList;
+	class ITexture;
 }
 
-struct UpdateSystemEntry;
-struct RenderSystemEntry;
+namespace TestPalette
+{
+	struct UpdateSystemEntry;
+	struct RenderSystemEntry;
+}
 
-class TestEntityState : public ff::State
+class TestPaletteState : public ff::State
 {
 public:
-	TestEntityState(ff::AppGlobals* globals);
+	TestPaletteState(ff::AppGlobals* globals);
 
 	virtual std::shared_ptr<ff::State> Advance(ff::AppGlobals *globals) override;
 	virtual void Render(ff::AppGlobals * globals, ff::IRenderTarget *target, ff::IRenderDepth* depth) override;
@@ -33,11 +37,15 @@ private:
 	std::unique_ptr<ff::IRenderer> _render;
 	ff::Viewport _viewport;
 	ff::EntityDomain _domain;
-	ff::IEntityBucket<UpdateSystemEntry>* _updateEntityBucket;
-	ff::IEntityBucket<RenderSystemEntry>* _renderEntityBucket;
-	ff::TypedResource<ff::ISprite> _colorSpriteResource;
+	ff::IEntityBucket<TestPalette::UpdateSystemEntry>* _updateEntityBucket;
+	ff::IEntityBucket<TestPalette::RenderSystemEntry>* _renderEntityBucket;
 	ff::TypedResource<ff::ISpriteList> _paletteSpritesResource;
 	ff::TypedResource<ff::ISpriteFont> _fontResource;
 	ff::TypedResource<ff::IPaletteData> _paletteResource;
 	ff::ComPtr<ff::IPalette> _palette;
+	ff::ComPtr<ff::ITexture> _paletteTextureSmall;
+	ff::ComPtr<ff::IRenderTarget> _paletteTargetSmall;
+	ff::ComPtr<ff::IRenderDepth> _paletteDepthSmall;
+	ff::ComPtr<ff::ITexture> _paletteTextureFull;
+	ff::ComPtr<ff::IRenderTarget> _paletteTargetFull;
 };

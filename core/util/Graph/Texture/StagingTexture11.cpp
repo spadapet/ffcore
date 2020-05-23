@@ -8,6 +8,7 @@
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteType.h"
+#include "Graph/State/GraphContext11.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
 #include "Resource/ResourcePersist.h"
@@ -50,6 +51,7 @@ public:
 	virtual size_t GetSampleCount() const override;
 	virtual ff::TextureFormat GetFormat() const override;
 	virtual ff::SpriteType GetSpriteType() const override;
+	virtual ff::IPalette* GetPalette() const override;
 	virtual ff::ComPtr<ff::ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) override;
 	virtual ff::ComPtr<ff::ITexture> Convert(ff::TextureFormat format, size_t mips) override;
 	virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat) override;
@@ -269,6 +271,11 @@ ff::SpriteType StagingTexture11::GetSpriteType() const
 		: (DirectX::HasAlpha(GetDxgiFormat()) ? ff::SpriteType::Transparent : ff::SpriteType::Opaque);
 }
 
+ff::IPalette* StagingTexture11::GetPalette() const
+{
+	return nullptr;
+}
+
 bool CreateTextureView11(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount, ff::ITextureView** obj);
 
 ff::ComPtr<ff::ITextureView> StagingTexture11::CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount)
@@ -359,16 +366,16 @@ ff::ComPtr<ff::ITexture> StagingTexture11::Convert(ff::TextureFormat format, siz
 	assertRetVal(Capture(scratch) == &scratch, false);
 
 	DirectX::ScratchImage data = ff::ConvertTextureData(scratch, ff::ConvertTextureFormat(format), mips);
-	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data));
+	return _device->AsGraphDeviceInternal()->CreateTexture(std::move(data), nullptr);
 }
 
 void StagingTexture11::Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, ff::TextureFormat dataFormat)
 {
 	assertRet(GetFormat() == dataFormat);
 
-	CD3D11_BOX box((UINT)rect.left, (UINT)rect.top, 0, (UINT)rect.right, (UINT)rect.bottom, 0);
+	CD3D11_BOX box((UINT)rect.left, (UINT)rect.top, 0, (UINT)rect.right, (UINT)rect.bottom, 1);
 	UINT subResource = ::D3D11CalcSubresource((UINT)mipIndex, (UINT)arrayIndex, (UINT)_textureDesc.MipLevels);
-	_device->AsGraphDevice11()->GetContext()->UpdateSubresource(GetTexture2d(), subResource, &box, data, (UINT)rowPitch, 0);
+	_device->AsGraphDevice11()->GetStateContext().UpdateSubresource(GetTexture2d(), subResource, &box, data, (UINT)rowPitch, 0);
 }
 
 const DirectX::ScratchImage* StagingTexture11::Capture(DirectX::ScratchImage& tempHolder)

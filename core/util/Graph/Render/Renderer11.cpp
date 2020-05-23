@@ -14,169 +14,213 @@
 #include "Graph/State/GraphContext11.h"
 #include "Graph/State/GraphFixedState11.h"
 #include "Graph/State/GraphStateCache11.h"
+#include "Graph/Texture/Palette.h"
+#include "Graph/Texture/PaletteData.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
 #include "Resource/ResourceValue.h"
 
 static const size_t MAX_TEXTURES = 32;
-static const size_t MAX_MODEL_MATRIXES = 1024;
+static const size_t MAX_TEXTURES_USING_PALETTE = 32;
+static const size_t MAX_PALETTES = 128; // 256 color palettes only
+static const size_t MAX_TRANSFORM_MATRIXES = 1024;
 static const size_t MAX_RENDER_COUNT = 524288; // 0x00080000
 static const float MAX_RENDER_DEPTH = 1.0f;
 static const float RENDER_DEPTH_DELTA = MAX_RENDER_DEPTH / MAX_RENDER_COUNT;
 
-static ID3D11ShaderResourceView* NULL_TEXTURES[::MAX_TEXTURES + 1] = { nullptr };
+static std::array<ID3D11ShaderResourceView*, ::MAX_TEXTURES + ::MAX_TEXTURES_USING_PALETTE + 1 /* palette */>  NULL_TEXTURES = { nullptr };
 
 enum class GeometryBucketType
 {
 	Lines,
-	LinesScreen,
 	Circle,
-	CircleScreen,
 	Triangles,
 	Sprites,
-	MultiSprites,
 	PaletteSprites,
 
 	LinesAlpha,
-	LinesScreenAlpha,
 	CircleAlpha,
-	CircleScreenAlpha,
 	TrianglesAlpha,
 	SpritesAlpha,
-	MultiSpritesAlpha,
 	PaletteSpritesAlpha,
 
 	Count,
 	FirstAlpha = LinesAlpha,
 };
 
-static const size_t GEOMETRY_BUCKET_COUNT = (size_t)GeometryBucketType::Count;
-
-class GeometryBucketBase
+class GeometryBucket
 {
-public:
-	virtual ~GeometryBucketBase()
+private:
+	GeometryBucket(GeometryBucketType bucketType, const std::type_info& itemType, size_t itemSize, size_t itemAlign)
+		: _bucketType(bucketType)
+		, _itemType(&itemType)
+		, _itemSize(itemSize)
+		, _itemAlign(itemAlign)
+		, _renderStart(0)
+		, _renderCount(0)
+		, _dataStart(nullptr)
+		, _dataCur(nullptr)
+		, _dataEnd(nullptr)
 	{
 	}
 
-	virtual void Reset(
+public:
+	template<typename T, GeometryBucketType BucketType>
+	static GeometryBucket New()
+	{
+		return GeometryBucket(BucketType, typeid(T), sizeof(T), alignof(T));
+	}
+
+	GeometryBucket(GeometryBucket&& rhs)
+		: _layout(std::move(rhs._layout))
+		, _vs(std::move(rhs._vs))
+		, _gs(std::move(rhs._gs))
+		, _ps(std::move(rhs._ps))
+		, _psPaletteOut(std::move(rhs._psPaletteOut))
+		, _bucketType(rhs._bucketType)
+		, _itemType(rhs._itemType)
+		, _itemSize(rhs._itemSize)
+		, _itemAlign(rhs._itemAlign)
+		, _renderStart(0)
+		, _renderCount(0)
+		, _dataStart(rhs._dataStart)
+		, _dataCur(rhs._dataCur)
+		, _dataEnd(rhs._dataEnd)
+	{
+		rhs._dataStart = nullptr;
+		rhs._dataCur = nullptr;
+		rhs._dataEnd = nullptr;
+	}
+
+	~GeometryBucket()
+	{
+		_aligned_free(_dataStart);
+	}
+
+	void Reset(
 		ID3D11InputLayout* layout = nullptr,
 		ID3D11VertexShader* vs = nullptr,
 		ID3D11GeometryShader* gs = nullptr,
-		ID3D11PixelShader* ps = nullptr)
+		ID3D11PixelShader* ps = nullptr,
+		ID3D11PixelShader* psPaletteOut = nullptr)
 	{
 		_layout = layout;
 		_vs = vs;
 		_gs = gs;
 		_ps = ps;
+		_psPaletteOut = psPaletteOut;
+
+		_aligned_free(_dataStart);
+		_dataStart = nullptr;
+		_dataCur = nullptr;
+		_dataEnd = nullptr;
 	}
 
-	void Apply(ff::GraphContext11& context, ID3D11Buffer* geometryBuffer) const
+	void Apply(ff::GraphContext11& context, ID3D11Buffer* geometryBuffer, bool paletteOut) const
 	{
 		context.SetVertexIA(geometryBuffer, GetItemByteSize(), 0);
 		context.SetLayoutIA(_layout);
 		context.SetVS(_vs);
 		context.SetGS(_gs);
-		context.SetPS(_ps);
+		context.SetPS(paletteOut ? _psPaletteOut : _ps);
 	}
 
-	virtual void ClearItems() = 0;
-	virtual void Add(const void* data) = 0;
-	virtual void* Add() = 0;
-	virtual size_t GetItemByteSize() const = 0;
-	virtual const std::type_info& GetItemType() const = 0;
-	virtual GeometryBucketType GetBucketType() const = 0;
-	virtual size_t GetCount() const = 0;
-	virtual const void* GetData() const = 0;
-	virtual size_t GetDataSize() const = 0;
+	void* Add(const void* data = nullptr)
+	{
+		if (_dataCur == _dataEnd)
+		{
+			size_t curSize = _dataEnd - _dataStart;
+			size_t newSize = std::max<size_t>(curSize * 2, _itemSize * 64);
+			_dataStart = (BYTE*)_aligned_realloc(_dataStart, newSize, _itemAlign);
+			_dataCur = _dataStart + curSize;
+			_dataEnd = _dataStart + newSize;
+		}
+
+		if (data)
+		{
+			std::memcpy(_dataCur, data, _itemSize);
+		}
+
+		void* result = _dataCur;
+		_dataCur += _itemSize;
+		return result;
+	}
+
+	size_t GetItemByteSize() const
+	{
+		return _itemSize;
+	}
+
+	const std::type_info& GetItemType() const
+	{
+		return *_itemType;
+	}
+
+	GeometryBucketType GetBucketType() const
+	{
+		return _bucketType;
+	}
+
+	size_t GetCount() const
+	{
+		return (_dataCur - _dataStart) / _itemSize;
+	}
+
+	void ClearItems()
+	{
+		_dataCur = _dataStart;
+	}
+
+	size_t GetByteSize() const
+	{
+		return _dataCur - _dataStart;
+	}
+
+	const void* GetData() const
+	{
+		return _dataStart;
+	}
+
+	void SetRenderStart(size_t renderStart)
+	{
+		_renderStart = renderStart;
+		_renderCount = GetCount();
+	}
+
+	size_t GetRenderStart() const
+	{
+		return _renderStart;
+	}
+
+	size_t GetRenderCount() const
+	{
+		return _renderCount;
+	}
 
 private:
 	ff::ComPtr<ID3D11InputLayout> _layout;
 	ff::ComPtr<ID3D11VertexShader> _vs;
 	ff::ComPtr<ID3D11GeometryShader> _gs;
 	ff::ComPtr<ID3D11PixelShader> _ps;
+	ff::ComPtr<ID3D11PixelShader> _psPaletteOut;
+
+	GeometryBucketType _bucketType;
+	const std::type_info* _itemType;
+	size_t _itemSize;
+	size_t _itemAlign;
+	size_t _renderStart;
+	size_t _renderCount;
+	BYTE* _dataStart;
+	BYTE* _dataCur;
+	BYTE* _dataEnd;
 };
-
-template<typename T, GeometryBucketType BucketType>
-class GeometryBucket : public GeometryBucketBase
-{
-public:
-	virtual void Reset(ID3D11InputLayout* layout, ID3D11VertexShader* vs, ID3D11GeometryShader* gs, ID3D11PixelShader* ps) override
-	{
-		_geometry.ClearAndReduce();
-		GeometryBucketBase::Reset(layout, vs, gs, ps);
-	}
-
-	virtual void ClearItems() override
-	{
-		_geometry.Clear();
-	}
-
-	virtual void Add(const void* data) override
-	{
-		_geometry.Push(*(T*)data);
-	}
-
-	virtual void* Add() override
-	{
-		_geometry.InsertDefault(_geometry.Size());
-		return &_geometry.GetLast();
-	}
-
-	virtual size_t GetItemByteSize() const override
-	{
-		return sizeof(T);
-	}
-
-	virtual const std::type_info& GetItemType() const override
-	{
-		return typeid(T);
-	}
-
-	virtual GeometryBucketType GetBucketType() const override
-	{
-		return BucketType;
-	}
-
-	virtual size_t GetCount() const override
-	{
-		return _geometry.Size();
-	}
-
-	virtual const void* GetData() const override
-	{
-		return _geometry.Size() ? _geometry.ConstData() : nullptr;
-	}
-
-	virtual size_t GetDataSize() const override
-	{
-		return _geometry.ByteSize();
-	}
-
-private:
-	ff::Vector<T> _geometry;
-};
-
-typedef std::array<std::unique_ptr<GeometryBucketBase>, ::GEOMETRY_BUCKET_COUNT> GeometryBucketArray;
-
-struct GeometryRenderInfo
-{
-	const GeometryBucketBase* _bucket;
-	size_t _startGeometry;
-	size_t _countGeometry;
-};
-
-typedef std::array<GeometryRenderInfo, ::GEOMETRY_BUCKET_COUNT> GeometryRenderInfoArray;
 
 struct AlphaGeometryEntry
 {
-	GeometryBucketType _bucketType;
+	const GeometryBucket* _bucket;
 	size_t _index;
 	float _depth;
 };
-
-static_assert(std::is_trivially_copyable<GeometryRenderInfo>::value, "GeometryRenderInfo must be POD");
-static_assert(std::is_trivially_copyable<AlphaGeometryEntry>::value, "AlphaGeometryEntry must be POD");
 
 struct GeometryShaderConstants0
 {
@@ -195,6 +239,16 @@ struct GeometryShaderConstants0
 struct GeometryShaderConstants1
 {
 	ff::Vector<DirectX::XMFLOAT4X4> _model;
+};
+
+struct PixelShaderConstants0
+{
+	PixelShaderConstants0()
+	{
+		ff::ZeroObject(*this);
+	}
+
+	ff::RectFloat _texturePaletteSizes[::MAX_TEXTURES_USING_PALETTE];
 };
 
 class Renderer11
@@ -218,7 +272,6 @@ public:
 	virtual ff::IRendererActive11* AsRendererActive11() override;
 
 	virtual void DrawSprite(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const float rotate, const DirectX::XMFLOAT4& color) override;
-	virtual void DrawMultiSprite(ff::ISprite** sprites, const DirectX::XMFLOAT4* colors, size_t count, ff::PointFloat pos, ff::PointFloat scale, const float rotate) override;
 	virtual void DrawFont(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const DirectX::XMFLOAT4& color) override;
 	virtual void DrawLineStrip(const ff::PointFloat* points, const DirectX::XMFLOAT4* colors, size_t count, float thickness, bool pixelThickness) override;
 	virtual void DrawLineStrip(const ff::PointFloat* points, size_t count, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness) override;
@@ -232,7 +285,20 @@ public:
 	virtual void DrawOutlineCircle(ff::PointFloat center, float radius, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness) override;
 	virtual void DrawOutlineCircle(ff::PointFloat center, float radius, const DirectX::XMFLOAT4& insideColor, const DirectX::XMFLOAT4& outsideColor, float thickness, bool pixelThickness) override;
 
-	virtual void PushPalette(ff::ITextureView* palette) override;
+	virtual void DrawPaletteFont(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, int color) override;
+	virtual void DrawPaletteLineStrip(const ff::PointFloat* points, const int* colors, size_t count, float thickness, bool pixelThickness = false) override;
+	virtual void DrawPaletteLineStrip(const ff::PointFloat* points, size_t count, int color, float thickness, bool pixelThickness = false) override;
+	virtual void DrawPaletteLine(ff::PointFloat start, ff::PointFloat end, int color, float thickness, bool pixelThickness = false) override;
+	virtual void DrawPaletteFilledRectangle(ff::RectFloat rect, const int* colors) override;
+	virtual void DrawPaletteFilledRectangle(ff::RectFloat rect, int color) override;
+	virtual void DrawPaletteFilledTriangles(const ff::PointFloat* points, const int* colors, size_t count) override;
+	virtual void DrawPaletteFilledCircle(ff::PointFloat center, float radius, int color) override;
+	virtual void DrawPaletteFilledCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor) override;
+	virtual void DrawPaletteOutlineRectangle(ff::RectFloat rect, int color, float thickness, bool pixelThickness = false) override;
+	virtual void DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int color, float thickness, bool pixelThickness = false) override;
+	virtual void DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor, float thickness, bool pixelThickness = false) override;
+
+	virtual void PushPalette(ff::IPalette* palette) override;
 	virtual void PopPalette() override;
 	virtual void PushCustomContext(ff::CustomRenderContextFunc11&& func) override;
 	virtual void PopCustomContext() override;
@@ -260,65 +326,49 @@ private:
 	{
 		None,
 		Line,
-		LineScreen,
 		Circle,
-		CircleScreen,
 		Triangle,
 		Sprite,
-		MultiSprite,
 
 		LineNoOverlap,
-		LineScreenNoOverlap,
 		CircleNoOverlap,
-		CircleScreenNoOverlap,
 		TriangleNoOverlap,
 		SpriteNoOverlap,
-		MultiSpriteNoOverlap,
 		FontNoOverlap,
 
 		StartNoOverlap = LineNoOverlap,
 	};
 
 	void DrawSprite(ff::ISprite* sprite, const ff::PointFloat& pos, const ff::PointFloat& scale, const float rotate, const DirectX::XMFLOAT4& color, LastDepthType depthType);
-	void DrawMultiSprite(ff::ISprite** sprites, const DirectX::XMFLOAT4* colors, size_t count, const ff::PointFloat& pos, const ff::PointFloat& scale, const float rotate, LastDepthType depthType);
 	void DrawLineStrip(const ff::PointFloat* points, size_t pointCount, const DirectX::XMFLOAT4* colors, size_t colorCount, float thickness, bool pixelThickness);
 
-	void InitConstantBuffers0(ff::IRenderTarget* target, const ff::RectFloat& viewRect, const ff::RectFloat& worldRect);
-	void UpdateConstantBuffers0(const DirectX::XMFLOAT4X4* worldTransform = nullptr, float zoffset = 0);
-	void UpdateConstantBuffers1(const ff::Vector<DirectX::XMFLOAT4X4>* worldMatrixesOverride = nullptr);
-	void SetShaderInput(const ff::Vector<ff::ComPtr<ID3D11ShaderResourceView>>* texturesOverride = nullptr);
+	void InitGeometryConstantBuffers0(ff::IRenderTarget* target, const ff::RectFloat& viewRect, const ff::RectFloat& worldRect);
+	void UpdateGeometryConstantBuffers0();
+	void UpdateGeometryConstantBuffers1();
+	void UpdatePixelConstantBuffers0();
+	void UpdatePaletteTexture();
+	void SetShaderInput();
 
 	void Flush();
-	bool CreateGeometryBuffer(GeometryRenderInfoArray& infos, ff::ComPtr<ID3D11Buffer>& geometryBuffer);
-	void DrawOpaqueGeometry(const GeometryRenderInfoArray& infos, ID3D11Buffer* geometryBuffer);
-	void DrawAlphaGeometry(const GeometryRenderInfoArray& infos, const ff::Vector<AlphaGeometryEntry>& alphaGeometry, ID3D11Buffer* geometryBuffer);
+	bool CreateGeometryBuffer();
+	void DrawOpaqueGeometry();
+	void DrawAlphaGeometry();
 	void PostFlush();
 
 	bool IsRendering() const;
 	float NudgeDepth(LastDepthType depthType);
 	unsigned int GetWorldMatrixIndex();
-	unsigned int GetTextureIndex(ff::ITextureView* texture);
-	void GetWorldMatrixAndTextureIndex(ff::ITextureView* texture, unsigned int& modelIndex, unsigned int& textureIndex);
-	void GetWorldMatrixAndTextureIndexes(ff::ITextureView** textures, unsigned int* textureIndexes, size_t count, unsigned int& modelIndex);
-	void AddGeometry(const void* data, size_t byteSize, GeometryBucketType bucketType, float depth);
-	void* AddGeometry(size_t byteSize, GeometryBucketType bucketType, float depth);
-
-	template<typename T>
-	void AddGeometry(const T& data, GeometryBucketType bucketType, float depth)
-	{
-		AddGeometry(&data, sizeof(T), bucketType, depth);
-	}
-
-	template<typename T>
-	T* AddGeometry(GeometryBucketType bucketType, float depth)
-	{
-		return (T*)AddGeometry(sizeof(T), bucketType, depth);
-	}
+	unsigned int GetWorldMatrixIndexNoFlush();
+	unsigned int GetTextureIndexNoFlush(ff::ITextureView* texture, bool usePalette);
+	unsigned int GetPaletteIndexNoFlush();
+	void GetWorldMatrixAndTextureIndex(ff::ITextureView* texture, bool usePalette, unsigned int& modelIndex, unsigned int& textureIndex);
+	void GetWorldMatrixAndTextureIndexes(ff::ITextureView** textures, bool usePalette, unsigned int* textureIndexes, size_t count, unsigned int& modelIndex);
+	void AddGeometry(const void* data, GeometryBucketType bucketType, float depth);
+	void* AddGeometry(GeometryBucketType bucketType, float depth);
 
 	ff::GraphFixedState11 CreateOpaqueDrawState();
 	ff::GraphFixedState11 CreateAlphaDrawState();
-	ID3D11ShaderResourceView* GetPaletteResourceView() const;
-	GeometryBucketBase& GetGeometryBucket(GeometryBucketType type);
+	GeometryBucket& GetGeometryBucket(GeometryBucketType type);
 
 	enum class State
 	{
@@ -333,10 +383,13 @@ private:
 	ff::ComPtr<ID3D11Buffer> _geometryBuffer;
 	ff::ComPtr<ID3D11Buffer> _geometryConstantsBuffer0;
 	ff::ComPtr<ID3D11Buffer> _geometryConstantsBuffer1;
+	ff::ComPtr<ID3D11Buffer> _pixelConstantsBuffer0;
 	GeometryShaderConstants0 _geometryConstants0;
 	GeometryShaderConstants1 _geometryConstants1;
+	PixelShaderConstants0 _pixelConstants0;
 	ff::hash_t _geometryConstantsHash0;
 	ff::hash_t _geometryConstantsHash1;
+	ff::hash_t _pixelConstantsHash0;
 
 	// Render state
 	ff::Vector<ff::ComPtr<ID3D11SamplerState>> _samplerStack;
@@ -351,13 +404,22 @@ private:
 	unsigned int _worldMatrixIndex;
 
 	// Textures
-	std::array<ff::ITextureView11*, ::MAX_TEXTURES> _textures;
+	std::array<ff::ITextureView*, ::MAX_TEXTURES> _textures;
+	std::array<ff::ITextureView*, ::MAX_TEXTURES_USING_PALETTE> _texturesUsingPalette;
 	size_t _textureCount;
+	size_t _texturesUsingPaletteCount;
+
+	// Palettes
+	ff::Vector<ff::IPalette*> _paletteStack;
+	ff::ComPtr<ff::ITexture> _paletteTexture;
+	std::array<ff::hash_t, ::MAX_PALETTES> _paletteTextureHashes;
+	ff::Map<ff::hash_t, std::pair<ff::IPalette*, unsigned int>, ff::NonHasher<ff::hash_t>> _paletteToIndex;
+	unsigned int _paletteIndex;
+	bool _targetRequiresPalette;
 
 	// Render data
 	ff::Vector<AlphaGeometryEntry> _alphaGeometry;
-	ff::Vector<ff::ITextureView11*> _paletteStack;
-	GeometryBucketArray _geometryBuckets;
+	std::array<GeometryBucket, (size_t)GeometryBucketType::Count> _geometryBuckets;
 	LastDepthType _lastDepthType;
 	float _drawDepth;
 	int _forceNoOverlap;
@@ -416,7 +478,7 @@ static AlphaType GetAlphaType(const ff::SpriteData& data, const DirectX::XMFLOAT
 	switch (::GetAlphaType(color, forceOpaque))
 	{
 	case AlphaType::Transparent:
-		return AlphaType::Transparent;
+		return ff::HasAllFlags(data._type, ff::SpriteType::Palette) ? AlphaType::Opaque : AlphaType::Transparent;
 
 	case AlphaType::Opaque:
 		return (ff::HasAllFlags(data._type, ff::SpriteType::Transparent) && !forceOpaque)
@@ -446,6 +508,22 @@ static AlphaType GetAlphaType(const ff::SpriteData** datas, const DirectX::XMFLO
 	}
 
 	return type;
+}
+
+void PaletteIndexToColor(int index, DirectX::XMFLOAT4& color)
+{
+	color.x = index / 256.0f;
+	color.y = 0;
+	color.z = 0;
+	color.w = 1.0f * (index != 0);
+}
+
+static void PaletteIndexToColor(const int* index, DirectX::XMFLOAT4* color, size_t count)
+{
+	for (size_t i = 0; i != count; i++)
+	{
+		PaletteIndexToColor(index[i], color[i]);
+	}
 }
 
 static void GetAlphaBlend(D3D11_RENDER_TARGET_BLEND_DESC& desc)
@@ -708,36 +786,24 @@ static bool SetupRenderTarget(ff::IGraphDevice* device, ff::IRenderTarget* targe
 	return true;
 }
 
-template<typename T, GeometryBucketType BucketType>
-static void InitGeometryBucket(GeometryBucketArray& buckets)
-{
-	buckets[(size_t)BucketType] = std::make_unique<GeometryBucket<T, BucketType>>();
-}
-
 Renderer11::Renderer11(ff::IGraphDevice* device)
 	: _device(device)
 	, _worldMatrixStack(this)
+	, _geometryBuckets
+	{
+		GeometryBucket::New<ff::LineGeometryInput, GeometryBucketType::Lines>(),
+		GeometryBucket::New<ff::CircleGeometryInput, GeometryBucketType::Circle>(),
+		GeometryBucket::New<ff::TriangleGeometryInput, GeometryBucketType::Triangles>(),
+		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::Sprites>(),
+		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::PaletteSprites>(),
+
+		GeometryBucket::New<ff::LineGeometryInput, GeometryBucketType::LinesAlpha>(),
+		GeometryBucket::New<ff::CircleGeometryInput, GeometryBucketType::CircleAlpha>(),
+		GeometryBucket::New<ff::TriangleGeometryInput, GeometryBucketType::TrianglesAlpha>(),
+		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::SpritesAlpha>(),
+		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::PaletteSpritesAlpha>(),
+	}
 {
-	assert(_geometryBuckets.size() == 16);
-
-	::InitGeometryBucket<ff::LineGeometryInput, GeometryBucketType::Lines>(_geometryBuckets);
-	::InitGeometryBucket<ff::LineScreenGeometryInput, GeometryBucketType::LinesScreen>(_geometryBuckets);
-	::InitGeometryBucket<ff::CircleGeometryInput, GeometryBucketType::Circle>(_geometryBuckets);
-	::InitGeometryBucket<ff::CircleScreenGeometryInput, GeometryBucketType::CircleScreen>(_geometryBuckets);
-	::InitGeometryBucket<ff::TriangleGeometryInput, GeometryBucketType::Triangles>(_geometryBuckets);
-	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::Sprites>(_geometryBuckets);
-	::InitGeometryBucket<ff::MultiSpriteGeometryInput, GeometryBucketType::MultiSprites>(_geometryBuckets);
-	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::PaletteSprites>(_geometryBuckets);
-
-	::InitGeometryBucket<ff::LineGeometryInput, GeometryBucketType::LinesAlpha>(_geometryBuckets);
-	::InitGeometryBucket<ff::LineScreenGeometryInput, GeometryBucketType::LinesScreenAlpha>(_geometryBuckets);
-	::InitGeometryBucket<ff::CircleGeometryInput, GeometryBucketType::CircleAlpha>(_geometryBuckets);
-	::InitGeometryBucket<ff::CircleScreenGeometryInput, GeometryBucketType::CircleScreenAlpha>(_geometryBuckets);
-	::InitGeometryBucket<ff::TriangleGeometryInput, GeometryBucketType::TrianglesAlpha>(_geometryBuckets);
-	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::SpritesAlpha>(_geometryBuckets);
-	::InitGeometryBucket<ff::MultiSpriteGeometryInput, GeometryBucketType::MultiSpritesAlpha>(_geometryBuckets);
-	::InitGeometryBucket<ff::SpriteGeometryInput, GeometryBucketType::PaletteSpritesAlpha>(_geometryBuckets);
-
 	Init();
 
 	_device->AddChild(this);
@@ -755,10 +821,13 @@ void Renderer11::Destroy()
 	_geometryBuffer = nullptr;
 	_geometryConstantsBuffer0 = nullptr;
 	_geometryConstantsBuffer1 = nullptr;
+	_pixelConstantsBuffer0 = nullptr;
 	_geometryConstants0 = GeometryShaderConstants0();
 	_geometryConstants1 = GeometryShaderConstants1();
+	_pixelConstants0 = PixelShaderConstants0();
 	_geometryConstantsHash0 = 0;
 	_geometryConstantsHash1 = 0;
+	_pixelConstantsHash0 = 0;
 
 	_samplerStack.Clear();
 	_opaqueState = ff::GraphFixedState11();
@@ -771,7 +840,15 @@ void Renderer11::Destroy()
 	_worldMatrixIndex = ff::INVALID_DWORD;
 
 	ff::ZeroObject(_textures);
+	ff::ZeroObject(_texturesUsingPalette);
 	_textureCount = 0;
+	_texturesUsingPaletteCount = 0;
+
+	ff::ZeroObject(_paletteTextureHashes);
+	_paletteStack.Clear();
+	_paletteToIndex.Clear();
+	_paletteTexture = nullptr;
+	_paletteIndex = ff::INVALID_DWORD;
 
 	_alphaGeometry.Clear();
 	_lastDepthType = LastDepthType::None;
@@ -781,7 +858,7 @@ void Renderer11::Destroy()
 
 	for (auto& bucket : _geometryBuckets)
 	{
-		bucket->Reset();
+		bucket.Reset();
 	}
 }
 
@@ -794,74 +871,78 @@ bool Renderer11::Init()
 	ff::ComPtr<ID3D11InputLayout> circleLayout;
 	ff::ComPtr<ID3D11InputLayout> triangleLayout;
 	ff::ComPtr<ID3D11InputLayout> spriteLayout;
-	ff::ComPtr<ID3D11InputLayout> multiSpriteLayout;
 
 	// Vertex shaders
 	ID3D11VertexShader* lineVS = ::GetVertexShaderAndInputLayout<ff::LineGeometryInput>(L"LineVS", lineLayout, cache);
 	ID3D11VertexShader* circleVS = ::GetVertexShaderAndInputLayout<ff::CircleGeometryInput>(L"CircleVS", circleLayout, cache);
 	ID3D11VertexShader* triangleVS = ::GetVertexShaderAndInputLayout<ff::TriangleGeometryInput>(L"TriangleVS", triangleLayout, cache);
 	ID3D11VertexShader* spriteVS = ::GetVertexShaderAndInputLayout<ff::SpriteGeometryInput>(L"SpriteVS", spriteLayout, cache);
-	ID3D11VertexShader* multiSpriteVS = ::GetVertexShaderAndInputLayout<ff::MultiSpriteGeometryInput>(L"MultiSpriteVS", multiSpriteLayout, cache);
 
 	// Geometry shaders
 	ID3D11GeometryShader* lineGS = ::GetGeometryShader(L"LineGS", cache);
-	ID3D11GeometryShader* lineScreenGS = ::GetGeometryShader(L"LineScreenGS", cache);
 	ID3D11GeometryShader* circleGS = ::GetGeometryShader(L"CircleGS", cache);
-	ID3D11GeometryShader* circleScreenGS = ::GetGeometryShader(L"CircleScreenGS", cache);
 	ID3D11GeometryShader* triangleGS = ::GetGeometryShader(L"TriangleGS", cache);
 	ID3D11GeometryShader* spriteGS = ::GetGeometryShader(L"SpriteGS", cache);
-	ID3D11GeometryShader* multiSpriteGS = ::GetGeometryShader(L"MultiSpriteGS", cache);
 
 	// Pixel shaders
 	ID3D11PixelShader* colorPS = ::GetPixelShader(L"ColorPS", cache);
+	ID3D11PixelShader* paletteOutColorPS = ::GetPixelShader(L"PaletteOutColorPS", cache);
 	ID3D11PixelShader* spritePS = ::GetPixelShader(L"SpritePS", cache);
 	ID3D11PixelShader* spritePalettePS = ::GetPixelShader(L"SpritePalettePS", cache);
-	ID3D11PixelShader* multiSpritePS = ::GetPixelShader(L"MultiSpritePS", cache);
+	ID3D11PixelShader* paletteOutSpritePS = ::GetPixelShader(L"PaletteOutSpritePS", cache);
+	ID3D11PixelShader* paletteOutSpritePalettePS = ::GetPixelShader(L"PaletteOutSpritePalettePS", cache);
 
 	assertRetVal(
 		lineVS != nullptr &&
 		circleVS != nullptr &&
 		triangleVS != nullptr &&
 		spriteVS != nullptr &&
-		multiSpriteVS != nullptr &&
 		lineGS != nullptr &&
-		lineScreenGS != nullptr &&
 		circleGS != nullptr &&
-		circleScreenGS != nullptr &&
 		triangleGS != nullptr &&
 		spriteGS != nullptr &&
-		multiSpriteGS != nullptr &&
 		colorPS != nullptr &&
+		paletteOutColorPS != nullptr &&
 		spritePS != nullptr &&
 		spritePalettePS != nullptr &&
-		multiSpritePS != nullptr &&
+		paletteOutSpritePS != nullptr &&
+		paletteOutSpritePalettePS != nullptr &&
 		lineLayout != nullptr &&
 		circleLayout != nullptr &&
 		triangleLayout != nullptr &&
-		spriteLayout != nullptr &&
-		multiSpriteLayout != nullptr,
+		spriteLayout != nullptr,
 		false);
 
 	// Geometry buckets
-	assert(_geometryBuckets.size() == 16);
+	GetGeometryBucket(GeometryBucketType::Lines).Reset(lineLayout, lineVS, lineGS, colorPS, paletteOutColorPS);
+	GetGeometryBucket(GeometryBucketType::Circle).Reset(circleLayout, circleVS, circleGS, colorPS, paletteOutColorPS);
+	GetGeometryBucket(GeometryBucketType::Triangles).Reset(triangleLayout, triangleVS, triangleGS, colorPS, paletteOutColorPS);
+	GetGeometryBucket(GeometryBucketType::Sprites).Reset(spriteLayout, spriteVS, spriteGS, spritePS, paletteOutSpritePS);
+	GetGeometryBucket(GeometryBucketType::PaletteSprites).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS, paletteOutSpritePalettePS);
 
-	GetGeometryBucket(GeometryBucketType::Lines).Reset(lineLayout, lineVS, lineGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::LinesScreen).Reset(lineLayout, lineVS, lineScreenGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::Circle).Reset(circleLayout, circleVS, circleGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::CircleScreen).Reset(circleLayout, circleVS, circleScreenGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::Triangles).Reset(triangleLayout, triangleVS, triangleGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::Sprites).Reset(spriteLayout, spriteVS, spriteGS, spritePS);
-	GetGeometryBucket(GeometryBucketType::MultiSprites).Reset(multiSpriteLayout, multiSpriteVS, multiSpriteGS, multiSpritePS);
-	GetGeometryBucket(GeometryBucketType::PaletteSprites).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS);
+	GetGeometryBucket(GeometryBucketType::LinesAlpha).Reset(lineLayout, lineVS, lineGS, colorPS, paletteOutColorPS);
+	GetGeometryBucket(GeometryBucketType::CircleAlpha).Reset(circleLayout, circleVS, circleGS, colorPS, paletteOutColorPS);
+	GetGeometryBucket(GeometryBucketType::TrianglesAlpha).Reset(triangleLayout, triangleVS, triangleGS, colorPS, paletteOutColorPS);
+	GetGeometryBucket(GeometryBucketType::SpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePS, paletteOutSpritePS);
+	GetGeometryBucket(GeometryBucketType::PaletteSpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS, paletteOutSpritePalettePS);
 
-	GetGeometryBucket(GeometryBucketType::LinesAlpha).Reset(lineLayout, lineVS, lineGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::CircleAlpha).Reset(circleLayout, circleVS, circleGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::CircleScreenAlpha).Reset(circleLayout, circleVS, circleScreenGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::LinesScreenAlpha).Reset(lineLayout, lineVS, lineScreenGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::TrianglesAlpha).Reset(triangleLayout, triangleVS, triangleGS, colorPS);
-	GetGeometryBucket(GeometryBucketType::SpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePS);
-	GetGeometryBucket(GeometryBucketType::MultiSpritesAlpha).Reset(multiSpriteLayout, multiSpriteVS, multiSpriteGS, multiSpritePS);
-	GetGeometryBucket(GeometryBucketType::PaletteSpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS);
+	// Default palette
+	{
+		static const BYTE emptyPaletteColors[256 * 4] = { 0 };
+
+		ff::ComPtr<ff::IData> defaultPaletteData;
+		ff::ComPtr<ff::IPaletteData> defaultPaletteData2;
+		ff::ComPtr<ff::IPalette> defaultPalette;
+
+		assertRetVal(ff::CreateDataInStaticMem(emptyPaletteColors, _countof(emptyPaletteColors), &defaultPaletteData), false);
+		assertRetVal(ff::CreatePaletteData(defaultPaletteData, &defaultPaletteData2), false);
+		assertRetVal(ff::CreatePalette(_device, defaultPaletteData2, &defaultPalette), false);
+
+		_paletteStack.Push(defaultPalette);
+	}
+
+	_paletteTexture = _device->CreateTexture(ff::PointInt(256, (int)::MAX_PALETTES), ff::TextureFormat::RGBA32);
+	assertRetVal(_paletteTexture, false);
 
 	// States
 	_samplerStack.Push(::GetTextureSamplerState(cache, D3D11_FILTER_MIN_MAG_MIP_POINT));
@@ -896,24 +977,9 @@ ff::GraphFixedState11 Renderer11::CreateAlphaDrawState()
 	return state;
 }
 
-ID3D11ShaderResourceView* Renderer11::GetPaletteResourceView() const
+GeometryBucket& Renderer11::GetGeometryBucket(GeometryBucketType type)
 {
-	size_t size = _paletteStack.Size();
-	if (size)
-	{
-		ff::ITextureView11* view = _paletteStack[size - 1];
-		if (view)
-		{
-			return view->GetView();
-		}
-	}
-
-	return nullptr;
-}
-
-GeometryBucketBase& Renderer11::GetGeometryBucket(GeometryBucketType type)
-{
-	return *_geometryBuckets[(size_t)type];
+	return _geometryBuckets[(size_t)type];
 }
 
 bool Renderer11::IsValid() const
@@ -927,32 +993,22 @@ ff::IRendererActive* Renderer11::BeginRender(ff::IRenderTarget* target, ff::IRen
 
 	noAssertRetVal(::SetupViewMatrix(target, viewRect, worldRect, _viewMatrix), nullptr);
 	assertRetVal(::SetupRenderTarget(_device, target, depth, viewRect), nullptr);
-	InitConstantBuffers0(target, viewRect, worldRect);
-
+	InitGeometryConstantBuffers0(target, viewRect, worldRect);
+	_targetRequiresPalette = (target->GetFormat() == ff::TextureFormat::R8_UINT);
 	_state = State::Rendering;
+
 	return this;
 }
 
-void Renderer11::InitConstantBuffers0(ff::IRenderTarget* target, const ff::RectFloat& viewRect, const ff::RectFloat& worldRect)
+void Renderer11::InitGeometryConstantBuffers0(ff::IRenderTarget* target, const ff::RectFloat& viewRect, const ff::RectFloat& worldRect)
 {
 	_geometryConstants0._viewSize = viewRect.Size() / (float)target->GetDpiScale();
 	_geometryConstants0._viewScale = worldRect.Size() / _geometryConstants0._viewSize;
 }
 
-void Renderer11::UpdateConstantBuffers0(const DirectX::XMFLOAT4X4* worldTransform, float zoffset)
+void Renderer11::UpdateGeometryConstantBuffers0()
 {
-	_geometryConstants0._zoffset = zoffset;
-
-	if (worldTransform)
-	{
-		DirectX::XMMATRIX worldMatrix = DirectX::XMLoadFloat4x4(worldTransform);
-		DirectX::XMMATRIX viewMatrix = DirectX::XMLoadFloat4x4(&_viewMatrix);
-		DirectX::XMStoreFloat4x4(&_geometryConstants0._projection, DirectX::XMMatrixTranspose(viewMatrix * worldMatrix));
-	}
-	else
-	{
-		_geometryConstants0._projection = _viewMatrix;
-	}
+	_geometryConstants0._projection = _viewMatrix;
 
 	ff::hash_t hash0 = ff::HashFunc(_geometryConstants0);
 	if (_geometryConstantsBuffer0 == nullptr || _geometryConstantsHash0 != hash0)
@@ -970,25 +1026,16 @@ void Renderer11::UpdateConstantBuffers0(const DirectX::XMFLOAT4X4* worldTransfor
 	}
 }
 
-void Renderer11::UpdateConstantBuffers1(const ff::Vector<DirectX::XMFLOAT4X4>* worldMatrixesOverride)
+void Renderer11::UpdateGeometryConstantBuffers1()
 {
 	// Build up model matrix array
-	size_t worldMatrixCount = 0;
-	if (worldMatrixesOverride)
-	{
-		worldMatrixCount = worldMatrixesOverride->Size();
-		_geometryConstants1._model = *worldMatrixesOverride;
-	}
-	else
-	{
-		worldMatrixCount = _worldMatrixToIndex.Size();
-		_geometryConstants1._model.Resize(worldMatrixCount);
+	size_t worldMatrixCount = _worldMatrixToIndex.Size();
+	_geometryConstants1._model.Resize(worldMatrixCount);
 
-		for (const auto& iter : _worldMatrixToIndex)
-		{
-			unsigned int index = iter.GetValue();
-			_geometryConstants1._model[index] = iter.GetKey();
-		}
+	for (const auto& iter : _worldMatrixToIndex)
+	{
+		unsigned int index = iter.GetValue();
+		_geometryConstants1._model[index] = iter.GetKey();
 	}
 
 	ff::hash_t hash1 = worldMatrixCount
@@ -999,7 +1046,7 @@ void Renderer11::UpdateConstantBuffers1(const ff::Vector<DirectX::XMFLOAT4X4>* w
 	{
 		_geometryConstantsHash1 = hash1;
 #if _DEBUG
-		size_t bufferSize = sizeof(DirectX::XMFLOAT4X4) * ::MAX_MODEL_MATRIXES;
+		size_t bufferSize = sizeof(DirectX::XMFLOAT4X4) * ::MAX_TRANSFORM_MATRIXES;
 #else
 		size_t bufferSize = sizeof(DirectX::XMFLOAT4X4) * worldMatrixCount;
 #endif
@@ -1008,101 +1055,142 @@ void Renderer11::UpdateConstantBuffers1(const ff::Vector<DirectX::XMFLOAT4X4>* w
 	}
 }
 
-void Renderer11::SetShaderInput(const ff::Vector<ff::ComPtr<ID3D11ShaderResourceView>>* texturesOverride)
+void Renderer11::UpdatePixelConstantBuffers0()
 {
-	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
-	std::array<ID3D11Buffer*, 2> buffersGS =
+	noAssertRet(_texturesUsingPaletteCount);
+
+	for (size_t i = 0; i < _texturesUsingPaletteCount; i++)
 	{
-		_geometryConstantsBuffer0,
-		_geometryConstantsBuffer1,
-	};
+		ff::RectFloat& rect = _pixelConstants0._texturePaletteSizes[i];
+		ff::PointInt size = _texturesUsingPalette[i]->GetTexture()->GetSize();
+		rect.left = (float)size.x;
+		rect.top = (float)size.y;
+	}
 
-	context.SetConstantsGS(buffersGS.data(), 0, buffersGS.size());
-
-	ID3D11SamplerState* samplerState = _samplerStack.GetLast();
-	context.SetSamplersPS(&samplerState, 0, 1);
-
-	if (texturesOverride)
+	ff::hash_t hash0 = ff::HashFunc(_pixelConstants0);
+	if (_pixelConstantsBuffer0 == nullptr || _pixelConstantsHash0 != hash0)
 	{
-		if (texturesOverride->Size())
+		if (_pixelConstantsBuffer0 == nullptr)
 		{
-			context.SetResourcesPS(texturesOverride->Data()->Address(), 0, texturesOverride->Size());
+			_pixelConstantsBuffer0 = ::CreateConstantBuffer<PixelShaderConstants0>(_device, _pixelConstants0);
+		}
+		else
+		{
+			_device->AsGraphDevice11()->GetStateContext().UpdateDiscard(_pixelConstantsBuffer0, &_pixelConstants0, sizeof(PixelShaderConstants0));
+		}
+
+		_pixelConstantsHash0 = hash0;
+	}
+}
+
+void Renderer11::UpdatePaletteTexture()
+{
+	noAssertRet(_texturesUsingPaletteCount);
+
+	ff::GraphContext11& deviceContext = _device->AsGraphDevice11()->GetStateContext();
+	ID3D11Resource* destResource = _paletteTexture->AsTexture11()->GetTexture2d();
+	CD3D11_BOX srcBox(0, 0, 0, 256, 1, 1);
+
+	for (const auto& iter : _paletteToIndex)
+	{
+		ff::IPalette* palette = iter.GetValue().first;
+		unsigned int index = iter.GetValue().second;
+
+		if (_paletteTextureHashes[index] != palette->GetTextureHash())
+		{
+			_paletteTextureHashes[index] = palette->GetTextureHash();
+			ID3D11Resource* srcResource = palette->GetTexture()->AsTexture11()->GetTexture2d();
+			deviceContext.CopySubresourceRegion(destResource, 0, 0, index, 0, srcResource, 0, &srcBox);
 		}
 	}
-	else if (_textureCount)
+}
+
+void Renderer11::SetShaderInput()
+{
+	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
+	std::array<ID3D11Buffer*, 2> buffersGS = { _geometryConstantsBuffer0, _geometryConstantsBuffer1 };
+	context.SetConstantsGS(buffersGS.data(), 0, buffersGS.size());
+
+	std::array<ID3D11Buffer*, 1> buffersPS = { _pixelConstantsBuffer0 };
+	context.SetConstantsPS(buffersPS.data(), 0, buffersPS.size());
+
+	std::array<ID3D11SamplerState*, 1> sampleStates = { _samplerStack.GetLast() };
+	context.SetSamplersPS(sampleStates.data(), 0, sampleStates.size());
+
+	if (_textureCount)
 	{
 		std::array<ID3D11ShaderResourceView*, ::MAX_TEXTURES> textures;
 		for (size_t i = 0; i < _textureCount; i++)
 		{
-			textures[i] = _textures[i]->GetView();
+			textures[i] = _textures[i]->AsTextureView11()->GetView();
 		}
 
 		context.SetResourcesPS(textures.data(), 0, _textureCount);
+	}
 
-		// Reserved texture 1: Palette
-		ID3D11ShaderResourceView* palette = GetPaletteResourceView();
-		context.SetResourcesPS(&palette, ::MAX_TEXTURES, 1);
+	if (_texturesUsingPaletteCount)
+	{
+		std::array<ID3D11ShaderResourceView*, ::MAX_TEXTURES_USING_PALETTE> texturesUsingPalette;
+		for (size_t i = 0; i < _texturesUsingPaletteCount; i++)
+		{
+			texturesUsingPalette[i] = _texturesUsingPalette[i]->AsTextureView11()->GetView();
+		}
+
+		context.SetResourcesPS(texturesUsingPalette.data(), ::MAX_TEXTURES, _texturesUsingPaletteCount);
+
+		std::array < ID3D11ShaderResourceView*, 1> palettes = { _paletteTexture->AsTextureView()->AsTextureView11()->GetView() };
+		context.SetResourcesPS(palettes.data(), ::MAX_TEXTURES + ::MAX_TEXTURES_USING_PALETTE, palettes.size());
 	}
 }
 
 void Renderer11::Flush()
 {
-	noAssertRet(_lastDepthType != LastDepthType::None);
-
-	GeometryRenderInfoArray infos;
-	noAssertRet(CreateGeometryBuffer(infos, _geometryBuffer));
-
-	UpdateConstantBuffers0();
-	UpdateConstantBuffers1();
-	SetShaderInput();
-	DrawOpaqueGeometry(infos, _geometryBuffer);
-	DrawAlphaGeometry(infos, _alphaGeometry, _geometryBuffer);
-
-	PostFlush();
+	if (_lastDepthType != LastDepthType::None && CreateGeometryBuffer())
+	{
+		UpdateGeometryConstantBuffers0();
+		UpdateGeometryConstantBuffers1();
+		UpdatePixelConstantBuffers0();
+		UpdatePaletteTexture();
+		SetShaderInput();
+		DrawOpaqueGeometry();
+		DrawAlphaGeometry();
+		PostFlush();
+	}
 }
 
-bool Renderer11::CreateGeometryBuffer(GeometryRenderInfoArray& infos, ff::ComPtr<ID3D11Buffer>& buffer)
+bool Renderer11::CreateGeometryBuffer()
 {
 	size_t byteSize = 0;
 
-	for (size_t i = 0; i < ::GEOMETRY_BUCKET_COUNT; i++)
+	for (GeometryBucket& bucket : _geometryBuckets)
 	{
-		GeometryRenderInfo& info = infos[i];
-		const GeometryBucketBase& bucket = *_geometryBuckets[i];
-		size_t vertexSize = bucket.GetItemByteSize();
-
-		byteSize = ff::RoundUp(byteSize, vertexSize);
-
-		info._bucket = &bucket;
-		info._startGeometry = byteSize / vertexSize;
-		info._countGeometry = bucket.GetCount();
-
-		byteSize += bucket.GetDataSize();
+		byteSize = ff::RoundUp(byteSize, bucket.GetItemByteSize());
+		bucket.SetRenderStart(byteSize / bucket.GetItemByteSize());
+		byteSize += bucket.GetByteSize();
 	}
 
 	assertRetVal(byteSize, false);
 
-	::EnsureBuffer(_device, buffer, byteSize, D3D11_BIND_VERTEX_BUFFER, true);
-	assertRetVal(buffer, false);
+	::EnsureBuffer(_device, _geometryBuffer, byteSize, D3D11_BIND_VERTEX_BUFFER, true);
+	assertRetVal(_geometryBuffer, false);
 
-	void* bufferData = _device->AsGraphDevice11()->GetStateContext().Map(buffer, D3D11_MAP_WRITE_DISCARD);
+	void* bufferData = _device->AsGraphDevice11()->GetStateContext().Map(_geometryBuffer, D3D11_MAP_WRITE_DISCARD);
 
-	for (const GeometryRenderInfo& info : infos)
+	for (GeometryBucket& bucket : _geometryBuckets)
 	{
-		if (info._countGeometry)
+		if (bucket.GetRenderCount())
 		{
-			::memcpy((BYTE*)bufferData + info._startGeometry * info._bucket->GetItemByteSize(),
-				info._bucket->GetData(),
-				info._bucket->GetDataSize());
+			::memcpy((BYTE*)bufferData + bucket.GetRenderStart() * bucket.GetItemByteSize(), bucket.GetData(), bucket.GetByteSize());
+			bucket.ClearItems();
 		}
 	}
 
-	_device->AsGraphDevice11()->GetStateContext().Unmap(buffer);
+	_device->AsGraphDevice11()->GetStateContext().Unmap(_geometryBuffer);
 
 	return true;
 }
 
-void Renderer11::DrawOpaqueGeometry(const GeometryRenderInfoArray& infos, ID3D11Buffer* geometryBuffer)
+void Renderer11::DrawOpaqueGeometry()
 {
 	const ff::CustomRenderContextFunc11* customFunc = _customContextStack.Size() ? &_customContextStack.GetLast() : nullptr;
 	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
@@ -1110,28 +1198,29 @@ void Renderer11::DrawOpaqueGeometry(const GeometryRenderInfoArray& infos, ID3D11
 
 	_opaqueState.Apply(context);
 
-	for (const GeometryRenderInfo& info : infos)
+	for (const GeometryBucket& bucket : _geometryBuckets)
 	{
-		if (info._bucket->GetBucketType() >= GeometryBucketType::FirstAlpha)
+		if (bucket.GetBucketType() >= GeometryBucketType::FirstAlpha)
 		{
 			break;
 		}
 
-		if (info._countGeometry)
+		if (bucket.GetRenderCount())
 		{
-			info._bucket->Apply(context, geometryBuffer);
+			bucket.Apply(context, _geometryBuffer, _targetRequiresPalette);
 
-			if (!customFunc || (*customFunc)(context, info._bucket->GetItemType(), true))
+			if (!customFunc || (*customFunc)(context, bucket.GetItemType(), true))
 			{
-				context.Draw(info._countGeometry, info._startGeometry);
+				context.Draw(bucket.GetRenderCount(), bucket.GetRenderStart());
 			}
 		}
 	}
 }
 
-void Renderer11::DrawAlphaGeometry(const GeometryRenderInfoArray& infos, const ff::Vector<AlphaGeometryEntry>& alphaGeometry, ID3D11Buffer* geometryBuffer)
+void Renderer11::DrawAlphaGeometry()
 {
-	noAssertRet(alphaGeometry.Size());
+	const size_t alphaGeometrySize = _alphaGeometry.Size();
+	noAssertRet(alphaGeometrySize);
 
 	const ff::CustomRenderContextFunc11* customFunc = _customContextStack.Size() ? &_customContextStack.GetLast() : nullptr;
 	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
@@ -1139,16 +1228,15 @@ void Renderer11::DrawAlphaGeometry(const GeometryRenderInfoArray& infos, const f
 
 	_alphaState.Apply(context);
 
-	for (size_t i = 0; i < alphaGeometry.Size(); )
+	for (size_t i = 0; i < alphaGeometrySize; )
 	{
-		const AlphaGeometryEntry& entry = alphaGeometry[i];
-		const GeometryRenderInfo& info = infos[(size_t)entry._bucketType];
+		const AlphaGeometryEntry& entry = _alphaGeometry[i];
 		size_t geometryCount = 1;
 
-		for (i++; i < alphaGeometry.Size(); i++, geometryCount++)
+		for (i++; i < alphaGeometrySize; i++, geometryCount++)
 		{
-			const AlphaGeometryEntry& entry2 = alphaGeometry[i];
-			if (entry2._bucketType != entry._bucketType ||
+			const AlphaGeometryEntry& entry2 = _alphaGeometry[i];
+			if (entry2._bucket != entry._bucket ||
 				entry2._depth != entry._depth ||
 				entry2._index != entry._index + geometryCount)
 			{
@@ -1156,11 +1244,11 @@ void Renderer11::DrawAlphaGeometry(const GeometryRenderInfoArray& infos, const f
 			}
 		}
 
-		info._bucket->Apply(context, geometryBuffer);
+		entry._bucket->Apply(context, _geometryBuffer, _targetRequiresPalette);
 
-		if (!customFunc || (*customFunc)(context, info._bucket->GetItemType(), false))
+		if (!customFunc || (*customFunc)(context, entry._bucket->GetItemType(), false))
 		{
-			context.Draw(geometryCount, info._startGeometry + entry._index);
+			context.Draw(geometryCount, entry._bucket->GetRenderStart() + entry._index);
 		}
 	}
 }
@@ -1169,15 +1257,15 @@ void Renderer11::PostFlush()
 {
 	_worldMatrixToIndex.Clear();
 	_worldMatrixIndex = ff::INVALID_DWORD;
-	ff::ZeroObject(_textures);
+
+	_paletteToIndex.Clear();
+	_paletteIndex = ff::INVALID_DWORD;
+
 	_textureCount = 0;
+	_texturesUsingPaletteCount = 0;
+
 	_alphaGeometry.Clear();
 	_lastDepthType = LastDepthType::None;
-
-	for (auto& bucket : _geometryBuckets)
-	{
-		bucket->ClearItems();
-	}
 }
 
 void Renderer11::EndRender()
@@ -1186,9 +1274,10 @@ void Renderer11::EndRender()
 
 	Flush();
 
-	_device->AsGraphDevice11()->GetStateContext().SetResourcesPS(::NULL_TEXTURES, 0, _countof(::NULL_TEXTURES));
+	_device->AsGraphDevice11()->GetStateContext().SetResourcesPS(::NULL_TEXTURES.data(), 0, ::NULL_TEXTURES.size());
 
 	_state = State::Valid;
+	_paletteStack.Resize(1);
 	_samplerStack.Resize(1);
 	_customContextStack.Clear();
 	_worldMatrixStack.Reset();
@@ -1220,87 +1309,165 @@ float Renderer11::NudgeDepth(LastDepthType depthType)
 
 unsigned int Renderer11::GetWorldMatrixIndex()
 {
+	unsigned int index = GetWorldMatrixIndexNoFlush();
+	if (index == ff::INVALID_DWORD)
+	{
+		Flush();
+		index = GetWorldMatrixIndexNoFlush();
+	}
+
+	return index;
+}
+
+unsigned int Renderer11::GetWorldMatrixIndexNoFlush()
+{
 	if (_worldMatrixIndex == ff::INVALID_DWORD)
 	{
 		DirectX::XMFLOAT4X4 wm;
 		DirectX::XMStoreFloat4x4(&wm, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&_worldMatrixStack.GetMatrix())));
 		auto iter = _worldMatrixToIndex.GetKey(wm);
 
-		if (!iter)
+		if (!iter && _worldMatrixToIndex.Size() != ::MAX_TRANSFORM_MATRIXES)
 		{
-			if (_worldMatrixToIndex.Size() == ::MAX_MODEL_MATRIXES)
-			{
-				// Make room for a new matrix
-				Flush();
-			}
-
 			iter = _worldMatrixToIndex.SetKey(wm, (unsigned int)_worldMatrixToIndex.Size());
 		}
 
-		_worldMatrixIndex = iter->GetValue();
+		if (iter)
+		{
+			_worldMatrixIndex = iter->GetValue();
+		}
 	}
 
 	return _worldMatrixIndex;
 }
 
-unsigned int Renderer11::GetTextureIndex(ff::ITextureView* texture)
+unsigned int Renderer11::GetTextureIndexNoFlush(ff::ITextureView* texture, bool usePalette)
 {
-	ff::ITextureView11* texture11 = texture ? texture->AsTextureView11() : nullptr;
-	noAssertRetVal(texture11, ff::INVALID_DWORD);
+	assert(texture);
 
-	for (size_t i = 0; i < _textureCount; i++)
+	if (usePalette)
 	{
-		if (_textures[i] == texture11)
+		unsigned int paletteIndex = (_paletteIndex == ff::INVALID_DWORD) ? GetPaletteIndexNoFlush() : _paletteIndex;
+		if (paletteIndex == ff::INVALID_DWORD)
 		{
-			return (unsigned int)i;
+			return ff::INVALID_DWORD;
+		}
+
+		unsigned int textureIndex = ff::INVALID_DWORD;
+
+		for (size_t i = _texturesUsingPaletteCount; i != 0; i--)
+		{
+			if (_texturesUsingPalette[i - 1] == texture)
+			{
+				textureIndex = (unsigned int)(i - 1);
+				break;
+			}
+		}
+
+		if (textureIndex == ff::INVALID_DWORD)
+		{
+			if (_texturesUsingPaletteCount == ::MAX_TEXTURES_USING_PALETTE)
+			{
+				return ff::INVALID_DWORD;
+			}
+
+			_texturesUsingPalette[_texturesUsingPaletteCount] = texture;
+			textureIndex = (unsigned int)_texturesUsingPaletteCount++;
+		}
+
+		return textureIndex | (paletteIndex << 8);
+	}
+	else
+	{
+		unsigned int textureIndex = ff::INVALID_DWORD;
+
+		for (size_t i = _textureCount; i != 0; i--)
+		{
+			if (_textures[i - 1] == texture)
+			{
+				textureIndex = (unsigned int)(i - 1);
+				break;
+			}
+		}
+
+		if (textureIndex == ff::INVALID_DWORD)
+		{
+			if (_textureCount == ::MAX_TEXTURES)
+			{
+				return ff::INVALID_DWORD;
+			}
+
+			_textures[_textureCount] = texture;
+			textureIndex = (unsigned int)_textureCount++;
+		}
+
+		return textureIndex;
+	}
+}
+
+unsigned int Renderer11::GetPaletteIndexNoFlush()
+{
+	if (_paletteIndex == ff::INVALID_DWORD)
+	{
+		if (_targetRequiresPalette)
+		{
+			// Not converting palette to RGBA, so don't use a palette
+			_paletteIndex = 0;
+		}
+		else
+		{
+			ff::IPalette* palette = _paletteStack.GetLast();
+			ff::hash_t paletteHash = palette->GetTextureHash();
+			auto iter = _paletteToIndex.GetKey(paletteHash);
+
+			if (!iter && _paletteToIndex.Size() != ::MAX_PALETTES)
+			{
+				iter = _paletteToIndex.SetKey(paletteHash, std::make_pair(palette, (unsigned int)_paletteToIndex.Size()));
+			}
+
+			if (iter)
+			{
+				_paletteIndex = iter->GetValue().second;
+			}
 		}
 	}
 
-	if (_textureCount == _textures.size())
+	return _paletteIndex;
+}
+
+void Renderer11::GetWorldMatrixAndTextureIndex(ff::ITextureView* texture, bool usePalette, unsigned int& modelIndex, unsigned int& textureIndex)
+{
+	modelIndex = (_worldMatrixIndex == ff::INVALID_DWORD) ? GetWorldMatrixIndexNoFlush() : _worldMatrixIndex;
+	textureIndex = GetTextureIndexNoFlush(texture, usePalette);
+
+	if (modelIndex == ff::INVALID_DWORD || textureIndex == ff::INVALID_DWORD)
 	{
-		// Make room for more textures
 		Flush();
-	}
-
-	_textures[_textureCount] = texture11;
-	return (unsigned int)_textureCount++;
-}
-
-void Renderer11::GetWorldMatrixAndTextureIndex(ff::ITextureView* texture, unsigned int& modelIndex, unsigned int& textureIndex)
-{
-	LastDepthType depthType = _lastDepthType;
-
-	modelIndex = GetWorldMatrixIndex();
-	textureIndex = GetTextureIndex(texture);
-
-	if (depthType != _lastDepthType)
-	{
-		// Do it again since there was a Flush
-		GetWorldMatrixAndTextureIndex(texture, modelIndex, textureIndex);
+		GetWorldMatrixAndTextureIndex(texture, usePalette, modelIndex, textureIndex);
 	}
 }
 
-void Renderer11::GetWorldMatrixAndTextureIndexes(ff::ITextureView** textures, unsigned int* textureIndexes, size_t count, unsigned int& modelIndex)
+void Renderer11::GetWorldMatrixAndTextureIndexes(ff::ITextureView** textures, bool usePalette, unsigned int* textureIndexes, size_t count, unsigned int& modelIndex)
 {
-	LastDepthType depthType = _lastDepthType;
+	modelIndex = (_worldMatrixIndex == ff::INVALID_DWORD) ? GetWorldMatrixIndexNoFlush() : _worldMatrixIndex;
+	bool flush = (modelIndex == ff::INVALID_DWORD);
 
-	modelIndex = GetWorldMatrixIndex();
-
-	for (size_t i = 0; i < count; i++)
+	for (size_t i = 0; !flush && i < count; i++)
 	{
-		textureIndexes[i] = GetTextureIndex(textures[i]);
+		textureIndexes[i] = GetTextureIndexNoFlush(textures[i], usePalette);
+		flush |= (textureIndexes[i] == ff::INVALID_DWORD);
 	}
 
-	if (depthType != _lastDepthType)
+	if (flush)
 	{
-		// Do it again since there was a Flush
-		GetWorldMatrixAndTextureIndexes(textures, textureIndexes, count, modelIndex);
+		Flush();
+		GetWorldMatrixAndTextureIndexes(textures, usePalette, textureIndexes, count, modelIndex);
 	}
 }
 
-void Renderer11::AddGeometry(const void* data, size_t byteSize, GeometryBucketType bucketType, float depth)
+void Renderer11::AddGeometry(const void* data, GeometryBucketType bucketType, float depth)
 {
-	GeometryBucketBase& bucket = GetGeometryBucket(bucketType);
+	GeometryBucket& bucket = GetGeometryBucket(bucketType);
 
 	if (bucketType >= GeometryBucketType::FirstAlpha)
 	{
@@ -1308,19 +1475,18 @@ void Renderer11::AddGeometry(const void* data, size_t byteSize, GeometryBucketTy
 
 		_alphaGeometry.Push(AlphaGeometryEntry
 			{
-				bucketType,
+				&bucket,
 				bucket.GetCount(),
 				depth
 			});
 	}
 
-	assert(byteSize == bucket.GetItemByteSize());
 	bucket.Add(data);
 }
 
-void* Renderer11::AddGeometry(size_t byteSize, GeometryBucketType bucketType, float depth)
+void* Renderer11::AddGeometry(GeometryBucketType bucketType, float depth)
 {
-	GeometryBucketBase& bucket = GetGeometryBucket(bucketType);
+	GeometryBucket& bucket = GetGeometryBucket(bucketType);
 
 	if (bucketType >= GeometryBucketType::FirstAlpha)
 	{
@@ -1328,13 +1494,12 @@ void* Renderer11::AddGeometry(size_t byteSize, GeometryBucketType bucketType, fl
 
 		_alphaGeometry.Push(AlphaGeometryEntry
 			{
-				bucketType,
+				&bucket,
 				bucket.GetCount(),
 				depth
 			});
 	}
 
-	assert(byteSize == bucket.GetItemByteSize());
 	return bucket.Add();
 }
 
@@ -1348,36 +1513,18 @@ ff::IRendererActive11* Renderer11::AsRendererActive11()
 	return this;
 }
 
-void Renderer11::PushPalette(ff::ITextureView* palette)
+void Renderer11::PushPalette(ff::IPalette* palette)
 {
-	assert(!palette || (palette->GetTexture()->GetSize() == ff::PointInt(256, 1) && palette->GetTexture()->GetFormat() == ff::TextureFormat::RGBA32));
-
-	ff::ITextureView11* oldPalette = _paletteStack.Size() ? _paletteStack.GetLast() : nullptr;
-	ff::ITextureView11* newPalette = palette ? palette->AsTextureView11() : nullptr;
-	if (oldPalette != newPalette)
-	{
-		Flush();
-	}
-
-	_paletteStack.Push(newPalette);
+	assertRet(!_targetRequiresPalette && palette);
+	_paletteStack.Push(palette);
+	_paletteIndex = ff::INVALID_DWORD;
 }
 
 void Renderer11::PopPalette()
 {
-	size_t size = _paletteStack.Size();
-	assertRet(size);
-
-	if (size > 1)
-	{
-		ff::ITextureView11* oldPalette = _paletteStack[size - 1];
-		ff::ITextureView11* newPalette = _paletteStack[size - 2];
-		if (oldPalette != newPalette)
-		{
-			Flush();
-		}
-	}
-
+	assertRet(_paletteStack.Size() > 1);
 	_paletteStack.Pop();
+	_paletteIndex = ff::INVALID_DWORD;
 }
 
 void Renderer11::PushCustomContext(ff::CustomRenderContextFunc11&& func)
@@ -1433,85 +1580,33 @@ void Renderer11::PopOpaque()
 void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::PointFloat& pos, const ff::PointFloat& scale, const float rotate, const DirectX::XMFLOAT4& color, LastDepthType depthType)
 {
 	const ff::SpriteData& data = sprite->GetSpriteData();
+	noAssertRet(data._textureView); // an async sprite resource isn't done loading yet
+
 	AlphaType alphaType = ::GetAlphaType(data, color, _forceOpaque);
-	if (alphaType != AlphaType::Invisible)
-	{
-		float depth = NudgeDepth(depthType);
-		bool usePalette = ff::HasAllFlags(data._type, ff::SpriteType::Palette);
-		GeometryBucketType bucketType = (alphaType == AlphaType::Transparent)
-			? (usePalette ? GeometryBucketType::PaletteSpritesAlpha : GeometryBucketType::SpritesAlpha)
-			: (usePalette ? GeometryBucketType::PaletteSprites : GeometryBucketType::Sprites);
-		ff::SpriteGeometryInput& input = *AddGeometry<ff::SpriteGeometryInput>(bucketType, depth);
+	noAssertRet(alphaType != AlphaType::Invisible);
 
-		GetWorldMatrixAndTextureIndex(data._textureView, input.matrixIndex, input.textureIndex);
-		input.pos.x = pos.x;
-		input.pos.y = pos.y;
-		input.pos.z = depth;
-		input.scale = *(DirectX::XMFLOAT2*) & scale;
-		input.rotate = rotate;
-		input.color = color;
-		input.uvrect = *(DirectX::XMFLOAT4*) & data._textureUV;
-		input.rect = *(DirectX::XMFLOAT4*) & data._worldRect;
-	}
-}
+	bool usePalette = ff::HasAllFlags(data._type, ff::SpriteType::Palette);
+	GeometryBucketType bucketType = (alphaType == AlphaType::Transparent && !_targetRequiresPalette)
+		? (usePalette ? GeometryBucketType::PaletteSpritesAlpha : GeometryBucketType::SpritesAlpha)
+		: (usePalette ? GeometryBucketType::PaletteSprites : GeometryBucketType::Sprites);
 
-void Renderer11::DrawMultiSprite(ff::ISprite** sprites, const DirectX::XMFLOAT4* colors, size_t count, const ff::PointFloat& pos, const ff::PointFloat& scale, const float rotate, LastDepthType depthType)
-{
-	noAssertRet(count);
+	float depth = NudgeDepth(depthType);
+	ff::SpriteGeometryInput& input = *(ff::SpriteGeometryInput*)AddGeometry(bucketType, depth);
 
-	if (count == 1)
-	{
-		DrawSprite(sprites[0], pos, scale, rotate, colors[0], depthType);
-		return;
-	}
-
-	const ff::SpriteData* datas[4] = { nullptr };
-	ff::ITextureView* textures[4] = { nullptr };
-
-	for (size_t i = 0; i < count; i++)
-	{
-		datas[i] = &sprites[i]->GetSpriteData();
-		textures[i] = datas[i]->_textureView;
-	}
-
-	AlphaType alphaType = ::GetAlphaType(datas, colors, count, _forceOpaque);
-	if (alphaType != AlphaType::Invisible)
-	{
-		float depth = NudgeDepth(depthType);
-		GeometryBucketType bucketType = (alphaType == AlphaType::Transparent) ? GeometryBucketType::MultiSpritesAlpha : GeometryBucketType::MultiSprites;
-		ff::MultiSpriteGeometryInput& input = *AddGeometry<ff::MultiSpriteGeometryInput>(bucketType, depth);
-
-		for (size_t i = 0; i < count; i++)
-		{
-			input.color[i] = colors[i];
-			input.uvrect[i] = *(DirectX::XMFLOAT4*) & datas[i]->_textureUV;
-		}
-
-		for (size_t i = count; i < 4; i++)
-		{
-			input.color[i] = ff::GetColorNone();
-			input.uvrect[i] = ff::GetColorNone();
-			input.textureIndex[i] = ff::INVALID_DWORD;
-		}
-
-		GetWorldMatrixAndTextureIndexes(textures, input.textureIndex, count, input.matrixIndex);
-		input.rect = *(DirectX::XMFLOAT4*) & datas[0]->_worldRect;
-		input.pos.x = pos.x;
-		input.pos.y = pos.y;
-		input.pos.z = depth;
-		input.scale = *(DirectX::XMFLOAT2*) & scale;
-		input.rotate = rotate;
-	}
+	GetWorldMatrixAndTextureIndex(data._textureView, usePalette, input.matrixIndex, input.textureIndex);
+	input.pos.x = pos.x;
+	input.pos.y = pos.y;
+	input.pos.z = depth;
+	input.scale = *(DirectX::XMFLOAT2*) & scale;
+	input.rotate = rotate;
+	input.color = color;
+	input.uvrect = *(DirectX::XMFLOAT4*) & data._textureUV;
+	input.rect = *(DirectX::XMFLOAT4*) & data._worldRect;
 }
 
 void Renderer11::DrawSprite(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const float rotate, const DirectX::XMFLOAT4& color)
 {
 	return DrawSprite(sprite, pos, scale, rotate, color, _forceNoOverlap ? LastDepthType::SpriteNoOverlap : LastDepthType::Sprite);
-}
-
-void Renderer11::DrawMultiSprite(ff::ISprite** sprites, const DirectX::XMFLOAT4* colors, size_t count, ff::PointFloat pos, ff::PointFloat scale, const float rotate)
-{
-	return DrawMultiSprite(sprites, colors, count, pos, scale, rotate, _forceNoOverlap ? LastDepthType::SpriteNoOverlap : LastDepthType::Sprite);
 }
 
 void Renderer11::DrawFont(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const DirectX::XMFLOAT4& color)
@@ -1528,13 +1623,11 @@ void Renderer11::DrawLineStrip(
 	bool pixelThickness)
 {
 	assert(colorCount == 1 || colorCount == pointCount);
-	thickness = std::abs(thickness);
+	thickness = pixelThickness ? -std::abs(thickness) : std::abs(thickness);
 
 	ff::LineGeometryInput input;
-	input.matrixIndex = GetWorldMatrixIndex();
-	input.depth = NudgeDepth(pixelThickness
-		? (_forceNoOverlap ? LastDepthType::LineScreenNoOverlap : LastDepthType::LineScreen)
-		: (_forceNoOverlap ? LastDepthType::LineNoOverlap : LastDepthType::Line));
+	input.matrixIndex = (_worldMatrixIndex == ff::INVALID_DWORD) ? GetWorldMatrixIndex() : _worldMatrixIndex;
+	input.depth = NudgeDepth(_forceNoOverlap ? LastDepthType::LineNoOverlap : LastDepthType::Line);
 	input.color[0] = colors[0];
 	input.color[1] = colors[0];
 	input.thickness[0] = thickness;
@@ -1566,11 +1659,8 @@ void Renderer11::DrawLineStrip(
 
 		if (alphaType != AlphaType::Invisible)
 		{
-			GeometryBucketType bucketType = pixelThickness
-				? ((alphaType == AlphaType::Transparent) ? GeometryBucketType::LinesScreenAlpha : GeometryBucketType::LinesScreen)
-				: ((alphaType == AlphaType::Transparent) ? GeometryBucketType::LinesAlpha : GeometryBucketType::Lines);
-
-			AddGeometry(input, bucketType, input.depth);
+			GeometryBucketType bucketType = (alphaType == AlphaType::Transparent) ? GeometryBucketType::LinesAlpha : GeometryBucketType::Lines;
+			AddGeometry(&input, bucketType, input.depth);
 		}
 	}
 }
@@ -1649,7 +1739,7 @@ void Renderer11::DrawFilledRectangle(ff::RectFloat rect, const DirectX::XMFLOAT4
 void Renderer11::DrawFilledTriangles(const ff::PointFloat* points, const DirectX::XMFLOAT4* colors, size_t count)
 {
 	ff::TriangleGeometryInput input;
-	input.matrixIndex = GetWorldMatrixIndex();
+	input.matrixIndex = (_worldMatrixIndex == ff::INVALID_DWORD) ? GetWorldMatrixIndex() : _worldMatrixIndex;
 	input.depth = NudgeDepth(_forceNoOverlap ? LastDepthType::TriangleNoOverlap : LastDepthType::Triangle);
 
 	for (size_t i = 0; i < count; i++, points += 3, colors += 3)
@@ -1661,7 +1751,7 @@ void Renderer11::DrawFilledTriangles(const ff::PointFloat* points, const DirectX
 		if (alphaType != AlphaType::Invisible)
 		{
 			GeometryBucketType bucketType = (alphaType == AlphaType::Transparent) ? GeometryBucketType::TrianglesAlpha : GeometryBucketType::Triangles;
-			AddGeometry(input, bucketType, input.depth);
+			AddGeometry(&input, bucketType, input.depth);
 		}
 	}
 }
@@ -1721,26 +1811,109 @@ void Renderer11::DrawOutlineCircle(ff::PointFloat center, float radius, const Di
 void Renderer11::DrawOutlineCircle(ff::PointFloat center, float radius, const DirectX::XMFLOAT4& insideColor, const DirectX::XMFLOAT4& outsideColor, float thickness, bool pixelThickness)
 {
 	ff::CircleGeometryInput input;
-	input.matrixIndex = GetWorldMatrixIndex();
+	input.matrixIndex = (_worldMatrixIndex == ff::INVALID_DWORD) ? GetWorldMatrixIndex() : _worldMatrixIndex;
 	input.pos.x = center.x;
 	input.pos.y = center.y;
-	input.pos.z = NudgeDepth(pixelThickness
-		? (_forceNoOverlap ? LastDepthType::CircleScreenNoOverlap : LastDepthType::CircleScreen)
-		: (_forceNoOverlap ? LastDepthType::CircleNoOverlap : LastDepthType::Circle));
+	input.pos.z = NudgeDepth(_forceNoOverlap ? LastDepthType::CircleNoOverlap : LastDepthType::Circle);
 	input.radius = std::abs(radius);
-	input.thickness = !pixelThickness ? std::min(thickness, input.radius) : thickness;
+	input.thickness = pixelThickness ? -std::abs(thickness) : std::min(std::abs(thickness), input.radius);
 	input.insideColor = insideColor;
 	input.outsideColor = outsideColor;
 
 	AlphaType alphaType = ::GetAlphaType(&input.insideColor, 2, _forceOpaque);
 	if (alphaType != AlphaType::Invisible)
 	{
-		GeometryBucketType bucketType = pixelThickness
-			? ((alphaType == AlphaType::Transparent) ? GeometryBucketType::CircleScreenAlpha : GeometryBucketType::CircleScreen)
-			: ((alphaType == AlphaType::Transparent) ? GeometryBucketType::CircleAlpha : GeometryBucketType::Circle);
-
-		AddGeometry(input, bucketType, input.pos.z);
+		GeometryBucketType bucketType = (alphaType == AlphaType::Transparent) ? GeometryBucketType::CircleAlpha : GeometryBucketType::Circle;
+		AddGeometry(&input, bucketType, input.pos.z);
 	}
+}
+
+void Renderer11::DrawPaletteFont(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, int color)
+{
+	DirectX::XMFLOAT4 color2;
+	::PaletteIndexToColor(color, color2);
+	DrawFont(sprite, pos, scale, color2);
+}
+
+void Renderer11::DrawPaletteLineStrip(const ff::PointFloat* points, const int* colors, size_t count, float thickness, bool pixelThickness)
+{
+	ff::Vector<DirectX::XMFLOAT4, 64> colors2;
+	colors2.Resize(count);
+	::PaletteIndexToColor(colors, colors2.Data(), count);
+	DrawLineStrip(points, count, colors2.Data(), count, thickness, pixelThickness);
+}
+
+void Renderer11::DrawPaletteLineStrip(const ff::PointFloat* points, size_t count, int color, float thickness, bool pixelThickness)
+{
+	DirectX::XMFLOAT4 color2;
+	::PaletteIndexToColor(color, color2);
+	DrawLineStrip(points, count, &color2, 1, thickness, pixelThickness);
+}
+
+void Renderer11::DrawPaletteLine(ff::PointFloat start, ff::PointFloat end, int color, float thickness, bool pixelThickness)
+{
+	DirectX::XMFLOAT4 color2;
+	::PaletteIndexToColor(color, color2);
+	DrawLine(start, end, color2, thickness, pixelThickness);
+}
+
+void Renderer11::DrawPaletteFilledRectangle(ff::RectFloat rect, const int* colors)
+{
+	std::array<DirectX::XMFLOAT4, 4> colors2;
+	::PaletteIndexToColor(colors, colors2.data(), colors2.size());
+	DrawFilledRectangle(rect, colors2.data());
+}
+
+void Renderer11::DrawPaletteFilledRectangle(ff::RectFloat rect, int color)
+{
+	DirectX::XMFLOAT4 color2;
+	::PaletteIndexToColor(color, color2);
+	DrawFilledRectangle(rect, color2);
+}
+
+void Renderer11::DrawPaletteFilledTriangles(const ff::PointFloat* points, const int* colors, size_t count)
+{
+	ff::Vector<DirectX::XMFLOAT4, 64 * 3> colors2;
+	colors2.Resize(count * 3);
+	::PaletteIndexToColor(colors, colors2.Data(), count);
+	DrawFilledTriangles(points, colors2.Data(), count);
+}
+
+void Renderer11::DrawPaletteFilledCircle(ff::PointFloat center, float radius, int color)
+{
+	DirectX::XMFLOAT4 color2;
+	::PaletteIndexToColor(color, color2);
+	DrawFilledCircle(center, radius, color2);
+}
+
+void Renderer11::DrawPaletteFilledCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor)
+{
+	DirectX::XMFLOAT4 insideColor2, outsideColor2;
+	::PaletteIndexToColor(insideColor, insideColor2);
+	::PaletteIndexToColor(outsideColor, outsideColor2);
+	DrawFilledCircle(center, radius, insideColor2, outsideColor2);
+}
+
+void Renderer11::DrawPaletteOutlineRectangle(ff::RectFloat rect, int color, float thickness, bool pixelThickness)
+{
+	DirectX::XMFLOAT4 color2;
+	::PaletteIndexToColor(color, color2);
+	DrawOutlineRectangle(rect, color2, thickness, pixelThickness);
+}
+
+void Renderer11::DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int color, float thickness, bool pixelThickness)
+{
+	DirectX::XMFLOAT4 color2;
+	::PaletteIndexToColor(color, color2);
+	DrawOutlineCircle(center, radius, color2, thickness, pixelThickness);
+}
+
+void Renderer11::DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor, float thickness, bool pixelThickness)
+{
+	DirectX::XMFLOAT4 insideColor2, outsideColor2;
+	::PaletteIndexToColor(insideColor, insideColor2);
+	::PaletteIndexToColor(outsideColor, outsideColor2);
+	DrawOutlineCircle(center, radius, insideColor2, outsideColor2, thickness, pixelThickness);
 }
 
 ff::IGraphDevice* Renderer11::GetDevice() const
