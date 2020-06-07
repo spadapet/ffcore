@@ -200,8 +200,10 @@ void ff::XamlView::Advance()
 
 void ff::XamlView::PreRender()
 {
-	_view->GetRenderer()->UpdateRenderTree();
-	_view->GetRenderer()->RenderOffscreen();
+	if (_view->GetRenderer()->UpdateRenderTree())
+	{
+		_view->GetRenderer()->RenderOffscreen();
+	}
 }
 
 void ff::XamlView::Render(ff::IRenderTarget* target, ff::IRenderDepth* depth, const ff::RectFloat* viewRect)

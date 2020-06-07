@@ -1,2 +1,2 @@
 svn://svn.noesisengine.com/Noesis/NoesisSDK/trunk/Native
-3.0.0 (r9323)
+3.0.1 (r9342)
