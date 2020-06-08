@@ -324,6 +324,7 @@ void ff::XamlGlobalState::UnregisterView(XamlView* view)
 {
 	verify(_views.DeleteItem(view));
 	_inputViews.DeleteItem(view);
+	_renderedViews.DeleteItem(view);
 
 	if (_focusedView == view)
 	{
@@ -512,8 +513,15 @@ const ff::Vector<ff::XamlView*>& ff::XamlGlobalState::GetInputViews() const
 	return _inputViews;
 }
 
+const ff::Vector<ff::XamlView*>& ff::XamlGlobalState::GetRenderedViews() const
+{
+	return _renderedViews;
+}
+
 void ff::XamlGlobalState::OnRenderView(XamlView* view)
 {
+	_renderedViews.Push(view);
+
 	if (view->IsEnabled())
 	{
 		if (view->IsInputBelowBlocked())
@@ -529,6 +537,7 @@ void ff::XamlGlobalState::OnFrameRendering(ff::AppGlobals* globals, ff::AdvanceT
 {
 	// OnRenderView will need to be called again for each view actually rendered
 	_inputViews.Clear();
+	_renderedViews.Clear();
 }
 
 void ff::XamlGlobalState::OnFrameRendered(ff::AppGlobals* globals, ff::AdvanceType type, ff::IRenderTarget* target, ff::IRenderDepth* depth)

@@ -37,6 +37,7 @@ namespace ff
 		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlViewState> CreateViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target);
 		UTIL_API const ff::Vector<XamlView*>& GetInputViews() const;
+		UTIL_API const ff::Vector<XamlView*>& GetRenderedViews() const;
 
 		UTIL_API ff::AppGlobals* GetAppGlobals() const;
 		ff::IResourceAccess* GetResourceAccess() const;
@@ -70,6 +71,7 @@ namespace ff
 		ff::IValueAccess* _values;
 		ff::Vector<XamlView*> _views;
 		ff::Vector<XamlView*> _inputViews;
+		ff::Vector<XamlView*> _renderedViews;
 		Noesis::Ptr<XamlFontProvider> _fontProvider;
 		Noesis::Ptr<XamlTextureProvider> _textureProvider;
 		Noesis::Ptr<XamlProvider> _xamlProvider;
