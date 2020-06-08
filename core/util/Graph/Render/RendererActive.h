@@ -17,8 +17,8 @@ namespace ff
 		virtual MatrixStack& GetWorldMatrixStack() = 0;
 		virtual IRendererActive11* AsRendererActive11() = 0;
 
-		virtual void DrawSprite(ISprite* sprite, PointFloat pos, PointFloat scale, const float rotate, const DirectX::XMFLOAT4& color = ff::GetColorWhite()) = 0;
-		virtual void DrawFont(ISprite* sprite, PointFloat pos, PointFloat scale, const DirectX::XMFLOAT4& color) = 0;
+		virtual void DrawSprite(ISprite* sprite, PointFloat pos = PointFloat::Zeros(), PointFloat scale = PointFloat::Ones(), const float rotate = 0, const DirectX::XMFLOAT4& color = ff::GetColorWhite()) = 0;
+		virtual void DrawFont(ISprite* sprite, PointFloat pos, PointFloat scale = PointFloat::Ones(), const DirectX::XMFLOAT4& color = ff::GetColorWhite()) = 0;
 		virtual void DrawLineStrip(const PointFloat* points, const DirectX::XMFLOAT4* colors, size_t count, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawLineStrip(const PointFloat* points, size_t count, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawLine(PointFloat start, PointFloat end, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
