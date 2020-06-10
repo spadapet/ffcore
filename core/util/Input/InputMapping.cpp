@@ -86,18 +86,6 @@ BEGIN_INTERFACES(InputMapping)
 	HAS_INTERFACE(ff::IResourceGetClone)
 END_INTERFACES()
 
-bool ff::CreateInputMapping(ff::IInputMapping** ppMapping)
-{
-	assertRetVal(ppMapping, false);
-	*ppMapping = nullptr;
-
-	ff::ComPtr<InputMapping, ff::IInputMapping> pMapping;
-	assertHrRetVal(ComAllocator<InputMapping>::CreateInstance(&pMapping), false);
-
-	*ppMapping = pMapping.Detach();
-	return true;
-}
-
 static ff::ModuleStartup Register([](ff::Module& module)
 	{
 		module.RegisterClassT<InputMapping>(L"input");
@@ -552,9 +540,7 @@ bool InputMapping::SaveToCache(ff::Dict& dict)
 
 ff::ComPtr<IUnknown> InputMapping::GetResourceClone()
 {
-	ff::ComPtr<ff::IInputMapping> myClone;
-	assertRetVal(ff::CreateInputMapping(&myClone), false);
-
+	ff::ComPtr<ff::IInputMapping> myClone = new ff::ComObject<InputMapping>();
 	ff::Vector<ff::InputEventMapping> events = GetMappedEvents();
 	ff::Vector<ff::InputValueMapping> values = GetMappedValues();
 

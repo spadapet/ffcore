@@ -16,12 +16,12 @@ ff::XamlRenderTarget::XamlRenderTarget(ff::IGraphDevice* graph, size_t width, si
 	ff::TextureFormat format = sRGB ? ff::TextureFormat::RGBA32_SRGB : ff::TextureFormat::RGBA32;
 
 	_msaaTexture = graph->CreateTexture(size, format, 1, 1, samples);
-	_msaaTarget = graph->CreateRenderTargetTexture(_msaaTexture, 0, 1, 0);
+	_msaaTarget = graph->CreateRenderTargetTexture(_msaaTexture);
 
 	if (_msaaTexture->GetSampleCount() > 1)
 	{
-		_resolvedTexture = graph->CreateTexture(size, format, 1, 1, 1);
-		_resolvedTarget = graph->CreateRenderTargetTexture(_resolvedTexture, 0, 1, 0);
+		_resolvedTexture = graph->CreateTexture(size, format);
+		_resolvedTarget = graph->CreateRenderTargetTexture(_resolvedTexture);
 	}
 	else
 	{
@@ -38,8 +38,8 @@ ff::XamlRenderTarget::XamlRenderTarget(const XamlRenderTarget& rhs, ff::StringRe
 	, _graph(rhs._graph)
 	, _depth(rhs._depth)
 {
-	_resolvedTexture = _graph->CreateTexture(rhs._resolvedTexture->GetSize(), rhs._resolvedTexture->GetFormat(), 1, 1, 1);
-	_resolvedTarget = _graph->CreateRenderTargetTexture(_resolvedTexture, 0, 1, 0);
+	_resolvedTexture = _graph->CreateTexture(rhs._resolvedTexture->GetSize(), rhs._resolvedTexture->GetFormat());
+	_resolvedTarget = _graph->CreateRenderTargetTexture(_resolvedTexture);
 	_resolvedTextureWrapper = Noesis::MakePtr<XamlTexture>(_resolvedTexture, name);
 
 	if (rhs._msaaTexture->GetSampleCount() > 1)

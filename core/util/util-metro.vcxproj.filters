@@ -500,7 +500,6 @@
     <ClCompile Include="Globals\DesktopGlobals.cpp">
       <Filter>Globals</Filter>
     </ClCompile>
-    <ClCompile Include="Graph\GraphBuffer.cpp" />
     <ClCompile Include="Input\DeviceEvent.cpp">
       <Filter>Input</Filter>
     </ClCompile>
@@ -557,6 +556,15 @@
     </ClCompile>
     <ClCompile Include="Graph\Texture\PaletteData.cpp">
       <Filter>Graph\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\GraphBuffer.cpp">
+      <Filter>Graph</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Render\PixelTransform.cpp">
+      <Filter>Graph\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Render\PixelRenderer.cpp">
+      <Filter>Graph\Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1052,7 +1060,6 @@
     <ClInclude Include="Globals\DesktopGlobals.h">
       <Filter>Globals</Filter>
     </ClInclude>
-    <ClInclude Include="Graph\GraphBuffer.h" />
     <ClInclude Include="Input\DeviceEvent.h">
       <Filter>Input</Filter>
     </ClInclude>
@@ -1113,6 +1120,18 @@
     <ClInclude Include="Graph\Texture\PaletteData.h">
       <Filter>Graph\Texture</Filter>
     </ClInclude>
+    <ClInclude Include="Graph\GraphBuffer.h">
+      <Filter>Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\PixelTransform.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\PixelRenderer.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\PixelAnimation.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\util-metro.def">
@@ -1121,9 +1140,6 @@
     <None Include="Assets\Renderer.hlsl">
       <Filter>Assets</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Natvis Include="util.natvis" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="Assets\Inconsolata-Regular.ttf">
@@ -1158,5 +1174,10 @@
     <ResJson Include="Assets\Values.res.json">
       <Filter>Assets</Filter>
     </ResJson>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="util.natvis">
+      <Filter>Assets</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

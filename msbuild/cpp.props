@@ -121,6 +121,8 @@
     <ClCompile>
       <AdditionalIncludeDirectories Condition=" '$(AppType)' == 'Desktop' ">$(MSBuildProjectDirectory);$(GeneratedFilesDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj /Wv:18 %(AdditionalOptions)</AdditionalOptions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BasicRuntimeChecks Condition=" '$(Configuration)' == 'Debug' ">EnableFastChecks</BasicRuntimeChecks>
       <BufferSecurityCheck Condition=" '$(Configuration)' != 'Debug' ">false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FunctionLevelLinking Condition=" '$(Configuration)' != 'Debug' ">true</FunctionLevelLinking>
@@ -137,8 +139,7 @@
       <PreprocessorDefinitions Condition=" '$(ConfigurationType)' == 'Application' ">_WINDOWS;_WINEXE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition=" '$(Configuration)' == 'Debug' ">DEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition=" '$(Configuration)' != 'Debug' ">NDEBUG;DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BasicRuntimeChecks Condition=" '$(Configuration)' == 'Debug' ">EnableFastChecks</BasicRuntimeChecks>
+      <SDLCheck Condition=" '$(Configuration)' != 'Debug' "></SDLCheck>
       <TreatWarningAsError>true</TreatWarningAsError>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>

@@ -133,8 +133,6 @@ namespace ff
 		virtual Vector<InputValueMapping> GetMappedValues(hash_t valueID) const = 0;
 	};
 
-	UTIL_API bool CreateInputMapping(IInputMapping** ppMapping);
-
 	UTIL_API int NameToVirtualKey(StringRef name);
 	UTIL_API String VirtualKeyToName(int vk);
 	UTIL_API String VirtualKeyToDisplayName(int vk);
