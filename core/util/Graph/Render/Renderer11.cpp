@@ -931,14 +931,12 @@ bool Renderer11::Init()
 		static const BYTE emptyPaletteColors[256 * 4] = { 0 };
 
 		ff::ComPtr<ff::IData> defaultPaletteData;
-		ff::ComPtr<ff::IPaletteData> defaultPaletteData2;
-		ff::ComPtr<ff::IPalette> defaultPalette;
-
 		assertRetVal(ff::CreateDataInStaticMem(emptyPaletteColors, _countof(emptyPaletteColors), &defaultPaletteData), false);
-		assertRetVal(ff::CreatePaletteData(defaultPaletteData, &defaultPaletteData2), false);
-		assertRetVal(ff::CreatePalette(_device, defaultPaletteData2, &defaultPalette), false);
 
-		_paletteStack.Push(defaultPalette);
+		ff::ComPtr<ff::IPaletteData> defaultPaletteData2;
+		assertRetVal(ff::CreatePaletteData(defaultPaletteData, &defaultPaletteData2), false);
+
+		_paletteStack.Push(defaultPaletteData2->CreatePalette(_device));
 	}
 
 	_paletteTexture = _device->CreateTexture(ff::PointInt(256, (int)::MAX_PALETTES), ff::TextureFormat::RGBA32);

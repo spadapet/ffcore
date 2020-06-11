@@ -2,6 +2,7 @@
 #include "Data/Data.h"
 #include "Dict/Dict.h"
 #include "Globals/ProcessGlobals.h"
+#include "Graph/Texture/Palette.h"
 #include "Graph/Texture/PaletteData.h"
 #include "Module/ModuleFactory.h"
 #include "Resource/ResourcePersist.h"
@@ -24,6 +25,7 @@ public:
 
 	// IPaletteData functions
 	virtual ff::IData* GetColors() const override;
+	virtual ff::ComPtr<ff::IPalette> CreatePalette(ff::IGraphDevice* device) override;
 
 	// IResourcePersist
 	virtual bool LoadFromSource(const ff::Dict& dict) override;
@@ -75,6 +77,16 @@ bool PaletteData::Init(ff::IData* colors)
 ff::IData* PaletteData::GetColors() const
 {
 	return _colors;
+}
+
+// From Palette.cpp:
+bool CreatePalette(ff::IGraphDevice* device, ff::IPaletteData* data, ff::IPalette** obj);
+
+ff::ComPtr<ff::IPalette> PaletteData::CreatePalette(ff::IGraphDevice* device)
+{
+	ff::ComPtr<ff::IPalette> palette;
+	assertRetVal(::CreatePalette(device, this, &palette), nullptr);
+	return palette;
 }
 
 bool PaletteData::LoadFromSource(const ff::Dict& dict)

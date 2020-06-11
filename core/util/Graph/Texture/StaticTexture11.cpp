@@ -185,7 +185,7 @@ bool StaticTexture11::Init(DirectX::ScratchImage&& data, ff::IPaletteData* palet
 
 	if (paletteData && GetDxgiFormat() == DXGI_FORMAT_R8_UINT)
 	{
-		ff::CreatePalette(_device, paletteData, &_palette);
+		_palette = paletteData->CreatePalette(_device);
 	}
 
 	return true;
@@ -362,7 +362,7 @@ bool StaticTexture11::LoadFromCache(const ff::Dict& dict)
 	{
 		ff::ComPtr<ff::IPaletteData> paletteData2;
 		assertRetVal(ff::CreatePaletteData(paletteData, &paletteData2), false);
-		assertRetVal(ff::CreatePalette(_device, paletteData2, &_palette), false);
+		_palette = paletteData2->CreatePalette(_device);
 	}
 
 	assertHrRetVal(DirectX::LoadFromDDSMemory(

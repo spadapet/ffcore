@@ -3,6 +3,8 @@
 namespace ff
 {
 	class IData;
+	class IGraphDevice;
+	class IPalette;
 
 	const size_t PALETTE_SIZE = 256;
 
@@ -11,6 +13,7 @@ namespace ff
 	{
 	public:
 		virtual IData* GetColors() const = 0; // 256 R8G8B8A8_UNORM colors
+		virtual ComPtr<IPalette> CreatePalette(ff::IGraphDevice* device) = 0;
 	};
 
 	bool CreatePaletteData(IData* colors, IPaletteData** obj);

@@ -41,12 +41,12 @@ BEGIN_INTERFACES(Palette)
 	HAS_INTERFACE(ff::IPalette)
 END_INTERFACES()
 
-bool ff::CreatePalette(IGraphDevice* device, IPaletteData* data, IPalette** obj)
+bool CreatePalette(ff::IGraphDevice* device, ff::IPaletteData* data, ff::IPalette** obj)
 {
 	assertRetVal(obj, false);
 	*obj = nullptr;
 
-	ff::ComPtr<Palette, IPalette> newObj;
+	ff::ComPtr<Palette, ff::IPalette> newObj;
 	assertHrRetVal(ff::ComAllocator<Palette>::CreateInstance(device, &newObj), false);
 	assertRetVal(newObj->Init(data), false);
 
