@@ -44,6 +44,7 @@ namespace ff
 		UTIL_API AutoResourceValue(IResources* resources, StringRef name);
 		UTIL_API AutoResourceValue(const AutoResourceValue& rhs);
 		UTIL_API AutoResourceValue(AutoResourceValue&& rhs);
+		UTIL_API AutoResourceValue(SharedResourceValue value);
 		UTIL_API AutoResourceValue& operator=(const AutoResourceValue& rhs);
 		UTIL_API AutoResourceValue& operator=(AutoResourceValue&& rhs);
 

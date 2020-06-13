@@ -71,10 +71,10 @@ TestEntityState::TestEntityState(ff::AppGlobals* globals)
 	, _renderEntityBucket(_domain.GetBucket<RenderSystemEntry>())
 	, _colorSpriteResource(L"TestSprites.Player")
 	, _paletteSpritesResource(L"TestPaletteSprites")
-	, _paletteResource(L"TestPalette")
 	, _fontResource(L"TestFont2")
 {
-	ff::CreatePalette(globals->GetGraph(), _paletteResource.Flush(), &_palette);
+	ff::TypedResource<ff::IPaletteData> paletteData(L"TestPalette");
+	_palette = paletteData->CreatePalette(globals->GetGraph());
 }
 
 std::shared_ptr<ff::State> TestEntityState::Advance(ff::AppGlobals* globals)

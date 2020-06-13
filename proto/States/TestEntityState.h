@@ -38,6 +38,5 @@ private:
 	ff::TypedResource<ff::ISprite> _colorSpriteResource;
 	ff::TypedResource<ff::ISpriteList> _paletteSpritesResource;
 	ff::TypedResource<ff::ISpriteFont> _fontResource;
-	ff::TypedResource<ff::IPaletteData> _paletteResource;
 	ff::ComPtr<ff::IPalette> _palette;
 };

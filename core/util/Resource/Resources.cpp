@@ -21,13 +21,9 @@ public:
 	bool Init(ff::AppGlobals* globals, const ff::Dict& dict);
 
 	// IResources
-	virtual void SetResources(const ff::Dict& dict) override;
-	virtual ff::Dict GetResources() const override;
+	virtual void AddResources(const ff::Dict& dict) override;
 	virtual ff::Vector<ff::String> GetResourceNames() const override;
-	virtual void Clear() override;
-	virtual bool IsLoading() const override;
 
-	virtual bool HasResource(ff::StringRef name) override;
 	virtual ff::SharedResourceValue GetResource(ff::StringRef name) override;
 	virtual ff::SharedResourceValue FlushResource(ff::SharedResourceValue value) override;
 
@@ -41,27 +37,26 @@ private:
 
 	struct ValueInfo
 	{
-		WeakResourceValue _value;
 		HANDLE _event;
+		WeakResourceValue _value;
+		ff::Vector<ValueInfo*> _loadingChildren;
+		ff::Vector<ValueInfo*> _waitingParents;
 	};
 
-	typedef std::shared_ptr<ValueInfo> ValueInfoPtr;
-
 	ff::AppGlobals* GetContext() const;
-	ValueInfoPtr GetValueInfo(ff::StringRef name);
+	ValueInfo& GetValueInfo(ff::StringRef name);
 	ff::SharedResourceValue CreateNullResource(ff::StringRef name) const;
 
 	ff::SharedResourceValue StartLoading(ff::StringRef name);
-	void DoLoad(ValueInfoPtr info, ff::StringRef name, ff::ValuePtr value);
+	void DoLoad(ValueInfo& info, ff::StringRef name, ff::ValuePtr value);
 	void Invalidate(ff::StringRef name);
-	void UpdateValueInfo(ValueInfoPtr info, ff::SharedResourceValue newValue);
+	void UpdateValueInfo(ValueInfo& info, ff::SharedResourceValue newValue);
 	ff::ValuePtr CreateObjects(ff::ValuePtr value);
 
 	ff::Mutex _mutex;
 	ff::Dict _dict;
-	ff::Map<ff::String, ValueInfoPtr> _values;
+	ff::Map<ff::String, ValueInfo> _values;
 	ff::AppGlobals* _globals;
-	std::atomic_long _loadingCount;
 };
 
 BEGIN_INTERFACES(Resources)
@@ -89,13 +84,11 @@ bool ff::CreateResources(AppGlobals* globals, const Dict& dict, ff::IResources**
 }
 
 Resources::Resources()
-	: _loadingCount(0)
 {
 }
 
 Resources::~Resources()
 {
-	Clear();
 }
 
 bool Resources::Init(ff::AppGlobals* globals, const ff::Dict& dict)
@@ -104,7 +97,7 @@ bool Resources::Init(ff::AppGlobals* globals, const ff::Dict& dict)
 	return LoadFromCache(dict);
 }
 
-void Resources::SetResources(const ff::Dict& dict)
+void Resources::AddResources(const ff::Dict& dict)
 {
 	ff::LockMutex lock(_mutex);
 
@@ -122,45 +115,10 @@ void Resources::SetResources(const ff::Dict& dict)
 	}
 }
 
-ff::Dict Resources::GetResources() const
-{
-	ff::Dict dict;
-	{
-		ff::LockMutex lock(_mutex);
-		dict = _dict;
-	}
-
-	return dict;
-}
-
 ff::Vector<ff::String> Resources::GetResourceNames() const
 {
 	ff::LockMutex lock(_mutex);
 	return _dict.GetAllNames();
-}
-
-void Resources::Clear()
-{
-	ff::LockMutex lock(_mutex);
-
-	for (const auto& i : _values)
-	{
-		Invalidate(i.GetKey());
-	}
-
-	_values.Clear();
-	_dict.Clear();
-}
-
-bool Resources::IsLoading() const
-{
-	return _loadingCount != 0;
-}
-
-bool Resources::HasResource(ff::StringRef name)
-{
-	ff::LockMutex lock(_mutex);
-	return _dict.GetValue(name) != nullptr;
 }
 
 ff::SharedResourceValue Resources::GetResource(ff::StringRef name)
@@ -180,9 +138,9 @@ ff::SharedResourceValue Resources::FlushResource(ff::SharedResourceValue value)
 	{
 		ff::LockMutex lock(_mutex);
 
-		for (const auto& i : _values)
+		for (auto& i : _values)
 		{
-			ValueInfo& info = *i.GetValue().get();
+			ValueInfo& info = i.GetEditableValue();
 			if (info._event)
 			{
 				ff::SharedResourceValue curValue = info._value.lock();
@@ -221,30 +179,30 @@ bool Resources::LoadFromSource(const ff::Dict& dict)
 
 bool Resources::LoadFromCache(const ff::Dict& dict)
 {
-	SetResources(dict);
+	AddResources(dict);
 	return true;
 }
 
 bool Resources::SaveToCache(ff::Dict& dict)
 {
-	dict = GetResources();
+	ff::LockMutex lock(_mutex);
+	dict = _dict;
 	return true;
 }
 
-Resources::ValueInfoPtr Resources::GetValueInfo(ff::StringRef name)
+Resources::ValueInfo& Resources::GetValueInfo(ff::StringRef name)
 {
 	ff::LockMutex lock(_mutex);
 	auto iter = _values.GetKey(name);
 
 	if (!iter)
 	{
-		ValueInfoPtr info = std::make_shared<ValueInfo>();
-		info->_value = CreateNullResource(name);
-		info->_event = nullptr;
+		ValueInfo info;
+		info._event = nullptr;
 		iter = _values.SetKey(name, info);
 	}
 
-	return iter->GetValue();
+	return iter->GetEditableValue();
 }
 
 ff::SharedResourceValue Resources::CreateNullResource(ff::StringRef name) const
@@ -257,40 +215,37 @@ ff::SharedResourceValue Resources::StartLoading(ff::StringRef name)
 {
 	ff::LockMutex lock(_mutex);
 
-	ValueInfoPtr infoPtr = GetValueInfo(name);
-	ValueInfo& info = *infoPtr.get();
-	ff::SharedResourceValue value = info._value.lock();
+	ValueInfo* info = &GetValueInfo(name);
+	ff::SharedResourceValue value = info->_value.lock();
 
 	if (value == nullptr)
 	{
 		value = CreateNullResource(name);
 		value->StartedLoading(this);
-		info._value = value;
+		info->_value = value;
 	}
 
-	noAssertRetVal(!info._event, value);
+	noAssertRetVal(!info->_event, value);
 	noAssertRetVal(value->GetValue()->IsType<ff::NullValue>(), value);
 
 	ff::ValuePtr dictValue = _dict.GetValue(name);
 	assertRetVal(dictValue && !dictValue->IsType<ff::NullValue>(), value);
 
-	info._event = ff::CreateEvent();
-	_loadingCount.fetch_add(1);
+	info->_event = ff::CreateEvent();
 
 	ff::ComPtr<Resources, IResources> keepAlive = this;
 	ff::String keepName = name;
 
-	ff::GetThreadPool()->AddTask([=]()
+	ff::GetThreadPool()->AddTask([keepAlive, keepName, info, dictValue]()
 		{
-			keepAlive->DoLoad(infoPtr, keepName, dictValue);
-			keepAlive->_loadingCount.fetch_sub(1);
+			keepAlive->DoLoad(*info, keepName, dictValue);
 		});
 
 	return value;
 }
 
 // background thread
-void Resources::DoLoad(ValueInfoPtr info, ff::StringRef name, ff::ValuePtr value)
+void Resources::DoLoad(ValueInfo& info, ff::StringRef name, ff::ValuePtr value)
 {
 	value = CreateObjects(value);
 
@@ -303,10 +258,9 @@ void Resources::Invalidate(ff::StringRef name)
 	UpdateValueInfo(GetValueInfo(name), CreateNullResource(name));
 }
 
-void Resources::UpdateValueInfo(ValueInfoPtr infoPtr, ff::SharedResourceValue newValue)
+void Resources::UpdateValueInfo(ValueInfo& info, ff::SharedResourceValue newValue)
 {
 	ff::LockMutex lock(_mutex);
-	ValueInfo& info = *infoPtr.get();
 	ff::SharedResourceValue oldResource = info._value.lock();
 
 	if (oldResource != nullptr)

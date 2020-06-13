@@ -17,10 +17,7 @@ static const GUID s_moduleId = { 0x3930fe5d, 0x70fe, 0x42e6,{ 0x93, 0xda, 0x57, 
 static ff::StaticString s_moduleName(L"Proto");
 static ff::ModuleFactory CreateThisModule(s_moduleName, s_moduleId, ff::GetDelayLoadInstance, ff::GetModuleStartup);
 
-class AppGlobalsHelper
-	: public ff::IAppGlobalsHelper
-	, public ff::IResourceAccess
-	, public ff::IValueAccess
+class AppGlobalsHelper : public ff::IAppGlobalsHelper
 {
 public:
 	virtual void OnGameThreadInitialized(ff::AppGlobals* globals) override
@@ -29,7 +26,8 @@ public:
 		_uiGlobals->Startup(
 			ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2"),
 			ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV"),
-			this, this,
+			ff::GetThisModule().GetResources(),
+			ff::GetThisModule().GetValueTable(),
 			ff::String::from_static(L"ApplicationResources.xaml"));
 	}
 
@@ -51,26 +49,6 @@ public:
 		states->AddTop(std::make_shared<TitleState>(globals));
 		states->AddTop(_uiGlobals);
 		return states;
-	}
-
-	virtual ff::AutoResourceValue GetResource(ff::StringRef name) override
-	{
-		return ff::AutoResourceValue(ff::GetThisModule().GetResources(), name);
-	}
-
-	virtual ff::Vector<ff::String> GetResourceNames() const override
-	{
-		return ff::GetThisModule().GetResources()->GetResourceNames();
-	}
-
-	virtual ff::ValuePtr GetValue(ff::StringRef name) const override
-	{
-		return ff::GetThisModule().GetValue(name);
-	}
-
-	virtual ff::String GetString(ff::StringRef name) const override
-	{
-		return ff::GetThisModule().GetString(name);
 	}
 
 private:

@@ -122,6 +122,11 @@ ff::AutoResourceValue::AutoResourceValue(AutoResourceValue&& rhs)
 {
 }
 
+ff::AutoResourceValue::AutoResourceValue(SharedResourceValue value)
+	: _value(value)
+{
+}
+
 ff::AutoResourceValue& ff::AutoResourceValue::operator=(const AutoResourceValue& rhs)
 {
 	_value = rhs._value;

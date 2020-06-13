@@ -119,6 +119,8 @@
     <ClCompile Include="Graph\RenderTarget\RenderTargetWindowMetro11.cpp" />
     <ClCompile Include="Graph\RenderTarget\Viewport.cpp" />
     <ClCompile Include="Graph\Render\MatrixStack.cpp" />
+    <ClCompile Include="Graph\Render\PixelRenderer.cpp" />
+    <ClCompile Include="Graph\Render\PixelTransform.cpp" />
     <ClCompile Include="Graph\Render\Renderer11.cpp" />
     <ClCompile Include="Graph\Render\RendererActive.cpp" />
     <ClCompile Include="Graph\Render\RendererVertex.cpp" />
@@ -291,6 +293,9 @@
     <ClInclude Include="Graph\RenderTarget\RenderTargetWindow.h" />
     <ClInclude Include="Graph\RenderTarget\Viewport.h" />
     <ClInclude Include="Graph\Render\MatrixStack.h" />
+    <ClInclude Include="Graph\Render\PixelAnimation.h" />
+    <ClInclude Include="Graph\Render\PixelRenderer.h" />
+    <ClInclude Include="Graph\Render\PixelTransform.h" />
     <ClInclude Include="Graph\Render\RenderAnimation.h" />
     <ClInclude Include="Graph\Render\Renderer.h" />
     <ClInclude Include="Graph\Render\RendererActive.h" />

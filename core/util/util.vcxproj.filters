@@ -560,6 +560,12 @@
     <ClCompile Include="UI\Internal\XamlShaders11.cpp">
       <Filter>UI\Internal</Filter>
     </ClCompile>
+    <ClCompile Include="Graph\Render\PixelRenderer.cpp">
+      <Filter>Graph\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Render\PixelTransform.cpp">
+      <Filter>Graph\Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1119,6 +1125,15 @@
     </ClInclude>
     <ClInclude Include="Graph\Texture\PaletteData.h">
       <Filter>Graph\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\PixelAnimation.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\PixelRenderer.h">
+      <Filter>Graph\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Render\PixelTransform.h">
+      <Filter>Graph\Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

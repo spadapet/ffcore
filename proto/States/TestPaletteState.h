@@ -41,7 +41,6 @@ private:
 	ff::IEntityBucket<TestPalette::RenderSystemEntry>* _renderEntityBucket;
 	ff::TypedResource<ff::ISpriteList> _paletteSpritesResource;
 	ff::TypedResource<ff::ISpriteFont> _fontResource;
-	ff::TypedResource<ff::IPaletteData> _paletteResource;
 	ff::ComPtr<ff::IPalette> _palette;
 	ff::ComPtr<ff::ITexture> _paletteTextureSmall;
 	ff::ComPtr<ff::IRenderTarget> _paletteTargetSmall;
