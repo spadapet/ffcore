@@ -18,7 +18,6 @@ namespace ff
 		IResources : public IUnknown, public IResourceAccess
 	{
 	public:
-		virtual void AddResources(const Dict& dict) = 0;
 		virtual SharedResourceValue FlushResource(SharedResourceValue value) = 0;
 	};
 

@@ -60,7 +60,7 @@ bool ff::ResourceValue::IsValid() const
 	return _newValue == nullptr;
 }
 
-void ff::ResourceValue::StartedLoading(IResources* owner)
+void ff::ResourceValue::SetLoadingOwner(IResources* owner)
 {
 	ff::LockMutex lock(::GetStaticMutex());
 	assert(!_owner && owner);

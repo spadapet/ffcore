@@ -20,11 +20,11 @@ public:
 
 	bool Init(ff::AppGlobals* globals, const ff::Dict& dict);
 
-	// IResources
-	virtual void AddResources(const ff::Dict& dict) override;
+	// IResourceAccess
 	virtual ff::Vector<ff::String> GetResourceNames() const override;
-
 	virtual ff::SharedResourceValue GetResource(ff::StringRef name) override;
+
+	// IResources
 	virtual ff::SharedResourceValue FlushResource(ff::SharedResourceValue value) override;
 
 	// IResourcePersist
@@ -35,26 +35,28 @@ public:
 private:
 	typedef std::weak_ptr<ff::ResourceValue> WeakResourceValue;
 
-	struct ValueInfo
+	struct ValueInfo;
+
+	struct ValueLoadingInfo
 	{
 		HANDLE _event;
-		WeakResourceValue _value;
-		ff::Vector<ValueInfo*> _loadingChildren;
-		ff::Vector<ValueInfo*> _waitingParents;
+		ff::SharedResourceValue _originalValue;
+		ff::SharedResourceValue _finalValue;
+		ff::Vector<ValueInfo*> _childInfos;
+		ff::Vector<ValueInfo*> _parentInfos;
 	};
 
-	ff::AppGlobals* GetContext() const;
-	ValueInfo& GetValueInfo(ff::StringRef name);
-	ff::SharedResourceValue CreateNullResource(ff::StringRef name) const;
+	struct ValueInfo
+	{
+		WeakResourceValue _value;
+		ff::ValuePtr _dictValue;
+		std::shared_ptr<ValueLoadingInfo> _loading;
+	};
 
-	ff::SharedResourceValue StartLoading(ff::StringRef name);
-	void DoLoad(ValueInfo& info, ff::StringRef name, ff::ValuePtr value);
-	void Invalidate(ff::StringRef name);
 	void UpdateValueInfo(ValueInfo& info, ff::SharedResourceValue newValue);
-	ff::ValuePtr CreateObjects(ff::ValuePtr value);
+	ff::ValuePtr CreateObjects(ValueInfo& info, ff::ValuePtr dictValue);
 
 	ff::Mutex _mutex;
-	ff::Dict _dict;
 	ff::Map<ff::String, ValueInfo> _values;
 	ff::AppGlobals* _globals;
 };
@@ -83,6 +85,12 @@ bool ff::CreateResources(AppGlobals* globals, const Dict& dict, ff::IResources**
 	return true;
 }
 
+static ff::SharedResourceValue CreateNullResource(ff::StringRef name)
+{
+	ff::ValuePtr nullValue = ff::Value::New<ff::NullValue>();
+	return std::make_shared<ff::ResourceValue>(nullValue, name);
+}
+
 Resources::Resources()
 {
 }
@@ -97,40 +105,55 @@ bool Resources::Init(ff::AppGlobals* globals, const ff::Dict& dict)
 	return LoadFromCache(dict);
 }
 
-void Resources::AddResources(const ff::Dict& dict)
-{
-	ff::LockMutex lock(_mutex);
-
-	_dict.Add(dict);
-
-	// Invalidate and reload existing resources that match the new names
-	ff::Vector<ff::String> names = dict.GetAllNames();
-	for (ff::StringRef name : names)
-	{
-		if (_values.KeyExists(name))
-		{
-			Invalidate(name);
-			StartLoading(name);
-		}
-	}
-}
-
 ff::Vector<ff::String> Resources::GetResourceNames() const
 {
-	ff::LockMutex lock(_mutex);
-	return _dict.GetAllNames();
+	ff::Vector<ff::String> names;
+	names.Reserve(_values.Size());
+
+	for (auto i : _values)
+	{
+		names.Push(i.GetKey());
+	}
+
+	return names;
 }
 
 ff::SharedResourceValue Resources::GetResource(ff::StringRef name)
 {
+	auto iter = _values.GetKey(name);
+	assertRetVal(iter, ::CreateNullResource(name));
+	ValueInfo& info = iter->GetEditableValue();
+
 	ff::LockMutex lock(_mutex);
-	noAssertRetVal(_dict.GetValue(name), CreateNullResource(name));
-	return StartLoading(name);
+	ff::SharedResourceValue value = info._value.lock();
+
+	if (!value)
+	{
+		value = ::CreateNullResource(name);
+		value->SetLoadingOwner(this);
+
+		info._value = value;
+		info._loading = std::make_shared<ValueLoadingInfo>();
+		info._loading->_originalValue = value;
+		info._loading->_event = ff::CreateEvent();
+
+		ff::ComPtr<Resources, IResources> keepAlive = this;
+		ff::String keepName = name;
+		ValueInfo* keepInfo = &info;
+
+		ff::GetThreadPool()->AddTask([this, keepAlive, keepName, keepInfo]()
+			{
+				ff::ValuePtr newValue = CreateObjects(*keepInfo, keepInfo->_dictValue);
+				UpdateValueInfo(*keepInfo, std::make_shared<ff::ResourceValue>(newValue, keepName));
+			});
+	}
+
+	return value;
 }
 
 ff::SharedResourceValue Resources::FlushResource(ff::SharedResourceValue value)
 {
-	ff::ComPtr<ff::IResources> owner = value->GetLoadingOwner();
+	ff::ComPtr<ff::IResources> owner = value ? value->GetLoadingOwner() : nullptr;
 	noAssertRetVal(owner, value);
 	assertRetVal(owner == this, value);
 
@@ -138,17 +161,13 @@ ff::SharedResourceValue Resources::FlushResource(ff::SharedResourceValue value)
 	{
 		ff::LockMutex lock(_mutex);
 
-		for (auto& i : _values)
+		auto i = _values.GetKey(value->GetName());
+		if (i)
 		{
-			ValueInfo& info = i.GetEditableValue();
-			if (info._event)
+			ValueInfo& info = i->GetEditableValue();
+			if (info._loading)
 			{
-				ff::SharedResourceValue curValue = info._value.lock();
-				if (value == curValue)
-				{
-					loadEvent = ff::DuplicateHandle(info._event);
-					break;
-				}
+				loadEvent = ff::DuplicateHandle(info._loading->_event);
 			}
 		}
 	}
@@ -161,11 +180,6 @@ ff::SharedResourceValue Resources::FlushResource(ff::SharedResourceValue value)
 	return value->IsValid() ? value : value->GetNewValue();
 }
 
-ff::AppGlobals* Resources::GetContext() const
-{
-	return _globals ? _globals : ff::AppGlobals::Get();
-}
-
 bool Resources::LoadFromSource(const ff::Dict& dict)
 {
 	ff::String basePath = dict.Get<ff::StringValue>(ff::RES_BASE);
@@ -174,130 +188,94 @@ bool Resources::LoadFromSource(const ff::Dict& dict)
 	ff::Vector<ff::String> errors;
 	ff::Dict resDict = ff::LoadResourcesFromJsonDict(dict, basePath, debug, errors);
 
+	if (errors.Size())
+	{
+		ff::ComPtr<ff::IResourceLoadListener> loadListener;
+		if (loadListener.QueryFrom(dict.Get<ff::ObjectValue>(ff::RES_LOAD_LISTENER)))
+		{
+			for (ff::StringRef error : errors)
+			{
+				loadListener->AddError(error);
+			}
+		}
+	}
+
 	return errors.IsEmpty() && LoadFromCache(resDict);
 }
 
 bool Resources::LoadFromCache(const ff::Dict& dict)
 {
-	AddResources(dict);
+	for (ff::String name : dict.GetAllNames())
+	{
+		ValueInfo info;
+		info._dictValue = dict.GetValue(name);
+		_values.SetKey(name, info);
+	}
+
 	return true;
 }
 
 bool Resources::SaveToCache(ff::Dict& dict)
 {
-	ff::LockMutex lock(_mutex);
-	dict = _dict;
+	for (auto i : _values)
+	{
+		dict.SetValue(i.GetKey(), i.GetValue()._dictValue);
+	}
+
 	return true;
 }
 
-Resources::ValueInfo& Resources::GetValueInfo(ff::StringRef name)
-{
-	ff::LockMutex lock(_mutex);
-	auto iter = _values.GetKey(name);
-
-	if (!iter)
-	{
-		ValueInfo info;
-		info._event = nullptr;
-		iter = _values.SetKey(name, info);
-	}
-
-	return iter->GetEditableValue();
-}
-
-ff::SharedResourceValue Resources::CreateNullResource(ff::StringRef name) const
-{
-	ff::ValuePtr nullValue = ff::Value::New<ff::NullValue>();
-	return std::make_shared<ff::ResourceValue>(nullValue, name);
-}
-
-ff::SharedResourceValue Resources::StartLoading(ff::StringRef name)
-{
-	ff::LockMutex lock(_mutex);
-
-	ValueInfo* info = &GetValueInfo(name);
-	ff::SharedResourceValue value = info->_value.lock();
-
-	if (value == nullptr)
-	{
-		value = CreateNullResource(name);
-		value->StartedLoading(this);
-		info->_value = value;
-	}
-
-	noAssertRetVal(!info->_event, value);
-	noAssertRetVal(value->GetValue()->IsType<ff::NullValue>(), value);
-
-	ff::ValuePtr dictValue = _dict.GetValue(name);
-	assertRetVal(dictValue && !dictValue->IsType<ff::NullValue>(), value);
-
-	info->_event = ff::CreateEvent();
-
-	ff::ComPtr<Resources, IResources> keepAlive = this;
-	ff::String keepName = name;
-
-	ff::GetThreadPool()->AddTask([keepAlive, keepName, info, dictValue]()
-		{
-			keepAlive->DoLoad(*info, keepName, dictValue);
-		});
-
-	return value;
-}
-
 // background thread
-void Resources::DoLoad(ValueInfo& info, ff::StringRef name, ff::ValuePtr value)
-{
-	value = CreateObjects(value);
-
-	ff::SharedResourceValue newValue = std::make_shared<ff::ResourceValue>(value, name);
-	UpdateValueInfo(info, newValue);
-}
-
-void Resources::Invalidate(ff::StringRef name)
-{
-	UpdateValueInfo(GetValueInfo(name), CreateNullResource(name));
-}
-
 void Resources::UpdateValueInfo(ValueInfo& info, ff::SharedResourceValue newValue)
 {
 	ff::LockMutex lock(_mutex);
-	ff::SharedResourceValue oldResource = info._value.lock();
+	ValueLoadingInfo& loadInfo = *info._loading;
+	ff::Vector<ValueInfo*> parentInfos;
 
-	if (oldResource != nullptr)
+	loadInfo._finalValue = newValue;
+
+	if (loadInfo._childInfos.IsEmpty())
 	{
-		oldResource->Invalidate(newValue);
-	}
+		ff::SharedResourceValue oldResource = info._value.lock();
+		if (oldResource)
+		{
+			oldResource->Invalidate(newValue);
+		}
 
-	info._value = newValue;
+		info._value = newValue;
 
-	if (info._event)
-	{
-		HANDLE event = info._event;
-		info._event = nullptr;
+		HANDLE event = loadInfo._event;
+		parentInfos = std::move(loadInfo._parentInfos);
+		info._loading = nullptr;
 
 		::SetEvent(event);
 		::CloseHandle(event);
 	}
+
+	for (ValueInfo* parentInfo : parentInfos)
+	{
+		ValueLoadingInfo& parentLoadingInfo = *parentInfo->_loading;
+		verify(parentLoadingInfo._childInfos.DeleteItem(&info));
+
+		if (parentLoadingInfo._childInfos.IsEmpty() && parentLoadingInfo._finalValue)
+		{
+			UpdateValueInfo(*parentInfo, parentLoadingInfo._finalValue);
+		}
+	}
 }
 
 // background thread
-ff::ValuePtr Resources::CreateObjects(ff::ValuePtr value)
+ff::ValuePtr Resources::CreateObjects(ValueInfo& info, ff::ValuePtr value)
 {
 	assertRetVal(value, nullptr);
 
 	if (value->IsType<ff::SavedDataValue>())
 	{
-		// Uncompress all data
-		ff::ValuePtr newValue = value->Convert<ff::DataValue>();
-		assertRetVal(newValue, value);
-		value = CreateObjects(newValue);
+		value = CreateObjects(info, value->Convert<ff::DataValue>());
 	}
 	else if (value->IsType<ff::SavedDictValue>())
 	{
-		// Uncompress all dicts
-		ff::ValuePtr newValue = value->Convert<ff::DictValue>();
-		assertRetVal(newValue, value);
-		value = CreateObjects(newValue);
+		value = CreateObjects(info, value->Convert<ff::DictValue>());
 	}
 	else if (value->IsType<ff::StringValue>())
 	{
@@ -306,8 +284,24 @@ ff::ValuePtr Resources::CreateObjects(ff::ValuePtr value)
 		{
 			ff::String refName = value->GetValue<ff::StringValue>().substr(ff::REF_PREFIX.GetString().size());
 			ff::SharedResourceValue refValue = GetResource(refName);
+
+			if (refValue)
+			{
+				ff::LockMutex lock(_mutex);
+				auto i = _values.GetKey(refName);
+				if (i)
+				{
+					ValueInfo& refInfo = i->GetEditableValue();
+					if (refInfo._loading)
+					{
+						info._loading->_childInfos.Push(&refInfo);
+						refInfo._loading->_parentInfos.Push(&info);
+					}
+				}
+			}
+
 			ff::ValuePtr newValue = ff::Value::New<ff::SharedResourceWrapperValue>(refValue);
-			value = CreateObjects(newValue);
+			value = CreateObjects(info, newValue);
 		}
 	}
 	else if (value->IsType<ff::DictValue>())
@@ -322,19 +316,20 @@ ff::ValuePtr Resources::CreateObjects(ff::ValuePtr value)
 			ff::Vector<ff::String> names = dict.GetAllNames();
 			for (ff::StringRef name : names)
 			{
-				ff::ValuePtr newValue = CreateObjects(dict.GetValue(name));
+				ff::ValuePtr newValue = CreateObjects(info, dict.GetValue(name));
 				dict.SetValue(name, newValue);
 			}
 		}
 
 		if (!isNestedResources && type.size())
 		{
-			ff::ComPtr<IUnknown> obj = ff::ProcessGlobals::Get()->GetModules().CreateClass(type, GetContext());
+			ff::AppGlobals* appGlobals = _globals ? _globals : ff::AppGlobals::Get();
+			ff::ComPtr<IUnknown> obj = ff::ProcessGlobals::Get()->GetModules().CreateClass(type, appGlobals);
 			ff::ComPtr<ff::IResourcePersist> resObj;
 			assertRetVal(resObj.QueryFrom(obj) && resObj->LoadFromCache(dict), value);
 
 			ff::ValuePtr newValue = ff::Value::New<ff::ObjectValue>(resObj);
-			value = CreateObjects(newValue);
+			value = CreateObjects(info, newValue);
 		}
 		else
 		{
@@ -346,7 +341,7 @@ ff::ValuePtr Resources::CreateObjects(ff::ValuePtr value)
 		ff::Vector<ff::ValuePtr> vec = value->GetValue<ff::ValueVectorValue>();
 		for (size_t i = 0; i < vec.Size(); i++)
 		{
-			vec[i] = CreateObjects(vec[i]);
+			vec[i] = CreateObjects(info, vec[i]);
 		}
 
 		value = ff::Value::New<ff::ValueVectorValue>(std::move(vec));

@@ -22,9 +22,9 @@ namespace ff
 
 		UTIL_API bool IsValid() const;
 		UTIL_API SharedResourceValue GetNewValue() const;
-		UTIL_API void Invalidate(SharedResourceValue newValue);
 
-		void StartedLoading(IResources* owner);
+		void Invalidate(SharedResourceValue newValue);
+		void SetLoadingOwner(IResources* owner);
 		ComPtr<IResources> GetLoadingOwner() const;
 
 	private:

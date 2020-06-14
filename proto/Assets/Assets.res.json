@@ -289,12 +289,6 @@
           },
           {
             "frame": 7,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 7",
-              "ref:TestSprites.Player Body Moving 7",
-              "ref:TestSprites.Player Turret Moving 7"
-            ],
             "color":
             [
               [
