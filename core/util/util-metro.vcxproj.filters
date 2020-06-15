@@ -198,9 +198,6 @@
     <ClCompile Include="Windows\WinUtil.cpp">
       <Filter>Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Graph\Anim\AnimKeys.cpp">
-      <Filter>Graph\Anim</Filter>
-    </ClCompile>
     <ClCompile Include="Graph\Font\FontData.cpp">
       <Filter>Graph\Font</Filter>
     </ClCompile>
@@ -285,9 +282,6 @@
       <Filter>Graph\Render</Filter>
     </ClCompile>
     <ClCompile Include="Graph\Sprite\Sprite.cpp">
-      <Filter>Graph\Sprite</Filter>
-    </ClCompile>
-    <ClCompile Include="Graph\Sprite\SpriteAnimation.cpp">
       <Filter>Graph\Sprite</Filter>
     </ClCompile>
     <ClCompile Include="Graph\Sprite\SpriteList.cpp">
@@ -560,11 +554,17 @@
     <ClCompile Include="Graph\GraphBuffer.cpp">
       <Filter>Graph</Filter>
     </ClCompile>
-    <ClCompile Include="Graph\Render\PixelTransform.cpp">
-      <Filter>Graph\Render</Filter>
-    </ClCompile>
     <ClCompile Include="Graph\Render\PixelRenderer.cpp">
       <Filter>Graph\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Anim\Transform.cpp">
+      <Filter>Graph\Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Anim\Animation.cpp">
+      <Filter>Graph\Anim</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Anim\KeyFrames.cpp">
+      <Filter>Graph\Anim</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -739,9 +739,6 @@
     <ClInclude Include="Windows\WinUtil.h">
       <Filter>Windows</Filter>
     </ClInclude>
-    <ClInclude Include="Graph\Anim\AnimKeys.h">
-      <Filter>Graph\Anim</Filter>
-    </ClInclude>
     <ClInclude Include="Graph\Anim\KeyFrames.h">
       <Filter>Graph\Anim</Filter>
     </ClInclude>
@@ -859,17 +856,11 @@
     <ClInclude Include="Graph\Sprite\Sprite.h">
       <Filter>Graph\Sprite</Filter>
     </ClInclude>
-    <ClInclude Include="Graph\Sprite\SpriteAnimation.h">
-      <Filter>Graph\Sprite</Filter>
-    </ClInclude>
     <ClInclude Include="Graph\Sprite\SpriteList.h">
       <Filter>Graph\Sprite</Filter>
     </ClInclude>
     <ClInclude Include="Graph\Sprite\SpriteOptimizer.h">
       <Filter>Graph\Sprite</Filter>
-    </ClInclude>
-    <ClInclude Include="Graph\Render\RenderAnimation.h">
-      <Filter>Graph\Render</Filter>
     </ClInclude>
     <ClInclude Include="Graph\Render\Renderer.h">
       <Filter>Graph\Render</Filter>
@@ -1123,14 +1114,17 @@
     <ClInclude Include="Graph\GraphBuffer.h">
       <Filter>Graph</Filter>
     </ClInclude>
-    <ClInclude Include="Graph\Render\PixelTransform.h">
-      <Filter>Graph\Render</Filter>
-    </ClInclude>
     <ClInclude Include="Graph\Render\PixelRenderer.h">
       <Filter>Graph\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Graph\Render\PixelAnimation.h">
-      <Filter>Graph\Render</Filter>
+    <ClInclude Include="Graph\Anim\Transform.h">
+      <Filter>Graph\Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Anim\Animation.h">
+      <Filter>Graph\Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Sprite\SpriteType.h">
+      <Filter>Graph\Sprite</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -30,6 +30,15 @@ namespace ff
 	}
 
 	template<typename T>
+	T GetFlags(T state, T flags)
+	{
+		typedef std::underlying_type_t<T> TI;
+		const TI istate = (TI)state;
+		const TI iflags = (TI)flags;
+		return (T)(istate & iflags);
+	}
+
+	template<typename T>
 	bool HasAllFlags(T state, T check)
 	{
 		typedef std::underlying_type_t<T> TI;

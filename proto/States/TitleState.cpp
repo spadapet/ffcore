@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "Audio/AudioEffect.h"
-#include "Audio/AudioMusic.h"
 #include "Audio/AudioPlaying.h"
 #include "Globals/AppGlobals.h"
-#include "Graph/Anim/AnimKeys.h"
+#include "Graph/Anim/Animation.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Font/SpriteFont.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/Render/Renderer.h"
@@ -11,7 +11,6 @@
 #include "Graph/RenderTarget/RenderDepth.h"
 #include "Graph/RenderTarget/RenderTarget.h"
 #include "Graph/Sprite/Sprite.h"
-#include "Graph/Sprite/SpriteAnimation.h"
 #include "Input/InputMapping.h"
 #include "Input/Joystick/JoystickDevice.h"
 #include "Input/Pointer/PointerDevice.h"
@@ -25,7 +24,6 @@ static ff::hash_t PLAY_MUSIC_EVENT = ff::HashFunc(L"playMusic");
 TitleState::TitleState(ff::AppGlobals* globals)
 	: _initialized(false)
 	, _rotate(0)
-	, _animFrame(0)
 {
 	ff::IGraphDevice* graph = ff::AppGlobals::Get()->GetGraph();
 	_render = graph->CreateRenderer();
@@ -43,7 +41,7 @@ std::shared_ptr<ff::State> TitleState::Advance(ff::AppGlobals* globals)
 	{
 		_initialized = true;
 		_sprite.Init(L"TestTexture");
-		_anim.Init(L"TestSpriteAnim");
+		_anim.Init(L"TestAnim");
 		_effect.Init(L"TestEffect");
 		_music.Init(L"TestMusic");
 		_font.Init(L"TestFont");
@@ -55,19 +53,19 @@ std::shared_ptr<ff::State> TitleState::Advance(ff::AppGlobals* globals)
 
 	_timer.Tick();
 	_rotate = std::fmod(_rotate + ff::PI_F / 240, 2.0f * ff::PI_F);
-	_input = _inputRes.GetObject();
 
-	if (_input)
+	if (_inputRes.HasObject())
 	{
-		_input->Advance(_inputDevices, _timer.GetTickSeconds());
+		ff::IInputMapping* input = _inputRes.GetObject();
+		input->Advance(_inputDevices, _timer.GetTickSeconds());
 
-		for (const ff::InputEvent& event : _input->GetEvents())
+		for (const ff::InputEvent& event : input->GetEvents())
 		{
 			if (event.IsStart())
 			{
-				if (event._eventID == PLAY_EFFECT_EVENT && _effect.GetObject())
+				if (event._eventID == PLAY_EFFECT_EVENT && _effect.HasObject())
 				{
-					_effect.GetObject()->Play();
+					_effect->Play();
 				}
 				else if (event._eventID == PLAY_MUSIC_EVENT)
 				{
@@ -90,7 +88,7 @@ std::shared_ptr<ff::State> TitleState::Advance(ff::AppGlobals* globals)
 		bool wasPlaying = _musicPlaying != nullptr;
 		_musicPlaying = nullptr;
 
-		if (_music.GetObject() && _music.GetObject()->Play(&_musicPlaying, false))
+		if (_music.HasObject() && _music->Play(&_musicPlaying, false))
 		{
 			if (!wasPlaying)
 			{
@@ -101,10 +99,16 @@ std::shared_ptr<ff::State> TitleState::Advance(ff::AppGlobals* globals)
 		}
 	}
 
-	if (_anim.GetObject())
+	if (_anim.HasObject())
 	{
-		double frame = std::fmod(_timer.GetSeconds(), _anim.GetObject()->GetLastFrame());
-		_animFrame = (float)frame;
+		if (!_animPlayer)
+		{
+			_animPlayer = _anim->CreateAnimationPlayer();
+		}
+		else
+		{
+			_animPlayer->AdvanceAnimation();
+		}
 	}
 
 	return nullptr;
@@ -145,63 +149,32 @@ void TitleState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::
 			render->DrawFilledRectangle(ff::RectFloat(75 + i, 75 + i, 225 + i, 225 + i), rectColors);
 		}
 
-		ff::ISprite* sprite = _sprite.GetObject();
-		if (sprite)
+		if (_sprite.HasObject())
 		{
-#if 1
-			render->DrawSprite(sprite, ff::PointFloat(500, 300), ff::PointFloat(2, 2), _rotate, ff::GetColorWhite());
-#else
-			render->PushOpaque();
-
-			for (size_t i = 0; i < 1000; i++)
-			{
-				float scale = (rand() % 4) + 1.0f;
-				render->DrawSprite(
-					sprite,
-					ff::PointInt(rand() % 1000, rand() % 500).ToType<float>(),
-					ff::PointFloat(scale, scale),
-					_rotate,
-					ff::GetColorWhite());
-			}
-
-			render->PopOpaque();
-#endif
+			ff::ISprite* sprite = _sprite.GetObject();
+			render->DrawSprite(sprite, ff::Transform::Create(ff::PointFloat(500, 300), ff::PointFloat(2, 2), _rotate * ff::RAD_TO_DEG_F));
 		}
 
-		if (_font.GetObject())
+		if (_font.HasObject())
 		{
 			ff::PointFloat scale(absCos + 1, absSin + 1);
 
-			_font.GetObject()->DrawText(render,
+			_font->DrawText(render,
 				ff::String(L"Hello World!\r\nThis is a test"),
 				ff::PointFloat(50, 300),
 				scale,
 				DirectX::XMFLOAT4(1, absCos, absSin, 1));
 		}
 
-		if (_anim.GetObject())
+		if (_animPlayer)
 		{
-			_anim.GetObject()->Render(
-				render,
-				ff::POSE_TWEEN_LINEAR_CLAMP,
-				_animFrame,
-				ff::PointFloat(500, 600),
-				ff::PointFloat::Ones(),
-				0,
-				ff::GetColorWhite());
+			_animPlayer->RenderAnimation(render, ff::Transform::Create(ff::PointFloat(500, 600)));
 
 			DirectX::XMFLOAT4 animColor(1, 1, 1, 0.5);
 
 			for (float i = 0; i < 50; i += 10)
 			{
-				_anim.GetObject()->Render(
-					render,
-					ff::POSE_TWEEN_LINEAR_CLAMP,
-					_animFrame,
-					ff::PointFloat(600 + i, 600 - i / 2),
-					ff::PointFloat::Ones(),
-					0,
-					animColor);
+				_animPlayer->RenderAnimation(render, ff::Transform::Create(ff::PointFloat(600 + i, 600 - i / 2), ff::PointFloat::Ones(), 0.0f, animColor));
 			}
 		}
 	}
@@ -245,12 +218,12 @@ void TitleState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::
 			viewRect.TopRight() + ff::PointFloat(-10, 10),
 			lineColor, absSin * 30 + 2);
 
-		if (_font.GetObject())
+		if (_font.HasObject())
 		{
 			size_t fps = _timer.GetTicksPerSecond();
 			double seconds = _timer.GetSeconds();
 
-			_font.GetObject()->DrawText(render,
+			_font->DrawText(render,
 				ff::String::format_new(L"View: (%.1f,%.1f)\nSwap: (%.1f,%.1f)\nFPS:%lu, S:%.4f",
 					viewRect.Width(), viewRect.Height(), swapSize.x, swapSize.y, fps, seconds),
 				ff::PointFloat(10, 10),

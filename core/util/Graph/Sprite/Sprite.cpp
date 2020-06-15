@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "COM/ComAlloc.h"
 #include "Dict/Dict.h"
+#include "Graph/Anim/Animation.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/GraphDevice.h"
-#include "Graph/Render/RenderAnimation.h"
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteList.h"
@@ -67,27 +68,30 @@ class __declspec(uuid("7f942967-3605-4b36-a880-a6252d2518b9"))
 	Sprite
 	: public ff::ComBase
 	, public ff::ISprite
-	, public ff::IRenderAnimation
+	, public ff::IAnimation
+	, public ff::IAnimationPlayer
 {
 public:
 	DECLARE_HEADER(Sprite);
 
 	void Init(const ff::SpriteData& data);
 
-	// ISprite functions
+	// ISprite
 	virtual const ff::SpriteData& GetSpriteData() override;
 
-	// IRenderAnimation functions
-	virtual void Render(
-		ff::IRendererActive* render,
-		ff::AnimTweenType type,
-		float frame,
-		ff::PointFloat pos,
-		ff::PointFloat scale,
-		float rotate,
-		const DirectX::XMFLOAT4& color) override;
-	virtual float GetLastFrame() const override;
-	virtual float GetFPS() const override;
+	// IAnimation
+	virtual float GetFrameLength() const override;
+	virtual float GetFramesPerSecond() const override;
+	virtual void GetFrameEvents(float start, float end, bool includeStart, ff::ItemCollector<ff::AnimationEvent>& events) override;
+	virtual void RenderFrame(ff::IRendererActive* render, const ff::Transform& position, float frame, const ff::Dict* params) override;
+	virtual ff::ValuePtr GetFrameValue(ff::hash_t name, float frame, const ff::Dict* params) override;
+	virtual ff::ComPtr<ff::IAnimationPlayer> CreateAnimationPlayer(float startFrame, float speed, const ff::Dict* params) override;
+
+	// IAnimationPlayer
+	virtual void AdvanceAnimation(ff::ItemCollector<ff::AnimationEvent>* frameEvents) override;
+	virtual void RenderAnimation(ff::IRendererActive* render, const ff::Transform& position) override;
+	virtual float GetCurrentFrame() const override;
+	virtual ff::IAnimation* GetAnimation() override;
 
 private:
 	ff::ComPtr<ff::ITextureView> _textureView;
@@ -96,14 +100,16 @@ private:
 
 BEGIN_INTERFACES(Sprite)
 	HAS_INTERFACE(ff::ISprite)
-	HAS_INTERFACE(ff::IRenderAnimation)
+	HAS_INTERFACE(ff::IAnimation)
+	HAS_INTERFACE(ff::IAnimationPlayer)
 END_INTERFACES()
 
 class __declspec(uuid("778af2ef-b522-453e-b040-65dc6ea6cb93"))
 	SpriteResource
 	: public ff::ComBase
 	, public ff::ISpriteResource
-	, public ff::IRenderAnimation
+	, public ff::IAnimation
+	, public ff::IAnimationPlayer
 	, public ff::IResourcePersist
 {
 public:
@@ -122,17 +128,19 @@ public:
 	virtual bool LoadFromCache(const ff::Dict& dict) override;
 	virtual bool SaveToCache(ff::Dict& dict) override;
 
-	// IRenderAnimation
-	virtual void Render(
-		ff::IRendererActive* render,
-		ff::AnimTweenType type,
-		float frame,
-		ff::PointFloat pos,
-		ff::PointFloat scale,
-		float rotate,
-		const DirectX::XMFLOAT4& color) override;
-	virtual float GetLastFrame() const override;
-	virtual float GetFPS() const override;
+	// IAnimation
+	virtual float GetFrameLength() const override;
+	virtual float GetFramesPerSecond() const override;
+	virtual void GetFrameEvents(float start, float end, bool includeStart, ff::ItemCollector<ff::AnimationEvent>& events) override;
+	virtual void RenderFrame(ff::IRendererActive* render, const ff::Transform& position, float frame, const ff::Dict* params) override;
+	virtual ff::ValuePtr GetFrameValue(ff::hash_t name, float frame, const ff::Dict* params) override;
+	virtual ff::ComPtr<ff::IAnimationPlayer> CreateAnimationPlayer(float startFrame, float speed, const ff::Dict* params) override;
+
+	// IAnimationPlayer
+	virtual void AdvanceAnimation(ff::ItemCollector<ff::AnimationEvent>* frameEvents) override;
+	virtual void RenderAnimation(ff::IRendererActive* render, const ff::Transform& position) override;
+	virtual float GetCurrentFrame() const override;
+	virtual ff::IAnimation* GetAnimation() override;
 
 private:
 	ff::String _name;
@@ -144,7 +152,8 @@ private:
 BEGIN_INTERFACES(SpriteResource)
 	HAS_INTERFACE(ff::ISprite)
 	HAS_INTERFACE(ff::ISpriteResource)
-	HAS_INTERFACE(ff::IRenderAnimation)
+	HAS_INTERFACE(ff::IAnimation)
+	HAS_INTERFACE(ff::IAnimationPlayer)
 	HAS_INTERFACE(ff::IResourcePersist)
 END_INTERFACES()
 
@@ -230,28 +239,6 @@ const ff::SpriteData& Sprite::GetSpriteData()
 	return _data;
 }
 
-void Sprite::Render(
-	ff::IRendererActive* render,
-	ff::AnimTweenType type,
-	float frame,
-	ff::PointFloat pos,
-	ff::PointFloat scale,
-	float rotate,
-	const DirectX::XMFLOAT4& color)
-{
-	render->DrawSprite(this, pos, scale, rotate, color);
-}
-
-float Sprite::GetLastFrame() const
-{
-	return 0;
-}
-
-float Sprite::GetFPS() const
-{
-	return 0;
-}
-
 void Sprite::Init(const ff::SpriteData& data)
 {
 	_textureView = data._textureView;
@@ -261,6 +248,54 @@ void Sprite::Init(const ff::SpriteData& data)
 	{
 		_data._type = _textureView->GetTexture()->GetSpriteType();
 	}
+}
+
+float Sprite::GetFrameLength() const
+{
+	return 0;
+}
+
+float Sprite::GetFramesPerSecond() const
+{
+	return 0;
+}
+
+void Sprite::GetFrameEvents(float start, float end, bool includeStart, ff::ItemCollector<ff::AnimationEvent>& events)
+{
+}
+
+void Sprite::RenderFrame(ff::IRendererActive* render, const ff::Transform& position, float frame, const ff::Dict* params)
+{
+	render->DrawSprite(this, position);
+}
+
+ff::ValuePtr Sprite::GetFrameValue(ff::hash_t name, float frame, const ff::Dict* params)
+{
+	return nullptr;
+}
+
+ff::ComPtr<ff::IAnimationPlayer> Sprite::CreateAnimationPlayer(float startFrame, float speed, const ff::Dict* params)
+{
+	return this;
+}
+
+void Sprite::AdvanceAnimation(ff::ItemCollector<ff::AnimationEvent>* frameEvents)
+{
+}
+
+void Sprite::RenderAnimation(ff::IRendererActive* render, const ff::Transform& position)
+{
+	render->DrawSprite(this, position);
+}
+
+float Sprite::GetCurrentFrame() const
+{
+	return 0;
+}
+
+ff::IAnimation* Sprite::GetAnimation()
+{
+	return this;
 }
 
 SpriteResource::SpriteResource()
@@ -329,6 +364,54 @@ ff::SharedResourceValue SpriteResource::GetSourceResource()
 	return _spriteRes.GetResourceValue();
 }
 
+void SpriteResource::RenderFrame(ff::IRendererActive* render, const ff::Transform& position, float frame, const ff::Dict* params)
+{
+	render->DrawSprite(this, position);
+}
+
+float SpriteResource::GetFrameLength() const
+{
+	return 0;
+}
+
+float SpriteResource::GetFramesPerSecond() const
+{
+	return 0;
+}
+
+void SpriteResource::GetFrameEvents(float start, float end, bool includeStart, ff::ItemCollector<ff::AnimationEvent>& events)
+{
+}
+
+ff::ValuePtr SpriteResource::GetFrameValue(ff::hash_t name, float frame, const ff::Dict* params)
+{
+	return nullptr;
+}
+
+ff::ComPtr<ff::IAnimationPlayer> SpriteResource::CreateAnimationPlayer(float startFrame, float speed, const ff::Dict* params)
+{
+	return this;
+}
+
+void SpriteResource::AdvanceAnimation(ff::ItemCollector<ff::AnimationEvent>* frameEvents)
+{
+}
+
+void SpriteResource::RenderAnimation(ff::IRendererActive* render, const ff::Transform& position)
+{
+	render->DrawSprite(this, position);
+}
+
+float SpriteResource::GetCurrentFrame() const
+{
+	return 0;
+}
+
+ff::IAnimation* SpriteResource::GetAnimation()
+{
+	return this;
+}
+
 bool SpriteResource::LoadFromSource(const ff::Dict& dict)
 {
 	return LoadFromCache(dict);
@@ -348,26 +431,4 @@ bool SpriteResource::SaveToCache(ff::Dict& dict)
 	dict.Set<ff::StringValue>(PROP_NAME, ff::String(_name));
 
 	return true;
-}
-
-void SpriteResource::Render(
-	ff::IRendererActive* render,
-	ff::AnimTweenType type,
-	float frame,
-	ff::PointFloat pos,
-	ff::PointFloat scale,
-	float rotate,
-	const DirectX::XMFLOAT4& color)
-{
-	render->DrawSprite(this, pos, scale, rotate, color);
-}
-
-float SpriteResource::GetLastFrame() const
-{
-	return 0;
-}
-
-float SpriteResource::GetFPS() const
-{
-	return 0;
 }

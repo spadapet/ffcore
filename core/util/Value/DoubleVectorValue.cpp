@@ -72,8 +72,11 @@ ff::ValuePtr ff::DoubleVectorValueType::Load(ff::IDataReader* stream) const
 	assertRetVal(ff::LoadData(stream, size), false);
 
 	ff::Vector<double> vec;
-	vec.Resize(size);
-	assertRetVal(ff::LoadBytes(stream, vec.Data(), vec.ByteSize()), false);
+	if (size)
+	{
+		vec.Resize(size);
+		assertRetVal(ff::LoadBytes(stream, vec.Data(), vec.ByteSize()), false);
+	}
 
 	return ff::Value::New<DoubleVectorValue>(std::move(vec));
 }
@@ -82,6 +85,6 @@ bool ff::DoubleVectorValueType::Save(const ff::Value* value, ff::IDataWriter* st
 {
 	const ff::Vector<double>& src = value->GetValue<DoubleVectorValue>();
 	assertRetVal(ff::SaveData(stream, (DWORD)src.Size()), false);
-	assertRetVal(ff::SaveBytes(stream, src.ConstData(), src.ByteSize()), false);
+	assertRetVal(src.IsEmpty() || ff::SaveBytes(stream, src.ConstData(), src.ByteSize()), false);
 	return true;
 }

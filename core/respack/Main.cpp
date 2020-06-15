@@ -20,8 +20,6 @@
 #include "Value/Values.h"
 #include "Windows/FileUtil.h"
 
-#include "Graph/Texture/Texture.h"
-
 // {AAA6C062-9085-467B-B423-0AE89A560428}
 static const GUID s_moduleId = { 0xaaa6c062, 0x9085, 0x467b, { 0xb4, 0x23, 0xa, 0xe8, 0x9a, 0x56, 0x4, 0x28 } };
 static ff::StaticString s_moduleName(L"ResPack");

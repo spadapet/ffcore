@@ -26,9 +26,14 @@ ff::Value* ff::SharedResourceWrapperValue::GetStaticDefaultValue()
 
 ff::ValuePtr ff::SharedResourceWrapperValueType::ConvertTo(const ff::Value* value, std::type_index type) const
 {
-	const ff::SharedResourceValue& src = value->GetValue<SharedResourceWrapperValue>();
+	ff::SharedResourceValue src = value->GetValue<SharedResourceWrapperValue>();
 
-	if (src != nullptr)
+	if (src && !src->IsValid())
+	{
+		src = src->GetNewValue();
+	}
+
+	if (src)
 	{
 		return src->GetValue()->Convert(type);
 	}
@@ -51,6 +56,12 @@ bool ff::SharedResourceWrapperValueType::Save(const ff::Value* value, ff::IDataW
 	ff::StringRef name = (res != nullptr) ? res->GetName() : ff::GetEmptyString();
 	assertRetVal(ff::SaveData(stream, name), false);
 	return true;
+}
+
+ff::ComPtr<IUnknown> ff::SharedResourceWrapperValueType::GetComObject(const ff::Value* value) const
+{
+	ff::ValuePtrT<ff::ObjectValue> objectValue = value;
+	return objectValue.GetValue();
 }
 
 ff::String ff::SharedResourceWrapperValueType::Print(const ff::Value* value)

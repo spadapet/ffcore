@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Globals/AppGlobals.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Font/SpriteFont.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/RenderTarget/RenderDepth.h"
@@ -123,10 +124,11 @@ void TestEntityState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target,
 	{
 		render->DrawSprite(
 			entry.visualComponent->sprite,
-			entry.positionComponent->position,
-			entry.visualComponent->scale,
-			entry.visualComponent->rotate,
-			entry.visualComponent->color);
+			ff::Transform::Create(
+				entry.positionComponent->position,
+				entry.visualComponent->scale,
+				entry.visualComponent->rotate,
+				entry.visualComponent->color));
 	}
 
 	ff::ISpriteFont* font = _fontResource.Flush();

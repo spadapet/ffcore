@@ -72,8 +72,11 @@ ff::ValuePtr ff::IntVectorValueType::Load(ff::IDataReader* stream) const
 	assertRetVal(ff::LoadData(stream, size), false);
 
 	ff::Vector<int> vec;
-	vec.Resize(size);
-	assertRetVal(ff::LoadBytes(stream, vec.Data(), vec.ByteSize()), false);
+	if (size)
+	{
+		vec.Resize(size);
+		assertRetVal(ff::LoadBytes(stream, vec.Data(), vec.ByteSize()), false);
+	}
 
 	return ff::Value::New<IntVectorValue>(std::move(vec));
 }
@@ -82,6 +85,6 @@ bool ff::IntVectorValueType::Save(const ff::Value* value, ff::IDataWriter* strea
 {
 	const ff::Vector<int>& src = value->GetValue<IntVectorValue>();
 	assertRetVal(ff::SaveData(stream, (DWORD)src.Size()), false);
-	assertRetVal(ff::SaveBytes(stream, src.ConstData(), src.ByteSize()), false);
+	assertRetVal(src.IsEmpty() || ff::SaveBytes(stream, src.ConstData(), src.ByteSize()), false);
 	return true;
 }

@@ -58,6 +58,7 @@ namespace ff
 		template<typename T> ValuePtr Convert() const;
 
 		UTIL_API bool IsType(std::type_index type) const;
+		UTIL_API bool IsSameType(const Value* rhs) const;
 		UTIL_API ValuePtr Convert(std::type_index type) const;
 		UTIL_API bool Compare(const Value* value) const;
 

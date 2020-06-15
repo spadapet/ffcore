@@ -4,6 +4,7 @@
 #include "Dict/Dict.h"
 #include "Globals/AppGlobals.h"
 #include "Globals/ProcessGlobals.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteList.h"
 #include "Graph/Sprite/SpriteOptimizer.h"
@@ -411,7 +412,7 @@ ff::PointFloat SpriteFont::InternalDrawText(
 
 		if (render && sprites && glyph._glyphToSprite && glyph._glyphToSprite < sprites->GetCount())
 		{
-			render->DrawFont(sprites->Get(glyph._glyphToSprite), basePos, scale, color);
+			render->DrawFont(sprites->Get(glyph._glyphToSprite), ff::Transform::Create(basePos, scale, 0.0f, color));
 		}
 
 		basePos.x += glyph._glyphWidth * scale.x;

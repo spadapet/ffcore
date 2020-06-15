@@ -172,6 +172,11 @@ bool ff::Value::IsType(std::type_index type) const
 	return this && _entry->_typeIndex == type;
 }
 
+bool ff::Value::IsSameType(const Value* rhs) const
+{
+	return this && rhs && _entry == rhs->_entry;
+}
+
 ff::ValuePtr ff::Value::Convert(std::type_index type) const
 {
 	if (!this || IsType(type))

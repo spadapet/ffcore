@@ -1,9 +1,9 @@
 #include "pch.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Render/MatrixStack.h"
 #include "Graph/Render/Renderer.h"
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Render/PixelRenderer.h"
-#include "Graph/Render/PixelTransform.h"
 
 static ff::PointFloat Floor(const ff::PointFixedInt& val)
 {
@@ -38,13 +38,15 @@ ff::IRendererActive11* ff::PixelRendererActive::GetRenderer11() const
 
 void ff::PixelRendererActive::DrawSprite(ff::ISprite* sprite, const PixelTransform& pos) const
 {
-	_render->DrawSprite(sprite, ::Floor(pos.position), pos.scale.ToType<float>(), (float)pos.rotation * ff::DEG_TO_RAD_F, pos.color);
+	ff::Transform pos2 = ff::Transform::Create(::Floor(pos._position), pos._scale.ToType<float>(), (float)pos._rotation, pos._color);
+	_render->DrawSprite(sprite, pos2);
 }
 
 void ff::PixelRendererActive::DrawFont(ff::ISprite* sprite, const PixelTransform& pos) const
 {
-	assert(pos.rotation == 0_f);
-	_render->DrawFont(sprite, ::Floor(pos.position), pos.scale.ToType<float>(), pos.color);
+	assert(pos._rotation == 0_f);
+	ff::Transform pos2 = ff::Transform::Create(::Floor(pos._position), pos._scale.ToType<float>(), 0.0f, pos._color);
+	_render->DrawFont(sprite, pos2);
 }
 
 void ff::PixelRendererActive::DrawLineStrip(const ff::PointFixedInt* points, size_t count, const DirectX::XMFLOAT4& color, ff::FixedInt thickness) const
@@ -125,13 +127,12 @@ void ff::PixelRendererActive::DrawPaletteOutlineCircle(PointFixedInt center, Fix
 
 void ff::PixelRendererActive::PushMatrix(const PixelTransform& pos) const
 {
+	// Translation must be whole pixels
+	DirectX::XMMATRIX xmatrix = pos.GetMatrix();
+	xmatrix.r[3] = DirectX::XMVectorFloor(xmatrix.r[3]);
+
 	DirectX::XMFLOAT4X4 matrix;
-	DirectX::XMStoreFloat4x4(&matrix,
-		DirectX::XMMatrixAffineTransformation2D(
-			DirectX::XMVectorSet(pos.scale.x, pos.scale.y, 1, 1), // scale
-			DirectX::XMVectorSet(0, 0, 0, 0), // rotation center
-			(float)pos.rotation * ff::DEG_TO_RAD_F, // rotation
-			DirectX::XMVectorSet(std::floor(pos.position.x), std::floor(pos.position.y), 0, 0)));
+	DirectX::XMStoreFloat4x4(&matrix, xmatrix);
 
 	ff::MatrixStack& stack = _render->GetWorldMatrixStack();
 	stack.PushMatrix();

@@ -4,7 +4,8 @@
 #include "Dict/Dict.h"
 #include "Graph/DataBlob.h"
 #include "Graph/GraphDevice.h"
-#include "Graph/Render/RenderAnimation.h"
+#include "Graph/Anim/Animation.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Sprite/Sprite.h"
 #include "Graph/Sprite/SpriteType.h"
@@ -27,7 +28,8 @@ class __declspec(uuid("94ba864d-9773-4ddd-8ede-bc39335e6852"))
 	, public ff::ITextureView11
 	, public ff::IResourcePersist
 	, public ff::ISprite
-	, public ff::IRenderAnimation
+	, public ff::IAnimation
+	, public ff::IAnimationPlayer
 {
 public:
 	DECLARE_HEADER(StagingTexture11);
@@ -75,17 +77,19 @@ public:
 	// ISprite
 	virtual const ff::SpriteData& GetSpriteData() override;
 
-	// IRenderAnimation functions
-	virtual void Render(
-		ff::IRendererActive* render,
-		ff::AnimTweenType type,
-		float frame,
-		ff::PointFloat pos,
-		ff::PointFloat scale,
-		float rotate,
-		const DirectX::XMFLOAT4& color) override;
-	virtual float GetLastFrame() const override;
-	virtual float GetFPS() const override;
+	// IAnimation
+	virtual float GetFrameLength() const override;
+	virtual float GetFramesPerSecond() const override;
+	virtual void GetFrameEvents(float start, float end, bool includeStart, ff::ItemCollector<ff::AnimationEvent>& events) override;
+	virtual void RenderFrame(ff::IRendererActive* render, const ff::Transform& position, float frame, const ff::Dict* params) override;
+	virtual ff::ValuePtr GetFrameValue(ff::hash_t name, float frame, const ff::Dict* params) override;
+	virtual ff::ComPtr<ff::IAnimationPlayer> CreateAnimationPlayer(float startFrame, float speed, const ff::Dict* params) override;
+
+	// IAnimationPlayer
+	virtual void AdvanceAnimation(ff::ItemCollector<ff::AnimationEvent>* frameEvents) override;
+	virtual void RenderAnimation(ff::IRendererActive* render, const ff::Transform& position) override;
+	virtual float GetCurrentFrame() const override;
+	virtual ff::IAnimation* GetAnimation() override;
 
 private:
 	ff::ComPtr<ff::IGraphDevice> _device;
@@ -101,7 +105,8 @@ BEGIN_INTERFACES(StagingTexture11)
 	HAS_INTERFACE(ff::ITextureView)
 	HAS_INTERFACE(ff::IResourcePersist)
 	HAS_INTERFACE(ff::ISprite)
-	HAS_INTERFACE(ff::IRenderAnimation)
+	HAS_INTERFACE(ff::IAnimation)
+	HAS_INTERFACE(ff::IAnimationPlayer)
 END_INTERFACES()
 
 bool CreateTexture11(
@@ -427,24 +432,50 @@ const ff::SpriteData& StagingTexture11::GetSpriteData()
 	return *_spriteData;
 }
 
-void StagingTexture11::Render(
-	ff::IRendererActive* render,
-	ff::AnimTweenType type,
-	float frame,
-	ff::PointFloat pos,
-	ff::PointFloat scale,
-	float rotate,
-	const DirectX::XMFLOAT4& color)
-{
-	render->DrawSprite(this, pos, scale, rotate, color);
-}
-
-float StagingTexture11::GetLastFrame() const
+float StagingTexture11::GetFrameLength() const
 {
 	return 0;
 }
 
-float StagingTexture11::GetFPS() const
+float StagingTexture11::GetFramesPerSecond() const
 {
 	return 0;
+}
+
+void StagingTexture11::GetFrameEvents(float start, float end, bool includeStart, ff::ItemCollector<ff::AnimationEvent>& events)
+{
+}
+
+void StagingTexture11::RenderFrame(ff::IRendererActive* render, const ff::Transform& position, float frame, const ff::Dict* params)
+{
+	render->DrawSprite(this, position);
+}
+
+ff::ValuePtr StagingTexture11::GetFrameValue(ff::hash_t name, float frame, const ff::Dict* params)
+{
+	return nullptr;
+}
+
+ff::ComPtr<ff::IAnimationPlayer> StagingTexture11::CreateAnimationPlayer(float startFrame, float speed, const ff::Dict* params)
+{
+	return this;
+}
+
+void StagingTexture11::AdvanceAnimation(ff::ItemCollector<ff::AnimationEvent>* frameEvents)
+{
+}
+
+void StagingTexture11::RenderAnimation(ff::IRendererActive* render, const ff::Transform& position)
+{
+	render->DrawSprite(this, position);
+}
+
+float StagingTexture11::GetCurrentFrame() const
+{
+	return 0;
+}
+
+ff::IAnimation* StagingTexture11::GetAnimation()
+{
+	return this;
 }

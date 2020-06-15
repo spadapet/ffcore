@@ -8,13 +8,13 @@
 
 namespace ff
 {
+	class IAnimation;
+	class IAnimationPlayer;
 	class IAudioEffect;
-	class IAudioMusic;
 	class IAudioPlaying;
 	class IRenderDepth;
 	class IRenderer;
 	class ISprite;
-	class ISpriteAnimation;
 	class ISpriteFont;
 }
 
@@ -30,14 +30,13 @@ public:
 private:
 	bool _initialized;
 	float _rotate;
-	float _animFrame;
 	ff::TypedResource<ff::ISprite> _sprite;
-	ff::TypedResource<ff::ISpriteAnimation> _anim;
+	ff::TypedResource<ff::IAnimation> _anim;
 	ff::TypedResource<ff::ISpriteFont> _font;
 	ff::TypedResource<ff::IAudioEffect> _effect;
-	ff::TypedResource<ff::IAudioMusic> _music;
+	ff::TypedResource<ff::IAudioEffect> _music;
 	ff::TypedResource<ff::IInputMapping> _inputRes;
-	ff::ComPtr<ff::IInputMapping> _input;
+	ff::ComPtr<ff::IAnimationPlayer> _animPlayer;
 	ff::ComPtr<ff::IAudioPlaying> _musicPlaying;
 	std::unique_ptr<ff::IRenderer> _render;
 	ff::Viewport _viewport;

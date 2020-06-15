@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Data/Data.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/GraphDeviceChild.h"
 #include "Graph/GraphShader.h"
@@ -271,8 +272,8 @@ public:
 	virtual ff::MatrixStack& GetWorldMatrixStack() override;
 	virtual ff::IRendererActive11* AsRendererActive11() override;
 
-	virtual void DrawSprite(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const float rotate, const DirectX::XMFLOAT4& color) override;
-	virtual void DrawFont(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const DirectX::XMFLOAT4& color) override;
+	virtual void DrawSprite(ff::ISprite* sprite, const ff::Transform& transform) override;
+	virtual void DrawFont(ff::ISprite* sprite, const ff::Transform& transform) override;
 	virtual void DrawLineStrip(const ff::PointFloat* points, const DirectX::XMFLOAT4* colors, size_t count, float thickness, bool pixelThickness) override;
 	virtual void DrawLineStrip(const ff::PointFloat* points, size_t count, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness) override;
 	virtual void DrawLine(ff::PointFloat start, ff::PointFloat end, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness) override;
@@ -339,7 +340,7 @@ private:
 		StartNoOverlap = LineNoOverlap,
 	};
 
-	void DrawSprite(ff::ISprite* sprite, const ff::PointFloat& pos, const ff::PointFloat& scale, const float rotate, const DirectX::XMFLOAT4& color, LastDepthType depthType);
+	void DrawSprite(ff::ISprite* sprite, const ff::Transform& transform, LastDepthType depthType);
 	void DrawLineStrip(const ff::PointFloat* points, size_t pointCount, const DirectX::XMFLOAT4* colors, size_t colorCount, float thickness, bool pixelThickness);
 
 	void InitGeometryConstantBuffers0(ff::IRenderTarget* target, const ff::RectFloat& viewRect, const ff::RectFloat& worldRect);
@@ -1575,12 +1576,12 @@ void Renderer11::PopOpaque()
 	_forceOpaque--;
 }
 
-void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::PointFloat& pos, const ff::PointFloat& scale, const float rotate, const DirectX::XMFLOAT4& color, LastDepthType depthType)
+void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::Transform& transform, LastDepthType depthType)
 {
 	const ff::SpriteData& data = sprite->GetSpriteData();
 	noAssertRet(data._textureView); // an async sprite resource isn't done loading yet
 
-	AlphaType alphaType = ::GetAlphaType(data, color, _forceOpaque);
+	AlphaType alphaType = ::GetAlphaType(data, transform._color, _forceOpaque);
 	noAssertRet(alphaType != AlphaType::Invisible);
 
 	bool usePalette = ff::HasAllFlags(data._type, ff::SpriteType::Palette);
@@ -1592,24 +1593,24 @@ void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::PointFloat& pos, cons
 	ff::SpriteGeometryInput& input = *(ff::SpriteGeometryInput*)AddGeometry(bucketType, depth);
 
 	GetWorldMatrixAndTextureIndex(data._textureView, usePalette, input.matrixIndex, input.textureIndex);
-	input.pos.x = pos.x;
-	input.pos.y = pos.y;
+	input.pos.x = transform._position.x;
+	input.pos.y = transform._position.y;
 	input.pos.z = depth;
-	input.scale = *(DirectX::XMFLOAT2*) & scale;
-	input.rotate = rotate;
-	input.color = color;
+	input.scale = *(DirectX::XMFLOAT2*)&transform._scale;
+	input.rotate = transform.GetRotationRadians();
+	input.color = transform._color;
 	input.uvrect = *(DirectX::XMFLOAT4*) & data._textureUV;
 	input.rect = *(DirectX::XMFLOAT4*) & data._worldRect;
 }
 
-void Renderer11::DrawSprite(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const float rotate, const DirectX::XMFLOAT4& color)
+void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::Transform& transform)
 {
-	return DrawSprite(sprite, pos, scale, rotate, color, _forceNoOverlap ? LastDepthType::SpriteNoOverlap : LastDepthType::Sprite);
+	return DrawSprite(sprite, transform, _forceNoOverlap ? LastDepthType::SpriteNoOverlap : LastDepthType::Sprite);
 }
 
-void Renderer11::DrawFont(ff::ISprite* sprite, ff::PointFloat pos, ff::PointFloat scale, const DirectX::XMFLOAT4& color)
+void Renderer11::DrawFont(ff::ISprite* sprite, const ff::Transform& transform)
 {
-	return DrawSprite(sprite, pos, scale, 0, color, LastDepthType::FontNoOverlap);
+	return DrawSprite(sprite, transform, LastDepthType::FontNoOverlap);
 }
 
 void Renderer11::DrawLineStrip(
@@ -1830,7 +1831,7 @@ void Renderer11::DrawPaletteFont(ff::ISprite* sprite, ff::PointFloat pos, ff::Po
 {
 	DirectX::XMFLOAT4 color2;
 	::PaletteIndexToColor(color, color2);
-	DrawFont(sprite, pos, scale, color2);
+	DrawFont(sprite, ff::Transform::Create(pos, scale, 0.0f, color2));
 }
 
 void Renderer11::DrawPaletteLineStrip(const ff::PointFloat* points, const int* colors, size_t count, float thickness, bool pixelThickness)

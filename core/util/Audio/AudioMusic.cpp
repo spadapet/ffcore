@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Audio/AudioDevice.h"
-#include "Audio/AudioMusic.h"
+#include "Audio/AudioEffect.h"
 #include "Audio/AudioPlaying.h"
 #include "Audio/AudioStream.h"
 #include "Data/DataPersist.h"
@@ -37,7 +37,7 @@ static T Clamp(T value, T minValue, T maxValue)
 class __declspec(uuid("7bd9c9be-b944-4c4c-95ee-218c516d71f8"))
 	AudioMusic
 	: public ff::ComBase
-	, public ff::IAudioMusic
+	, public ff::IAudioEffect
 	, public ff::IResourcePersist
 {
 public:
@@ -46,8 +46,8 @@ public:
 	virtual HRESULT _Construct(IUnknown* unkOuter) override;
 	void OnMusicDone(AudioMusicPlaying* playing);
 
-	// IAudioMusic
-	virtual bool Play(ff::IAudioPlaying** obj, bool startPlaying, float volume, float freqRatio) override;
+	// IAudioEffect
+	virtual bool Play(bool startPlaying, float volume, float freqRatio, ff::IAudioPlaying** obj) override;
 	virtual bool IsPlaying() const override;
 	virtual void StopAll() override;
 
@@ -189,7 +189,7 @@ private:
 	MediaState _mediaState;
 };
 
-class __declspec(uuid("4900158e-fcdd-4179-b85e-63aa12f6ee1f"))
+class __declspec(uuid("4d0dc5e5-d387-48a1-8f97-8002bc1adf90"))
 	AudioSourceReaderCallback : public ff::ComBase, public IMFSourceReaderCallback
 {
 public:
@@ -210,7 +210,7 @@ private:
 void DestroyVoiceAsync(ff::IAudioDevice* device, IXAudio2SourceVoice* source);
 
 BEGIN_INTERFACES(AudioMusic)
-	HAS_INTERFACE(ff::IAudioMusic)
+	HAS_INTERFACE(ff::IAudioEffect)
 	HAS_INTERFACE(ff::IResourcePersist)
 END_INTERFACES()
 
@@ -263,7 +263,7 @@ void AudioMusic::OnMusicDone(AudioMusicPlaying* playing)
 	verify(_playing.DeleteItem(playing));
 }
 
-bool AudioMusic::Play(ff::IAudioPlaying** obj, bool startPlaying, float volume, float freqRatio)
+bool AudioMusic::Play(bool startPlaying, float volume, float freqRatio, ff::IAudioPlaying** obj)
 {
 	noAssertRetVal(_device->IsValid() && _streamRes.GetObject(), false);
 

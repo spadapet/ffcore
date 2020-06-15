@@ -165,179 +165,7 @@
   {
     "res:type": "font",
     "data": "ref:TestFontData",
-    "size": 20,
-  },
-
-  "TestSpriteAnim":
-  {
-    "res:type": "spriteanim",
-    "lastFrame": 7,
-    "fps": 24,
-
-    "parts":
-    [
-      {
-        "keys":
-        [
-          {
-            "frame": 0,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 0",
-              "ref:TestSprites.Player Body Moving 0",
-              "ref:TestSprites.Player Turret Moving 0"
-            ],
-            "color":
-            [
-              [
-                1,
-                1,
-                1,
-                1
-              ],
-              [
-                1,
-                1,
-                1,
-                1
-              ],
-              [
-                1,
-                1,
-                1,
-                1
-              ],
-              [
-                1,
-                1,
-                1,
-                1
-              ]
-            ],
-            "offset":
-            [
-              1,
-              0
-            ],
-            "scale":
-            [
-              2,
-              2
-            ],
-            "rotate": 45,
-            "hitbox":
-            [
-              3,
-              4,
-              5,
-              6
-            ]
-          },
-          {
-            "frame": 1,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 1",
-              "ref:TestSprites.Player Body Moving 1",
-              "ref:TestSprites.Player Turret Moving 1"
-            ]
-          },
-          {
-            "frame": 2,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 2",
-              "ref:TestSprites.Player Body Moving 2",
-              "ref:TestSprites.Player Turret Moving 2"
-            ]
-          },
-          {
-            "frame": 3,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 3",
-              "ref:TestSprites.Player Body Moving 3",
-              "ref:TestSprites.Player Turret Moving 3"
-            ]
-          },
-          {
-            "frame": 4,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 4",
-              "ref:TestSprites.Player Body Moving 4",
-              "ref:TestSprites.Player Turret Moving 4"
-            ]
-          },
-          {
-            "frame": 5,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 5",
-              "ref:TestSprites.Player Body Moving 5",
-              "ref:TestSprites.Player Turret Moving 5"
-            ]
-          },
-          {
-            "frame": 6,
-            "sprite":
-            [
-              "ref:TestSprites.Player Wheels Moving 6",
-              "ref:TestSprites.Player Body Moving 6",
-              "ref:TestSprites.Player Turret Moving 6"
-            ]
-          },
-          {
-            "frame": 7,
-            "color":
-            [
-              [
-                1,
-                1,
-                1,
-                1
-              ],
-              [
-                1,
-                1,
-                1,
-                1
-              ],
-              [
-                1,
-                1,
-                1,
-                1
-              ],
-              [
-                1,
-                1,
-                1,
-                1
-              ]
-            ],
-            "offset":
-            [
-              0,
-              0
-            ],
-            "scale":
-            [
-              0.25,
-              0.25
-            ],
-            "rotate": 0,
-            "hitbox":
-            [
-              0,
-              0,
-              0,
-              0
-            ]
-          }
-        ]
-      }
-    ]
+    "size": 20
   },
 
   "TestPalette":
@@ -371,6 +199,176 @@
           8
         ],
         "repeat": 5
+      }
+    }
+  },
+
+  "TestAnim":
+  {
+    "res:type": "anim",
+    "length": 7,
+    "fps": 2,
+    "loop": true,
+    "visuals":
+    [
+      {
+        "visual": "sprite",
+        "color": "color",
+        "position": "position",
+        "scale": "scale",
+        "rotate": "rotate"
+      }
+    ],
+    "events":
+    [
+      {
+        "frame": 3.5,
+        "event": "halfDone"
+      },
+      {
+        "frame": 7,
+        "event": "done"
+      }
+    ],
+    "parts":
+    {
+      "sprite":
+      {
+        "length": 7,
+        "values":
+        [
+          {
+            "frame": 0,
+            "value":
+            [
+              "ref:TestSprites.Player Wheels Moving 0",
+              "ref:TestSprites.Player Body Moving 0",
+              "ref:TestSprites.Player Turret Moving 0"
+            ]
+          },
+          {
+            "frame": 1,
+            "value":
+            [
+              "ref:TestSprites.Player Wheels Moving 1",
+              "ref:TestSprites.Player Body Moving 1",
+              "ref:TestSprites.Player Turret Moving 1"
+            ]
+          },
+          {
+            "frame": 2,
+            "value":
+            [
+              "ref:TestSprites.Player Wheels Moving 2",
+              "ref:TestSprites.Player Body Moving 2",
+              "ref:TestSprites.Player Turret Moving 2"
+            ]
+          },
+          {
+            "frame": 3,
+            "value":
+            [
+              "ref:TestSprites.Player Wheels Moving 3",
+              "ref:TestSprites.Player Body Moving 3",
+              "ref:TestSprites.Player Turret Moving 3"
+            ]
+          },
+          {
+            "frame": 4,
+            "value":
+            [
+              "ref:TestSprites.Player Wheels Moving 4",
+              "ref:TestSprites.Player Body Moving 4",
+              "ref:TestSprites.Player Turret Moving 4"
+            ]
+          },
+          {
+            "frame": 5,
+            "value":
+            [
+              "ref:TestSprites.Player Wheels Moving 5",
+              "ref:TestSprites.Player Body Moving 5",
+              "ref:TestSprites.Player Turret Moving 5"
+            ]
+          },
+          {
+            "frame": 6,
+            "value":
+            [
+              "ref:TestSprites.Player Wheels Moving 6",
+              "ref:TestSprites.Player Body Moving 6",
+              "ref:TestSprites.Player Turret Moving 6"
+            ]
+          }
+        ]
+      },
+      "color":
+      {
+        "default":
+        [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "position":
+      {
+        "values":
+        [
+          {
+            "frame": 0,
+            "value":
+            [
+              1,
+              0
+            ]
+          },
+          {
+            "frame": 7,
+            "value":
+            [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "scale":
+      {
+        "values":
+        [
+          {
+            "frame": 0,
+            "value":
+            [
+              2,
+              2
+            ]
+          },
+          {
+            "frame": 7,
+            "value":
+            [
+              0.25,
+              0.25
+            ]
+          }
+        ]
+      },
+      "rotate":
+      {
+        "values":
+        [
+          {
+            "frame": 0,
+            "value": 45
+          },
+          {
+            "frame": 7,
+            "value": 0
+          }
+        ]
       }
     }
   }

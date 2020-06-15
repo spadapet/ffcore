@@ -154,7 +154,6 @@ void ff::AutoResourceValue::Init(IResources* resources, StringRef name)
 
 void ff::AutoResourceValue::Init(SharedResourceValue value)
 {
-	assert(value != nullptr);
 	_value = value;
 }
 

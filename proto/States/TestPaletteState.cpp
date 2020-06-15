@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Globals/AppGlobals.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Font/SpriteFont.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/RenderTarget/RenderDepth.h"
@@ -131,9 +132,10 @@ void TestPaletteState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target
 	{
 		render->DrawSprite(
 			entry.visualComponent->sprite,
-			entry.positionComponent->position,
-			entry.visualComponent->scale,
-			entry.visualComponent->rotate);
+			ff::Transform::Create(
+				entry.positionComponent->position,
+				entry.visualComponent->scale,
+				entry.visualComponent->rotate));
 	}
 
 	std::array<int, 4> c4{ 224, 224, 255, 255 };
@@ -146,12 +148,12 @@ void TestPaletteState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target
 
 	render = _render->BeginRender(_paletteTargetFull, nullptr, TestPalette::FULL_WORLD_RECT, TestPalette::SMALL_WORLD_RECT);
 	render->PushPalette(_palette);
-	render->DrawSprite(_paletteTextureSmall->AsSprite(), ff::PointFloat::Zeros(), ff::PointFloat::Ones(), 0);
+	render->DrawSprite(_paletteTextureSmall->AsSprite(), ff::Transform::Identity());
 
 	ff::RectFloat view = _viewport.GetView(target);
 	render = _render->BeginRender(target, nullptr, view, TestPalette::FULL_WORLD_RECT);
 	render->AsRendererActive11()->PushTextureSampler(D3D11_FILTER_MIN_MAG_MIP_LINEAR);
-	render->DrawSprite(_paletteTextureFull->AsSprite(), ff::PointFloat::Zeros(), ff::PointFloat::Ones(), 0);
+	render->DrawSprite(_paletteTextureFull->AsSprite(), ff::Transform::Identity());
 }
 
 void TestPaletteState::AddEntities()
