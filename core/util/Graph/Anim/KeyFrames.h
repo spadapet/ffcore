@@ -35,6 +35,8 @@ namespace ff
 			InterpolateLinear = 0x10,
 			InterpolateSpline = 0x20,
 			InterpolateBits = 0xF0,
+
+			Default = BoundsNone | InterpolateLinear,
 		};
 
 		static MethodType LoadMethod(const ff::Dict& dict, bool fromCache);
@@ -62,5 +64,20 @@ namespace ff
 		float _start;
 		float _length;
 		MethodType _method;
+	};
+
+	class CreateKeyFrames
+	{
+	public:
+		CreateKeyFrames(ff::StringRef name, float start, float length, KeyFrames::MethodType method = KeyFrames::MethodType::Default, ValuePtr defaultValue = nullptr);
+		CreateKeyFrames(const CreateKeyFrames& rhs);
+		CreateKeyFrames(CreateKeyFrames&& rhs);
+
+		void AddFrame(float frame, ValuePtr value);
+		KeyFrames Create() const;
+
+	private:
+		Dict _dict;
+		Vector<ValuePtr> _values;
 	};
 }

@@ -76,7 +76,7 @@ ff::ValuePtr ff::KeyFrames::GetValue(float frame, const Dict* params)
 		}
 	}
 
-	return _default;
+	return _default && !_default->IsType<ff::NullValue>() ? _default : nullptr;
 }
 
 float ff::KeyFrames::GetStart() const
@@ -129,8 +129,8 @@ ff::Dict ff::KeyFrames::SaveToCache() const
 	for (const KeyFrame& key : _keys)
 	{
 		frames.Push(key._frame);
-		values.Push(key._value ? key._value : ff::Value::New<ff::NullValue>());
-		tangents.Push(key._tangentValue ? key._tangentValue : ff::Value::New<ff::NullValue>());
+		values.Push(key._value);
+		tangents.Push(key._tangentValue);
 	}
 
 	dict.Set<ff::FloatVectorValue>(::PROP_FRAMES, std::move(frames));
@@ -188,7 +188,7 @@ static ff::ValuePtr ConvertKeyValue(ff::ValuePtr value)
 		return floatValue;
 	}
 
-	return value;
+	return value ? value : ff::Value::New<ff::NullValue>();
 }
 
 bool ff::KeyFrames::LoadFromSourceInternal(ff::StringRef name, const Dict& dict, ff::IResourceLoadListener* loadListener)
@@ -215,6 +215,7 @@ bool ff::KeyFrames::LoadFromSourceInternal(ff::StringRef name, const Dict& dict,
 		KeyFrame key;
 		key._frame = frameValue.GetValue();
 		key._value = ::ConvertKeyValue(valueValue);
+		key._tangentValue = ff::Value::New<ff::NullValue>();
 
 		size_t keyPos;
 		if (_keys.SortFind(key, &keyPos))
@@ -416,7 +417,7 @@ ff::KeyFrames::MethodType ff::KeyFrames::LoadMethod(const ff::Dict& dict, bool f
 {
 	MethodType method = MethodType::None;
 
-	if (fromCache)
+	if (fromCache || dict.GetValue(::PROP_METHOD)->IsType<ff::IntValue>())
 	{
 		method = (MethodType)dict.Get<ff::IntValue>(::PROP_METHOD);
 	}
@@ -475,4 +476,42 @@ bool ff::KeyFrames::AdjustFrame(float& frame, float start, float length, ff::Key
 	}
 
 	return true;
+}
+
+ff::CreateKeyFrames::CreateKeyFrames(ff::StringRef name, float start, float length, KeyFrames::MethodType method, ValuePtr defaultValue)
+{
+	_dict.Set<ff::StringValue>(::PROP_NAME, name);
+	_dict.Set<ff::FloatValue>(::PROP_START, start);
+	_dict.Set<ff::FloatValue>(::PROP_LENGTH, length);
+	_dict.Set<ff::IntValue>(::PROP_METHOD, (int)method);
+	_dict.SetValue(::PROP_DEFAULT, defaultValue);
+}
+
+ff::CreateKeyFrames::CreateKeyFrames(const CreateKeyFrames& rhs)
+	: _dict(rhs._dict)
+	, _values(rhs._values)
+{
+}
+
+ff::CreateKeyFrames::CreateKeyFrames(CreateKeyFrames&& rhs)
+	: _dict(std::move(rhs._dict))
+	, _values(std::move(rhs._values))
+{
+}
+
+void ff::CreateKeyFrames::AddFrame(float frame, ValuePtr value)
+{
+	ff::Dict dict;
+	dict.Set<ff::FloatValue>(::PROP_FRAME, frame);
+	dict.SetValue(::PROP_VALUE, value);
+
+	_values.Push(ff::Value::New<ff::DictValue>(std::move(dict)));
+}
+
+ff::KeyFrames ff::CreateKeyFrames::Create() const
+{
+	ff::Dict dict = _dict;
+	dict.Set<ff::ValueVectorValue>(::PROP_VALUES, ff::Vector<ff::ValuePtr>(_values));
+
+	return KeyFrames::LoadFromSource(dict.Get<ff::StringValue>(::PROP_NAME), dict);
 }
