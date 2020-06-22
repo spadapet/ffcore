@@ -157,6 +157,7 @@ public:
     //@}
 
 private:
+    static bool ValidateFontFamily(const void* value);
     static bool ValidateFontSize(const void* value);
 
     NS_DECLARE_REFLECTION(TextElement, FrameworkElement)

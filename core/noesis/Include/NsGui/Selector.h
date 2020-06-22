@@ -176,8 +176,6 @@ private:
     void SynchronizeWithCurrent(int32_t currentIndex);
     BaseComponent* SelectItem(BaseComponent* selectedValue);
     void UpdateSelectedValue(BaseComponent* selectedItem);
-    void UpdateSelectedIndex(int32_t selectedIndex);
-    void EnumPath(const PathElement& element, void* context);
 
     void TryFocusSelected();
 

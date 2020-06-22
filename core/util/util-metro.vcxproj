@@ -24,7 +24,7 @@
         mfplat.lib;
         mfreadwrite.lib;
         mfuuid.lib;
-        ..\noesis\lib\$(XPlatform)\noesis.lib;
+        ..\noesis\lib\uwp-$(XPlatform)\noesis.lib;
         %(AdditionalDependencies)
       </AdditionalDependencies>
       <DelayLoadDLLs>

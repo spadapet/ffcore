@@ -15,7 +15,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\noesis\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(FFCoreRoot)core\noesis\Lib\$(XPlatform)\Noesis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(FFCoreRoot)core\noesis\Lib\uwp-$(XPlatform)\Noesis.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>Noesis.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -72,7 +72,7 @@
   <ItemGroup>
     <ResJson Include="Assets\Assets.res.json" />
     <ResJson Include="Assets\Assets.Xaml.res.json" />
-    <None Include="..\core\noesis\Bin\$(XPlatform)\Noesis.dll">
+    <None Include="..\core\noesis\Bin\uwp-$(XPlatform)\Noesis.dll">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Assets\TestAssets.res.json">
