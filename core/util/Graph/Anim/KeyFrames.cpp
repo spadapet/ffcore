@@ -510,8 +510,16 @@ void ff::CreateKeyFrames::AddFrame(float frame, ValuePtr value)
 
 ff::KeyFrames ff::CreateKeyFrames::Create() const
 {
+	ff::String name;
+	ff::Dict dict = CreateSourceDict(name);
+	return KeyFrames::LoadFromSource(name, dict);
+}
+
+ff::Dict ff::CreateKeyFrames::CreateSourceDict(ff::StringOut name) const
+{
+	name = _dict.Get<ff::StringValue>(::PROP_NAME);
+
 	ff::Dict dict = _dict;
 	dict.Set<ff::ValueVectorValue>(::PROP_VALUES, ff::Vector<ff::ValuePtr>(_values));
-
-	return KeyFrames::LoadFromSource(dict.Get<ff::StringValue>(::PROP_NAME), dict);
+	return dict;
 }

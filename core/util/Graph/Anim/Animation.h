@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Graph/Anim/KeyFrames.h"
 #include "Value/Value.h"
 #include "Value/ValueType.h"
 
 namespace ff
 {
+	class CreateKeyFrames;
 	class Dict;
 	class IAnimation;
 	class IAnimationPlayer;
@@ -40,5 +42,34 @@ namespace ff
 		virtual void RenderAnimation(IRendererActive* render, const Transform& position) = 0;
 		virtual float GetCurrentFrame() const = 0;
 		virtual IAnimation* GetAnimation() = 0;
+	};
+
+	class CreateAnimation
+	{
+	public:
+		CreateAnimation(float length, float fps = 60.0f, KeyFrames::MethodType method = KeyFrames::MethodType::Default);
+		CreateAnimation(const CreateAnimation& rhs);
+		CreateAnimation(CreateAnimation&& rhs);
+
+		void AddKeys(const CreateKeyFrames& key);
+		void AddEvent(float frame, StringRef name, IAudioEffect* effect, const Dict* properties);
+		void AddVisual(
+			float start,
+			float length,
+			float speed,
+			KeyFrames::MethodType method,
+			StringRef visualKeys,
+			StringRef colorKeys,
+			StringRef positionKeys,
+			StringRef scaleKeys,
+			StringRef rotateKeys);
+
+		ComPtr<IAnimation> Create() const;
+
+	private:
+		Dict _dict;
+		Dict _keys;
+		Vector<ValuePtr> _events;
+		Vector<ValuePtr> _visuals;
 	};
 }

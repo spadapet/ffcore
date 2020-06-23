@@ -8,7 +8,6 @@
 #include "Graph/Render/MatrixStack.h"
 #include "Graph/Render/RendererActive.h"
 #include "Graph/Sprite/Sprite.h"
-#include "Graph/Texture/Palette.h"
 #include "Module/ModuleFactory.h"
 #include "Resource/ResourcePersist.h"
 #include "Value/Values.h"
@@ -19,11 +18,10 @@ static ff::StaticString PROP_EVENT(L"event");
 static ff::StaticString PROP_EVENTS(L"events");
 static ff::StaticString PROP_FPS(L"fps");
 static ff::StaticString PROP_FRAME(L"frame");
+static ff::StaticString PROP_KEYS(L"keys");
 static ff::StaticString PROP_LENGTH(L"length");
 static ff::StaticString PROP_LOOP(L"loop");
 static ff::StaticString PROP_METHOD(L"method");
-static ff::StaticString PROP_PALETTE(L"palette");
-static ff::StaticString PROP_PARTS(L"parts");
 static ff::StaticString PROP_POSITION(L"position");
 static ff::StaticString PROP_PROPERTIES(L"properties");
 static ff::StaticString PROP_ROTATE(L"rotate");
@@ -155,7 +153,6 @@ private:
 		ff::KeyFrames* _positionKeys;
 		ff::KeyFrames* _scaleKeys;
 		ff::KeyFrames* _rotateKeys;
-		ff::KeyFrames* _paletteKeys;
 	};
 
 	struct EventInfo
@@ -171,11 +168,11 @@ private:
 
 	ff::Vector<ff::ValuePtr> SaveEventsToCache();
 	ff::Vector<ff::ValuePtr> SaveVisualsToCache();
-	ff::Dict SavePartsToCache();
+	ff::Dict SaveKeysToCache();
 	bool Load(const ff::Dict& dict, bool fromCache);
 	bool LoadEvents(const ff::Vector<ff::ValuePtr>& values, bool fromCache);
 	bool LoadVisuals(const ff::Vector<ff::ValuePtr>& values, bool fromCache);
-	bool LoadParts(const ff::Dict& values, bool fromCache);
+	bool LoadKeys(const ff::Dict& values, bool fromCache);
 
 	typedef ff::Vector<ff::ComPtr<ff::IAnimation>, 4> CachedVisuals;
 	const CachedVisuals* GetCachedVisuals(const ff::ValuePtr& value);
@@ -185,7 +182,7 @@ private:
 	ff::KeyFrames::MethodType _method;
 	ff::Vector<VisualInfo> _visuals;
 	ff::Vector<EventInfo> _events;
-	ff::Map<ff::hash_t, ff::KeyFrames, ff::NonHasher<ff::hash_t>> _parts;
+	ff::Map<ff::hash_t, ff::KeyFrames, ff::NonHasher<ff::hash_t>> _keys;
 	mutable ff::Map<ff::ValuePtr, CachedVisuals> _cachedVisuals;
 };
 
@@ -284,25 +281,10 @@ void Animation::RenderFrame(ff::IRendererActive* render, const ff::Transform& po
 			}
 		}
 
-		ff::ComPtr<ff::IPalette> palette;
-		if (info._paletteKeys)
-		{
-			ff::ValuePtrT<ff::ObjectValue> value = info._paletteKeys->GetValue(visualFrame, params);
-			if (palette.QueryFrom(value.GetValue()))
-			{
-				render->PushPalette(palette);
-			}
-		}
-
 		for (const ff::ComPtr<ff::IAnimation>& animVisual : *visuals)
 		{
 			float visualAnimFrame = (_fps != 0.0f) ? visualFrame * animVisual->GetFramesPerSecond() / _fps : 0.0f;
 			animVisual->RenderFrame(render, visualTransform, visualAnimFrame, params);
-		}
-
-		if (palette)
-		{
-			render->PopPalette();
 		}
 	}
 
@@ -324,7 +306,7 @@ float Animation::GetFramesPerSecond() const
 
 ff::ValuePtr Animation::GetFrameValue(ff::hash_t name, float frame, const ff::Dict* params)
 {
-	auto i = _parts.GetKey(name);
+	auto i = _keys.GetKey(name);
 	return i ? i->GetEditableValue().GetValue(frame, params) : nullptr;
 }
 
@@ -389,7 +371,7 @@ bool Animation::SaveToCache(ff::Dict& dict)
 
 	dict.Set<ff::ValueVectorValue>(::PROP_EVENTS, SaveEventsToCache());
 	dict.Set<ff::ValueVectorValue>(::PROP_VISUALS, SaveVisualsToCache());
-	dict.Set<ff::DictValue>(::PROP_PARTS, SavePartsToCache());
+	dict.Set<ff::DictValue>(::PROP_KEYS, SaveKeysToCache());
 
 	return true;
 }
@@ -406,10 +388,16 @@ ff::Vector<ff::ValuePtr> Animation::SaveEventsToCache()
 		dict.Set<ff::StringValue>(::PROP_EVENT, event._event);
 		dict.Set<ff::DictValue>(::PROP_PROPERTIES, ff::Dict(event._properties));
 
-		ff::SharedResourceValue effect = event._effect.GetResourceValue();
-		if (effect && effect->GetValue() && !effect->GetValue()->IsType<ff::NullValue>())
+		ff::SharedResourceValue effectRes = event._effect.GetResourceValue();
+		ff::ComPtr<ff::IAudioEffect> effect = event._effect.Flush();
+
+		if (effectRes && effectRes->GetName().size() && effectRes->GetValue() && !effectRes->GetValue()->IsType<ff::NullValue>())
 		{
-			dict.Set<ff::SharedResourceWrapperValue>(::PROP_EFFECT, effect);
+			dict.Set<ff::SharedResourceWrapperValue>(::PROP_EFFECT, effectRes);
+		}
+		else if (effect)
+		{
+			dict.Set<ff::ObjectValue>(::PROP_EFFECT, effect);
 		}
 
 		values.Push(ff::Value::New<ff::DictValue>(std::move(dict)));
@@ -456,28 +444,23 @@ ff::Vector<ff::ValuePtr> Animation::SaveVisualsToCache()
 			dict.Set<ff::StringValue>(::PROP_ROTATE, i._rotateKeys->GetName());
 		}
 
-		if (i._paletteKeys)
-		{
-			dict.Set<ff::StringValue>(::PROP_PALETTE, i._paletteKeys->GetName());
-		}
-
 		values.Push(ff::Value::New<ff::DictValue>(std::move(dict)));
 	}
 
 	return values;
 }
 
-ff::Dict Animation::SavePartsToCache()
+ff::Dict Animation::SaveKeysToCache()
 {
-	ff::Dict parts;
+	ff::Dict keys;
 
-	for (auto& i : _parts)
+	for (auto& i : _keys)
 	{
-		const ff::KeyFrames& part = i.GetValue();
-		parts.Set<ff::DictValue>(part.GetName(), part.SaveToCache());
+		const ff::KeyFrames& key = i.GetValue();
+		keys.Set<ff::DictValue>(key.GetName(), key.SaveToCache());
 	}
 
-	return parts;
+	return keys;
 }
 
 bool Animation::Load(const ff::Dict& dict, bool fromCache)
@@ -486,7 +469,7 @@ bool Animation::Load(const ff::Dict& dict, bool fromCache)
 	_fps = dict.Get<ff::FloatValue>(::PROP_FPS);
 	_method = ff::KeyFrames::LoadMethod(dict, fromCache);
 
-	assertRetVal(LoadParts(dict.Get<ff::DictValue>(::PROP_PARTS), fromCache), false);
+	assertRetVal(LoadKeys(dict.Get<ff::DictValue>(::PROP_KEYS), fromCache), false);
 	assertRetVal(LoadVisuals(dict.Get<ff::ValueVectorValue>(::PROP_VISUALS), fromCache), false);
 	assertRetVal(LoadEvents(dict.Get<ff::ValueVectorValue>(::PROP_EVENTS), fromCache), false);
 
@@ -505,7 +488,22 @@ bool Animation::LoadEvents(const ff::Vector<ff::ValuePtr>& values, bool fromCach
 		event._frame = dict.Get<ff::FloatValue>(::PROP_FRAME);
 		event._event = dict.Get<ff::StringValue>(::PROP_EVENT);
 		event._properties = dict.Get<ff::DictValue>(::PROP_PROPERTIES);
-		event._effect.Init(dict.Get<ff::SharedResourceWrapperValue>(::PROP_EFFECT));
+
+		ff::ValuePtrT<ff::SharedResourceWrapperValue> effectRes = dict.GetValue(::PROP_EFFECT);
+		if (effectRes)
+		{
+			event._effect.Init(effectRes.GetValue());
+		}
+		else
+		{
+			ff::ValuePtrT<ff::ObjectValue> effectObject = dict.GetValue(::PROP_EFFECT);
+			ff::ComPtr<ff::IAudioEffect> effect;
+
+			if (effect.QueryFrom(effectObject.GetValue()))
+			{
+				event._effect.Init(std::make_shared<ff::ResourceValue>(effect, ff::GetEmptyString()));
+			}
+		}
 
 		_events.Push(std::move(event));
 	}
@@ -540,28 +538,24 @@ bool Animation::LoadVisuals(const ff::Vector<ff::ValuePtr>& values, bool fromCac
 		ff::String positionKeys = dict.Get<ff::StringValue>(::PROP_POSITION);
 		ff::String scaleKeys = dict.Get<ff::StringValue>(::PROP_SCALE);
 		ff::String rotateKeys = dict.Get<ff::StringValue>(::PROP_ROTATE);
-		ff::String paletteKeys = dict.Get<ff::StringValue>(::PROP_PALETTE);
 
-		auto visualIter = visualKeys.size() ? _parts.GetKey(ff::HashFunc(visualKeys)) : nullptr;
-		auto colorIter = colorKeys.size() ? _parts.GetKey(ff::HashFunc(colorKeys)) : nullptr;
-		auto positionIter = positionKeys.size() ? _parts.GetKey(ff::HashFunc(positionKeys)) : nullptr;
-		auto scaleIter = scaleKeys.size() ? _parts.GetKey(ff::HashFunc(scaleKeys)) : nullptr;
-		auto rotateIter = rotateKeys.size() ? _parts.GetKey(ff::HashFunc(rotateKeys)) : nullptr;
-		auto paletteIter = paletteKeys.size() ? _parts.GetKey(ff::HashFunc(paletteKeys)) : nullptr;
+		auto visualIter = visualKeys.size() ? _keys.GetKey(ff::HashFunc(visualKeys)) : nullptr;
+		auto colorIter = colorKeys.size() ? _keys.GetKey(ff::HashFunc(colorKeys)) : nullptr;
+		auto positionIter = positionKeys.size() ? _keys.GetKey(ff::HashFunc(positionKeys)) : nullptr;
+		auto scaleIter = scaleKeys.size() ? _keys.GetKey(ff::HashFunc(scaleKeys)) : nullptr;
+		auto rotateIter = rotateKeys.size() ? _keys.GetKey(ff::HashFunc(rotateKeys)) : nullptr;
 
 		assertRetVal(visualKeys.empty() || visualIter, false);
 		assertRetVal(colorKeys.empty() || colorIter, false);
 		assertRetVal(positionKeys.empty() || positionIter, false);
 		assertRetVal(scaleKeys.empty() || scaleIter, false);
 		assertRetVal(rotateKeys.empty() || rotateIter, false);
-		assertRetVal(paletteKeys.empty() || paletteIter, false);
 
 		info._visualKeys = visualIter ? &visualIter->GetEditableValue() : nullptr;
 		info._colorKeys = colorIter ? &colorIter->GetEditableValue() : nullptr;
 		info._positionKeys = positionIter ? &positionIter->GetEditableValue() : nullptr;
 		info._scaleKeys = scaleIter ? &scaleIter->GetEditableValue() : nullptr;
 		info._rotateKeys = rotateIter ? &rotateIter->GetEditableValue() : nullptr;
-		info._paletteKeys = paletteIter ? &paletteIter->GetEditableValue() : nullptr;
 
 		_visuals.Push(std::move(info));
 	}
@@ -569,12 +563,12 @@ bool Animation::LoadVisuals(const ff::Vector<ff::ValuePtr>& values, bool fromCac
 	return true;
 }
 
-bool Animation::LoadParts(const ff::Dict& values, bool fromCache)
+bool Animation::LoadKeys(const ff::Dict& values, bool fromCache)
 {
 	for (ff::StringRef name : values.GetAllNames())
 	{
 		ff::Dict dict = values.Get<ff::DictValue>(name);
-		_parts.SetKey(ff::HashFunc(name), fromCache ? ff::KeyFrames::LoadFromCache(dict) : ff::KeyFrames::LoadFromSource(name, dict));
+		_keys.SetKey(ff::HashFunc(name), fromCache ? ff::KeyFrames::LoadFromCache(dict) : ff::KeyFrames::LoadFromSource(name, dict));
 	}
 
 	return true;
@@ -620,4 +614,93 @@ const Animation::CachedVisuals* Animation::GetCachedVisuals(const ff::ValuePtr& 
 	}
 
 	return &i->GetValue();
+}
+
+ff::CreateAnimation::CreateAnimation(float length, float fps, KeyFrames::MethodType method)
+{
+	_dict.Set<ff::FloatValue>(::PROP_LENGTH, length);
+	_dict.Set<ff::FloatValue>(::PROP_FPS, fps);
+	_dict.Set<ff::IntValue>(::PROP_METHOD, (int)method);
+}
+
+ff::CreateAnimation::CreateAnimation(const CreateAnimation& rhs)
+	: _dict(rhs._dict)
+	, _events(rhs._events)
+	, _keys(rhs._keys)
+	, _visuals(rhs._visuals)
+{
+}
+
+ff::CreateAnimation::CreateAnimation(CreateAnimation&& rhs)
+	: _dict(std::move(rhs._dict))
+	, _events(std::move(rhs._events))
+	, _keys(std::move(rhs._keys))
+	, _visuals(std::move(rhs._visuals))
+{
+}
+
+void ff::CreateAnimation::AddKeys(const CreateKeyFrames& key)
+{
+	ff::String name;
+	ff::Dict dict = key.CreateSourceDict(name);
+	_keys.Set<ff::DictValue>(name, std::move(dict));
+}
+
+void ff::CreateAnimation::AddEvent(float frame, StringRef name, IAudioEffect* effect, const Dict* properties)
+{
+	ff::Dict dict;
+	dict.Set<ff::FloatValue>(::PROP_FRAME, frame);
+	dict.Set<ff::StringValue>(::PROP_EVENT, name);
+
+	if (effect)
+	{
+		dict.Set<ff::ObjectValue>(::PROP_EFFECT, effect);
+	}
+
+	if (properties)
+	{
+		dict.Set<ff::DictValue>(::PROP_PROPERTIES, ff::Dict(*properties));
+	}
+
+	_events.Push(ff::Value::New<ff::DictValue>(std::move(dict)));
+}
+
+void ff::CreateAnimation::AddVisual(
+	float start,
+	float length,
+	float speed,
+	KeyFrames::MethodType method,
+	StringRef visualKeys,
+	StringRef colorKeys,
+	StringRef positionKeys,
+	StringRef scaleKeys,
+	StringRef rotateKeys)
+{
+	ff::Dict dict;
+	dict.Set<ff::FloatValue>(::PROP_START, start);
+	dict.Set<ff::FloatValue>(::PROP_LENGTH, length);
+	dict.Set<ff::FloatValue>(::PROP_SPEED, speed);
+	dict.Set<ff::IntValue>(::PROP_METHOD, (int)method);
+	dict.Set<ff::StringValue>(::PROP_VISUAL, visualKeys);
+	dict.Set<ff::StringValue>(::PROP_COLOR, colorKeys);
+	dict.Set<ff::StringValue>(::PROP_POSITION, positionKeys);
+	dict.Set<ff::StringValue>(::PROP_SCALE, scaleKeys);
+	dict.Set<ff::StringValue>(::PROP_ROTATE, rotateKeys);
+
+	_visuals.Push(ff::Value::New<ff::DictValue>(std::move(dict)));
+}
+
+ff::ComPtr<ff::IAnimation> ff::CreateAnimation::Create() const
+{
+	ff::Dict dict = _dict;
+	dict.Set<ff::DictValue>(::PROP_KEYS, ff::Dict(_keys));
+	dict.Set<ff::ValueVectorValue>(::PROP_VISUALS, ff::Vector<ff::ValuePtr>(_visuals));
+	dict.Set<ff::ValueVectorValue>(::PROP_EVENTS, ff::Vector<ff::ValuePtr>(_events));
+
+	ff::ComPtr<Animation, ff::IAnimation> anim = new ff::ComObject<Animation>();
+	assertRetVal(anim->LoadFromSource(dict), nullptr);
+
+	ff::ComPtr<ff::IAnimation> result;
+	result.Attach(anim.DetachInterface());
+	return result;
 }

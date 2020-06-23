@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Dict/Dict.h"
 #include "Value/Value.h"
 #include "Value/ValueType.h"
 
@@ -75,6 +76,7 @@ namespace ff
 
 		void AddFrame(float frame, ValuePtr value);
 		KeyFrames Create() const;
+		Dict CreateSourceDict(StringOut name) const;
 
 	private:
 		Dict _dict;
