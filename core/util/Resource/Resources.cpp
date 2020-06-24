@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Dict/ValueTable.h"
 #include "Globals/AppGlobals.h"
 #include "Globals/ProcessGlobals.h"
 #include "Module/ModuleFactory.h"
@@ -18,7 +19,7 @@ class __declspec(uuid("676f438b-b858-4fa7-82f8-50dae9505bce"))
 public:
 	DECLARE_HEADER(Resources);
 
-	bool Init(ff::AppGlobals* globals, const ff::Dict& dict);
+	bool Init(ff::AppGlobals* globals, ff::IValueTable* values, const ff::Dict& dict);
 
 	// IResourceAccess
 	virtual ff::Vector<ff::String> GetResourceNames() const override;
@@ -59,6 +60,7 @@ private:
 	ff::Mutex _mutex;
 	ff::Map<ff::String, ValueInfo> _values;
 	ff::AppGlobals* _globals;
+	ff::ComPtr<ff::IValueTable> _valueTable;
 };
 
 BEGIN_INTERFACES(Resources)
@@ -73,13 +75,13 @@ static ff::ModuleStartup Register([](ff::Module& module)
 		module.RegisterClassT<Resources>(RESOURCES_CLASS_NAME);
 	});
 
-bool ff::CreateResources(AppGlobals* globals, const Dict& dict, ff::IResources** obj)
+bool ff::CreateResources(AppGlobals* globals, ff::IValueTable* values, const Dict& dict, ff::IResources** obj)
 {
 	assertRetVal(obj, false);
 
 	ComPtr<Resources, IResources> myObj;
 	assertHrRetVal(ff::ComAllocator<Resources>::CreateInstance(&myObj), false);
-	assertRetVal(myObj->Init(globals, dict), false);
+	assertRetVal(myObj->Init(globals, values, dict), false);
 
 	*obj = myObj.Detach();
 	return true;
@@ -99,9 +101,10 @@ Resources::~Resources()
 {
 }
 
-bool Resources::Init(ff::AppGlobals* globals, const ff::Dict& dict)
+bool Resources::Init(ff::AppGlobals* globals, ff::IValueTable* values, const ff::Dict& dict)
 {
 	_globals = globals;
+	_valueTable = values;
 	return LoadFromCache(dict);
 }
 
@@ -280,9 +283,13 @@ ff::ValuePtr Resources::CreateObjects(ValueInfo& info, ff::ValuePtr value)
 	else if (value->IsType<ff::StringValue>())
 	{
 		// Resolve references to other resources
-		if (!std::wcsncmp(value->GetValue<ff::StringValue>().c_str(), ff::REF_PREFIX.GetString().c_str(), ff::REF_PREFIX.GetString().size()))
+		ff::StringRef str = value->GetValue<ff::StringValue>();
+		ff::StringRef refPrefix = ff::REF_PREFIX.GetString();
+		ff::StringRef locPrefix = ff::LOC_PREFIX.GetString();
+
+		if (!std::wcsncmp(str.c_str(), refPrefix.c_str(), refPrefix.size()))
 		{
-			ff::String refName = value->GetValue<ff::StringValue>().substr(ff::REF_PREFIX.GetString().size());
+			ff::String refName = str.substr(refPrefix.size());
 			ff::SharedResourceValue refValue = GetResource(refName);
 
 			if (refValue)
@@ -302,6 +309,12 @@ ff::ValuePtr Resources::CreateObjects(ValueInfo& info, ff::ValuePtr value)
 
 			ff::ValuePtr newValue = ff::Value::New<ff::SharedResourceWrapperValue>(refValue);
 			value = CreateObjects(info, newValue);
+		}
+		else if (!std::wcsncmp(str.c_str(), locPrefix.c_str(), locPrefix.size()))
+		{
+			ff::String locName = str.substr(locPrefix.size());
+			value = _valueTable ? _valueTable->GetValue(locName) : nullptr;
+			assertSz(value, ff::String::format_new(L"Missing localized resource value: %s", locName.c_str()).c_str());
 		}
 	}
 	else if (value->IsType<ff::DictValue>())

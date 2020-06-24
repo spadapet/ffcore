@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Globals/MetroGlobals.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Font/SpriteFont.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/Render/Renderer.h"
@@ -278,9 +279,9 @@ ff::String ff::DebugPageState::GetDebugName(size_t page) const
 size_t ff::DebugPageState::GetDebugInfoCount(size_t page) const
 {
 #ifdef _DEBUG
-	return 7;
+	return 4;
 #else
-	return 5;
+	return 3;
 #endif
 }
 
@@ -294,24 +295,12 @@ ff::String ff::DebugPageState::GetDebugInfo(size_t page, size_t index, DirectX::
 
 	case 1:
 		color = ff::GetColorGreen();
-		return String::format_new(L"Render:%.2fms/%.fHz", _renderTime * 1000.0, _lastRps);
+		return String::format_new(L"Render:%.2fms/%.fHz, Clear:T%lu/D%lu, Draw:%lu", _renderTime * 1000.0, _lastRps, _graphCounters._clear, _graphCounters._depthClear, _graphCounters._draw);
 
 	case 2:
-		color = ff::GetColorGreen();
-		return String::format_new(L"Clear:%lu, DepthClear:%lu, Draw:%lu, CpuCopy:%lu, GpuCopy:%lu",
-			_graphCounters._clear,
-			_graphCounters._depthClear, 
-			_graphCounters._draw,
-			_graphCounters._map + _graphCounters._update,
-			_graphCounters._copy);
-
-	case 3:
-		return String::format_new(L"Present:%.2fms", _flipTime * 1000.0);
-
-	case 4:
 		return String::format_new(L"Total:%.2fms\n", (_advanceTimeTotal + _renderTime + _flipTime) * 1000.0);
 
-	case 6:
+	case 3:
 		color = DirectX::XMFLOAT4(.5, .5, .5, 1);
 		return String::format_new(L"Memory:%.3f MB (#%lu)", _memStats.current / 1000000.0, _memStats.count);
 
@@ -359,7 +348,7 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 	noAssertRet(font);
 
 	size_t pageIndex, subPageIndex;
-	IDebugPages* page = ConvertPageToSubPage(_debugPage, pageIndex, subPageIndex);
+	ff::IDebugPages* page = ConvertPageToSubPage(_debugPage, pageIndex, subPageIndex);
 	noAssertRet(page);
 
 	ff::PointFloat targetSize = target->GetRotatedSize().ToType<float>();
@@ -370,7 +359,7 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 	{
 		render->PushNoOverlap();
 
-		String introText = String::format_new(
+		ff::String introText = ff::String::format_new(
 			L"<F8> Close debug info\n"
 			L"<Ctrl-F8> Page %lu/%lu: %s\n"
 			L"Time:%.2fs, FPS:%.1f",
@@ -380,11 +369,8 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 			_totalSeconds,
 			_lastRps);
 
-		font->DrawText(render, introText,
-			ff::PointFloat(8, 8),
-			ff::PointFloat::Ones(),
-			ff::GetColorWhite(),
-			ff::GetColorBlack());
+		ff::FontColorChange outlineColor{ 0, ff::GetColorBlack() };
+		font->DrawText(render, introText, introText.size(), ff::Transform::Create(ff::PointFloat(8, 8)), nullptr, 0, &outlineColor, 1);
 
 		size_t line = 3;
 		float spacingY = font->GetLineSpacing();
@@ -393,12 +379,9 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 		for (size_t i = 0; i < page->GetDebugInfoCount(subPageIndex); i++, line++)
 		{
 			DirectX::XMFLOAT4 color = ff::GetColorWhite();
-			String str = page->GetDebugInfo(subPageIndex, i, color);
+			ff::String str = page->GetDebugInfo(subPageIndex, i, color);
 
-			font->DrawText(render, str,
-				ff::PointFloat(8, startY + spacingY * line),
-				ff::PointFloat::Ones(),
-				color, ff::GetColorBlack());
+			font->DrawText(render, str, str.size(), ff::Transform::Create(ff::PointFloat(8, startY + spacingY * line), ff::PointFloat::Ones(), 0.0f, color), nullptr, 0, &outlineColor, 1);
 		}
 
 		line++;
@@ -406,17 +389,10 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 		for (size_t i = 0; i < page->GetDebugToggleCount(subPageIndex); i++, line++)
 		{
 			int value = -1;
-			String str = page->GetDebugToggle(subPageIndex, i, value);
+			ff::String str = page->GetDebugToggle(subPageIndex, i, value);
+			const wchar_t* toggleText = (value != -1) ? (!value ? L" OFF:" : L" ON:") : L"";
 
-			const wchar_t* toggleText = (value != -1)
-				? (!value ? L" OFF:" : L" ON:")
-				: L"";
-
-			font->DrawText(render,
-				ff::String::format_new(L"<Ctrl-%lu>%s %s", i, toggleText, str.c_str()),
-				ff::PointFloat(8, startY + spacingY * line),
-				ff::PointFloat::Ones(),
-				ff::GetColorWhite(), ff::GetColorBlack());
+			font->DrawText(render, ff::String::format_new(L"<Ctrl-%lu>%s %s", i, toggleText, str.c_str()), ff::INVALID_SIZE, ff::Transform::Create(ff::PointFloat(8, startY + spacingY * line)), nullptr, 0, &outlineColor, 1);
 		}
 
 		render->PopNoOverlap();

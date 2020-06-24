@@ -21,7 +21,6 @@ namespace ff
 		IRendererActive11* GetRenderer11() const;
 
 		void DrawSprite(ISprite* sprite, const PixelTransform& pos) const;
-		void DrawFont(ISprite* sprite, const PixelTransform& pos) const;
 
 		void DrawLineStrip(const PointFixedInt* points, size_t count, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
 		void DrawLine(PointFixedInt start, PointFixedInt end, const DirectX::XMFLOAT4& color, FixedInt thickness) const;

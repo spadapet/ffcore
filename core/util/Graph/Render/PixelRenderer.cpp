@@ -42,13 +42,6 @@ void ff::PixelRendererActive::DrawSprite(ff::ISprite* sprite, const PixelTransfo
 	_render->DrawSprite(sprite, pos2);
 }
 
-void ff::PixelRendererActive::DrawFont(ff::ISprite* sprite, const PixelTransform& pos) const
-{
-	assert(pos._rotation == 0_f);
-	ff::Transform pos2 = ff::Transform::Create(::Floor(pos._position), pos._scale.ToType<float>(), 0.0f, pos._color);
-	_render->DrawFont(sprite, pos2);
-}
-
 void ff::PixelRendererActive::DrawLineStrip(const ff::PointFixedInt* points, size_t count, const DirectX::XMFLOAT4& color, ff::FixedInt thickness) const
 {
 	ff::Vector<ff::PointFloat, 64> pointFloats;

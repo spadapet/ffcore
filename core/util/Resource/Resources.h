@@ -6,6 +6,7 @@ namespace ff
 {
 	class AppGlobals;
 	class Dict;
+	class IValueTable;
 
 	class IResourceAccess
 	{
@@ -21,5 +22,5 @@ namespace ff
 		virtual SharedResourceValue FlushResource(SharedResourceValue value) = 0;
 	};
 
-	UTIL_API bool CreateResources(AppGlobals* globals, const Dict& dict, IResources** obj);
+	UTIL_API bool CreateResources(AppGlobals* globals, IValueTable* values, const Dict& dict, IResources** obj);
 }

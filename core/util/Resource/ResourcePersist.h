@@ -18,6 +18,7 @@ namespace ff
 	UTIL_API extern StaticString RES_VALUES;
 
 	UTIL_API extern StaticString FILE_PREFIX;
+	UTIL_API extern StaticString LOC_PREFIX;
 	UTIL_API extern StaticString REF_PREFIX;
 	UTIL_API extern StaticString RES_PREFIX;
 

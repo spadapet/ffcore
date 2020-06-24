@@ -193,7 +193,7 @@ void ff::Module::LoadResources()
 		}
 	}
 
-	verify(CreateResources(nullptr, finalDict, &_resources));
+	verify(CreateResources(nullptr, _valueTable, finalDict, &_resources));
 }
 
 void ff::Module::LoadValueTable()

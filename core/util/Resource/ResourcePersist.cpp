@@ -27,6 +27,7 @@ ff::StaticString ff::RES_TYPE(L"res:type");
 ff::StaticString ff::RES_VALUES(L"res:values");
 
 ff::StaticString ff::FILE_PREFIX(L"file:");
+ff::StaticString ff::LOC_PREFIX(L"loc:");
 ff::StaticString ff::REF_PREFIX(L"ref:");
 ff::StaticString ff::RES_PREFIX(L"res:");
 

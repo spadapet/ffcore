@@ -31,6 +31,9 @@ static ff::StaticString PROP_START(L"start");
 static ff::StaticString PROP_VISUAL(L"visual");
 static ff::StaticString PROP_VISUALS(L"visuals");
 
+// From Renderer11.cpp:
+void PaletteIndexToColor(int index, DirectX::XMFLOAT4& color);
+
 class __declspec(uuid("e8354436-8bc9-46a6-b469-214b3edf595e"))
 	AnimationPlayer
 	: public ff::ComBase
@@ -271,13 +274,20 @@ void Animation::RenderFrame(ff::IRendererActive* render, const ff::Transform& po
 
 		if (info._colorKeys)
 		{
-			ff::ValuePtrT<ff::RectFloatValue> value = info._colorKeys->GetValue(visualFrame, params);
-			if (value)
+			ff::ValuePtr value = info._colorKeys->GetValue(visualFrame, params);
+			ff::ValuePtrT<ff::RectFloatValue> rectValue = value;
+			ff::ValuePtrT<ff::IntValue> intValue = value;
+
+			if (rectValue)
 			{
 				DirectX::XMStoreFloat4(&visualTransform._color,
 					DirectX::XMVectorMultiply(
 						DirectX::XMLoadFloat4(&visualTransform._color),
-						DirectX::XMLoadFloat4((const DirectX::XMFLOAT4*) & value.GetValue())));
+						DirectX::XMLoadFloat4((const DirectX::XMFLOAT4*) & rectValue.GetValue())));
+			}
+			else if (intValue)
+			{
+				::PaletteIndexToColor(intValue.GetValue(), visualTransform._color);
 			}
 		}
 

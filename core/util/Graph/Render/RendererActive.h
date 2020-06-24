@@ -19,7 +19,7 @@ namespace ff
 		virtual IRendererActive11* AsRendererActive11() = 0;
 
 		virtual void DrawSprite(ISprite* sprite, const Transform& transform) = 0;
-		virtual void DrawFont(ISprite* sprite, const Transform& transform) = 0;
+
 		virtual void DrawLineStrip(const PointFloat* points, const DirectX::XMFLOAT4* colors, size_t count, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawLineStrip(const PointFloat* points, size_t count, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawLine(PointFloat start, PointFloat end, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
@@ -32,7 +32,6 @@ namespace ff
 		virtual void DrawOutlineCircle(PointFloat center, float radius, const DirectX::XMFLOAT4& color, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawOutlineCircle(PointFloat center, float radius, const DirectX::XMFLOAT4& insideColor, const DirectX::XMFLOAT4& outsideColor, float thickness, bool pixelThickness = false) = 0;
 
-		virtual void DrawPaletteFont(ISprite* sprite, PointFloat pos, PointFloat scale, int color) = 0;
 		virtual void DrawPaletteLineStrip(const PointFloat* points, const int* colors, size_t count, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawPaletteLineStrip(const PointFloat* points, size_t count, int color, float thickness, bool pixelThickness = false) = 0;
 		virtual void DrawPaletteLine(PointFloat start, PointFloat end, int color, float thickness, bool pixelThickness = false) = 0;
