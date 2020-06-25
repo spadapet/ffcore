@@ -483,13 +483,13 @@ ff::PointFloat SpriteFont::DrawPaletteText(
 	rgbColors.Reserve(colorCount);
 	rgbOutlineColors.Reserve(outlineColorCount);
 
-	for (; colorCount; colorCount--, colorChanges++)
+	for (size_t i = colorCount; i; i--, colorChanges++)
 	{
 		::PaletteIndexToColor(colorChanges->_color, color);
 		rgbColors.Push(ff::FontColorChange{ colorChanges->_index, color });
 	}
 
-	for (; outlineColorCount; outlineColorCount--, outlineColorChanges++)
+	for (size_t i = outlineColorCount; i; i--, outlineColorChanges++)
 	{
 		::PaletteIndexToColor(outlineColorChanges->_color, color);
 		rgbOutlineColors.Push(ff::FontColorChange{ outlineColorChanges->_index, color });

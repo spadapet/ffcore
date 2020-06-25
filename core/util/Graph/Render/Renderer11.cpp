@@ -43,7 +43,6 @@ enum class GeometryBucketType
 	CircleAlpha,
 	TrianglesAlpha,
 	SpritesAlpha,
-	PaletteSpritesAlpha,
 
 	Count,
 	FirstAlpha = LinesAlpha,
@@ -801,7 +800,6 @@ Renderer11::Renderer11(ff::IGraphDevice* device)
 		GeometryBucket::New<ff::CircleGeometryInput, GeometryBucketType::CircleAlpha>(),
 		GeometryBucket::New<ff::TriangleGeometryInput, GeometryBucketType::TrianglesAlpha>(),
 		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::SpritesAlpha>(),
-		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::PaletteSpritesAlpha>(),
 	}
 {
 	Init();
@@ -924,7 +922,6 @@ bool Renderer11::Init()
 	GetGeometryBucket(GeometryBucketType::CircleAlpha).Reset(circleLayout, circleVS, circleGS, colorPS, paletteOutColorPS);
 	GetGeometryBucket(GeometryBucketType::TrianglesAlpha).Reset(triangleLayout, triangleVS, triangleGS, colorPS, paletteOutColorPS);
 	GetGeometryBucket(GeometryBucketType::SpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePS, paletteOutSpritePS);
-	GetGeometryBucket(GeometryBucketType::PaletteSpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS, paletteOutSpritePalettePS);
 
 	// Default palette
 	{
@@ -1589,7 +1586,7 @@ void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::Transform& transform)
 
 	bool usePalette = ff::HasAllFlags(data._type, ff::SpriteType::Palette);
 	GeometryBucketType bucketType = (alphaType == AlphaType::Transparent && !_targetRequiresPalette)
-		? (usePalette ? GeometryBucketType::PaletteSpritesAlpha : GeometryBucketType::SpritesAlpha)
+		? (usePalette ? GeometryBucketType::PaletteSprites : GeometryBucketType::SpritesAlpha)
 		: (usePalette ? GeometryBucketType::PaletteSprites : GeometryBucketType::Sprites);
 
 	float depth = NudgeDepth(_forceNoOverlap ? LastDepthType::SpriteNoOverlap : LastDepthType::Sprite);
