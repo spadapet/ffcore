@@ -31,9 +31,6 @@ static ff::StaticString PROP_START(L"start");
 static ff::StaticString PROP_VISUAL(L"visual");
 static ff::StaticString PROP_VISUALS(L"visuals");
 
-// From Renderer11.cpp:
-void PaletteIndexToColor(int index, DirectX::XMFLOAT4& color);
-
 class __declspec(uuid("e8354436-8bc9-46a6-b469-214b3edf595e"))
 	AnimationPlayer
 	: public ff::ComBase
@@ -287,7 +284,7 @@ void Animation::RenderFrame(ff::IRendererActive* render, const ff::Transform& po
 			}
 			else if (intValue)
 			{
-				::PaletteIndexToColor(intValue.GetValue(), visualTransform._color);
+				ff::PaletteIndexToColor(intValue.GetValue(), visualTransform._color);
 			}
 		}
 

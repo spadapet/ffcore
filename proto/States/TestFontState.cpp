@@ -2,6 +2,7 @@
 #include "Dict/Dict.h"
 #include "Globals/AppGlobals.h"
 #include "Globals/ProcessGlobals.h"
+#include "Graph/Anim/Transform.h"
 #include "Graph/Font/SpriteFont.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/Render/Renderer.h"
@@ -51,22 +52,8 @@ void TestFontState::Render(ff::AppGlobals *context, ff::IRenderTarget *target, f
 		render->DrawLine(ff::PointFloat(20, 80), ff::PointFloat(800, 80), ff::GetColorRed(), 1, true);
 
 		ff::StaticString str(L"Hello Testing!\nLine 2. 12345... 'AaBbYy'");
-
-		ff::PointFloat size = font->DrawText(
-			render,
-			str,
-			ff::PointFloat(20, 20),
-			ff::PointFloat(4, 2),
-			ff::GetColorGreen(),
-			ff::GetColorMagenta());
-
-		ff::PointFloat size2 = font2->DrawText(
-			render,
-			str,
-			ff::PointFloat(20, 200),
-			ff::PointFloat::Ones(),
-			ff::GetColorMagenta(),
-			ff::GetColorGreen());
+		ff::PointFloat size = font->DrawText(render, str, ff::Transform::Create(ff::PointFloat(20, 20), ff::PointFloat(4, 2), 0.0f, ff::GetColorGreen()), ff::GetColorMagenta());
+		ff::PointFloat size2 = font2->DrawText(render, str, ff::Transform::Create(ff::PointFloat(20, 200), ff::PointFloat::Ones(), 0.0f, ff::GetColorMagenta()), ff::GetColorGreen());
 
 		render->DrawOutlineRectangle(ff::RectFloat(20, 20, 20 + size.x, 20 + size.y), ff::GetColorYellow(), 1, true);
 		render->DrawOutlineRectangle(ff::RectFloat(20, 200, 20 + size2.x, 200 + size2.y), ff::GetColorYellow(), 1, true);
@@ -86,7 +73,7 @@ void TestFontState::CreateSpriteFont()
 		ff::Vector<ff::String> errors;
 		ff::Dict dict = ff::LoadResourcesFromFileCached(jsonFile, false, errors);
 		assertRet(dict.Size() && errors.IsEmpty());
-		assertRet(ff::CreateResources(nullptr, dict, &_resources));
+		assertRet(ff::CreateResources(nullptr, nullptr, dict, &_resources));
 	},
 	[this]()
 	{

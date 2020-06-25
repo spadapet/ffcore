@@ -133,7 +133,7 @@ void TestEntityState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target,
 
 	ff::ISpriteFont* font = _fontResource.Flush();
 	ff::String text = ff::String::format_new(L"Entities:%lu", _renderEntityBucket->GetEntries().Size());
-	font->DrawText(render, text, ff::PointFloat(20, 1040), ff::PointFloat::Ones(), ff::GetColorWhite(), ff::GetColorBlack());
+	font->DrawText(render, text, ff::Transform::Create(ff::PointFloat(20, 1040)), ff::GetColorBlack());
 }
 
 void TestEntityState::AddEntities()

@@ -158,12 +158,8 @@ void TitleState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::
 		if (_font.HasObject())
 		{
 			ff::PointFloat scale(absCos + 1, absSin + 1);
-
-			_font->DrawText(render,
-				ff::String(L"Hello World!\r\nThis is a test"),
-				ff::PointFloat(50, 300),
-				scale,
-				DirectX::XMFLOAT4(1, absCos, absSin, 1));
+			ff::Transform transform = ff::Transform::Create(ff::PointFloat(50, 300), scale, 0.0f, DirectX::XMFLOAT4(1, absCos, absSin, 1));
+			_font->DrawText(render, ff::String::from_static(L"Hello World!\r\nThis is a test"), transform);
 		}
 
 		if (_animPlayer)
@@ -224,11 +220,8 @@ void TitleState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::
 			double seconds = _timer.GetSeconds();
 
 			_font->DrawText(render,
-				ff::String::format_new(L"View: (%.1f,%.1f)\nSwap: (%.1f,%.1f)\nFPS:%lu, S:%.4f",
-					viewRect.Width(), viewRect.Height(), swapSize.x, swapSize.y, fps, seconds),
-				ff::PointFloat(10, 10),
-				ff::PointFloat(.5, .5),
-				DirectX::XMFLOAT4(1, 0, 0, 1));
+				ff::String::format_new(L"View: (%.1f,%.1f)\nSwap: (%.1f,%.1f)\nFPS:%lu, S:%.4f", viewRect.Width(), viewRect.Height(), swapSize.x, swapSize.y, fps, seconds),
+				ff::Transform::Create(ff::PointFloat(10, 10), ff::PointFloat(.5, .5), 0.0f, DirectX::XMFLOAT4(1, 0, 0, 1)));
 		}
 	}
 

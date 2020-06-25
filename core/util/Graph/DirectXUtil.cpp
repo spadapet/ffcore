@@ -95,6 +95,22 @@ void ff::GraphCounters::Reset()
 	ff::ZeroObject(*this);
 }
 
+void ff::PaletteIndexToColor(int index, DirectX::XMFLOAT4& color)
+{
+	color.x = index / 256.0f;
+	color.y = 0;
+	color.z = 0;
+	color.w = 1.0f * (index != 0);
+}
+
+void ff::PaletteIndexToColor(const int* index, DirectX::XMFLOAT4* color, size_t count)
+{
+	for (size_t i = 0; i != count; i++)
+	{
+		ff::PaletteIndexToColor(index[i], color[i]);
+	}
+}
+
 bool ff::IsCompressedFormat(TextureFormat format)
 {
 	switch (format)

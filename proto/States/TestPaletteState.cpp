@@ -144,7 +144,11 @@ void TestPaletteState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target
 
 	ff::ISpriteFont* font = _fontResource.Flush();
 	ff::String text = ff::String::format_new(L"Entities:%lu", _renderEntityBucket->GetEntries().Size());
-	font->DrawPaletteText(render, text, ff::PointFloat(5, 240), ff::PointFloat(0.5, 0.5), 245, 224);
+	ff::Transform transform = ff::Transform::Create(ff::PointFloat(5, 240), ff::PointFloat(0.5, 0.5));
+	ff::PaletteIndexToColor(245, transform._color);
+	DirectX::XMFLOAT4 outlineColor;
+	ff::PaletteIndexToColor(224, outlineColor);
+	font->DrawText(render, text, transform, outlineColor);
 
 	render = _render->BeginRender(_paletteTargetFull, nullptr, TestPalette::FULL_WORLD_RECT, TestPalette::SMALL_WORLD_RECT);
 	render->PushPalette(_palette);

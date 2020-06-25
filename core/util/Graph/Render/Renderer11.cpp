@@ -509,22 +509,6 @@ static AlphaType GetAlphaType(const ff::SpriteData** datas, const DirectX::XMFLO
 	return type;
 }
 
-void PaletteIndexToColor(int index, DirectX::XMFLOAT4& color)
-{
-	color.x = index / 256.0f;
-	color.y = 0;
-	color.z = 0;
-	color.w = 1.0f * (index != 0);
-}
-
-static void PaletteIndexToColor(const int* index, DirectX::XMFLOAT4* color, size_t count)
-{
-	for (size_t i = 0; i != count; i++)
-	{
-		PaletteIndexToColor(index[i], color[i]);
-	}
-}
-
 static void GetAlphaBlend(D3D11_RENDER_TARGET_BLEND_DESC& desc)
 {
 	// newColor = (srcColor * SrcBlend) BlendOp (destColor * DestBlend)
@@ -1821,35 +1805,35 @@ void Renderer11::DrawPaletteLineStrip(const ff::PointFloat* points, const int* c
 {
 	ff::Vector<DirectX::XMFLOAT4, 64> colors2;
 	colors2.Resize(count);
-	::PaletteIndexToColor(colors, colors2.Data(), count);
+	ff::PaletteIndexToColor(colors, colors2.Data(), count);
 	DrawLineStrip(points, count, colors2.Data(), count, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteLineStrip(const ff::PointFloat* points, size_t count, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(color, color2);
 	DrawLineStrip(points, count, &color2, 1, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteLine(ff::PointFloat start, ff::PointFloat end, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(color, color2);
 	DrawLine(start, end, color2, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteFilledRectangle(ff::RectFloat rect, const int* colors)
 {
 	std::array<DirectX::XMFLOAT4, 4> colors2;
-	::PaletteIndexToColor(colors, colors2.data(), colors2.size());
+	ff::PaletteIndexToColor(colors, colors2.data(), colors2.size());
 	DrawFilledRectangle(rect, colors2.data());
 }
 
 void Renderer11::DrawPaletteFilledRectangle(ff::RectFloat rect, int color)
 {
 	DirectX::XMFLOAT4 color2;
-	::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(color, color2);
 	DrawFilledRectangle(rect, color2);
 }
 
@@ -1857,44 +1841,44 @@ void Renderer11::DrawPaletteFilledTriangles(const ff::PointFloat* points, const 
 {
 	ff::Vector<DirectX::XMFLOAT4, 64 * 3> colors2;
 	colors2.Resize(count * 3);
-	::PaletteIndexToColor(colors, colors2.Data(), count);
+	ff::PaletteIndexToColor(colors, colors2.Data(), count);
 	DrawFilledTriangles(points, colors2.Data(), count);
 }
 
 void Renderer11::DrawPaletteFilledCircle(ff::PointFloat center, float radius, int color)
 {
 	DirectX::XMFLOAT4 color2;
-	::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(color, color2);
 	DrawFilledCircle(center, radius, color2);
 }
 
 void Renderer11::DrawPaletteFilledCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor)
 {
 	DirectX::XMFLOAT4 insideColor2, outsideColor2;
-	::PaletteIndexToColor(insideColor, insideColor2);
-	::PaletteIndexToColor(outsideColor, outsideColor2);
+	ff::PaletteIndexToColor(insideColor, insideColor2);
+	ff::PaletteIndexToColor(outsideColor, outsideColor2);
 	DrawFilledCircle(center, radius, insideColor2, outsideColor2);
 }
 
 void Renderer11::DrawPaletteOutlineRectangle(ff::RectFloat rect, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(color, color2);
 	DrawOutlineRectangle(rect, color2, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(color, color2);
 	DrawOutlineCircle(center, radius, color2, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 insideColor2, outsideColor2;
-	::PaletteIndexToColor(insideColor, insideColor2);
-	::PaletteIndexToColor(outsideColor, outsideColor2);
+	ff::PaletteIndexToColor(insideColor, insideColor2);
+	ff::PaletteIndexToColor(outsideColor, outsideColor2);
 	DrawOutlineCircle(center, radius, insideColor2, outsideColor2, thickness, pixelThickness);
 }
 

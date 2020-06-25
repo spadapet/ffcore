@@ -14,30 +14,30 @@ namespace ff
 	class PixelRendererActive
 	{
 	public:
-		PixelRendererActive(RendererActive& render);
+		UTIL_API PixelRendererActive(RendererActive& render);
 
-		static IRendererActive* BeginRender(IRenderer* render, IRenderTarget* target, IRenderDepth* depth, RectFixedInt viewRect, RectFixedInt worldRect);
-		IRendererActive* GetRenderer() const;
-		IRendererActive11* GetRenderer11() const;
+		UTIL_API static IRendererActive* BeginRender(IRenderer* render, IRenderTarget* target, IRenderDepth* depth, RectFixedInt viewRect, RectFixedInt worldRect);
+		UTIL_API IRendererActive* GetRenderer() const;
+		UTIL_API IRendererActive11* GetRenderer11() const;
 
-		void DrawSprite(ISprite* sprite, const PixelTransform& pos) const;
+		UTIL_API void DrawSprite(ISprite* sprite, const PixelTransform& pos) const;
 
-		void DrawLineStrip(const PointFixedInt* points, size_t count, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
-		void DrawLine(PointFixedInt start, PointFixedInt end, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
-		void DrawFilledRectangle(RectFixedInt rect, const DirectX::XMFLOAT4& color) const;
-		void DrawFilledCircle(PointFixedInt center, FixedInt radius, const DirectX::XMFLOAT4& color) const;
-		void DrawOutlineRectangle(RectFixedInt rect, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
-		void DrawOutlineCircle(PointFixedInt center, FixedInt radius, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
+		UTIL_API void DrawLineStrip(const PointFixedInt* points, size_t count, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
+		UTIL_API void DrawLine(PointFixedInt start, PointFixedInt end, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
+		UTIL_API void DrawFilledRectangle(RectFixedInt rect, const DirectX::XMFLOAT4& color) const;
+		UTIL_API void DrawFilledCircle(PointFixedInt center, FixedInt radius, const DirectX::XMFLOAT4& color) const;
+		UTIL_API void DrawOutlineRectangle(RectFixedInt rect, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
+		UTIL_API void DrawOutlineCircle(PointFixedInt center, FixedInt radius, const DirectX::XMFLOAT4& color, FixedInt thickness) const;
 
-		void DrawPaletteLineStrip(const PointFixedInt* points, size_t count, int color, FixedInt thickness) const;
-		void DrawPaletteLine(PointFixedInt start, PointFixedInt end, int color, FixedInt thickness) const;
-		void DrawPaletteFilledRectangle(RectFixedInt rect, int color) const;
-		void DrawPaletteFilledCircle(PointFixedInt center, FixedInt radius, int color) const;
-		void DrawPaletteOutlineRectangle(RectFixedInt rect, int color, FixedInt thickness) const;
-		void DrawPaletteOutlineCircle(PointFixedInt center, FixedInt radius, int color, FixedInt thickness) const;
+		UTIL_API void DrawPaletteLineStrip(const PointFixedInt* points, size_t count, int color, FixedInt thickness) const;
+		UTIL_API void DrawPaletteLine(PointFixedInt start, PointFixedInt end, int color, FixedInt thickness) const;
+		UTIL_API void DrawPaletteFilledRectangle(RectFixedInt rect, int color) const;
+		UTIL_API void DrawPaletteFilledCircle(PointFixedInt center, FixedInt radius, int color) const;
+		UTIL_API void DrawPaletteOutlineRectangle(RectFixedInt rect, int color, FixedInt thickness) const;
+		UTIL_API void DrawPaletteOutlineCircle(PointFixedInt center, FixedInt radius, int color, FixedInt thickness) const;
 
-		void PushMatrix(const PixelTransform& pos) const;
-		void PopMatrix() const;
+		UTIL_API void PushMatrix(const PixelTransform& pos) const;
+		UTIL_API void PopMatrix() const;
 
 	private:
 		IRendererActive* _render;

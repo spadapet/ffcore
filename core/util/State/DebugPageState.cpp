@@ -369,8 +369,7 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 			_totalSeconds,
 			_lastRps);
 
-		ff::FontColorChange outlineColor{ 0, ff::GetColorBlack() };
-		font->DrawText(render, introText, introText.size(), ff::Transform::Create(ff::PointFloat(8, 8)), nullptr, 0, &outlineColor, 1);
+		font->DrawText(render, introText, ff::Transform::Create(ff::PointFloat(8, 8)), ff::GetColorBlack());
 
 		size_t line = 3;
 		float spacingY = font->GetLineSpacing();
@@ -381,7 +380,7 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 			DirectX::XMFLOAT4 color = ff::GetColorWhite();
 			ff::String str = page->GetDebugInfo(subPageIndex, i, color);
 
-			font->DrawText(render, str, str.size(), ff::Transform::Create(ff::PointFloat(8, startY + spacingY * line), ff::PointFloat::Ones(), 0.0f, color), nullptr, 0, &outlineColor, 1);
+			font->DrawText(render, str, ff::Transform::Create(ff::PointFloat(8, startY + spacingY * line), ff::PointFloat::Ones(), 0.0f, color), ff::GetColorBlack());
 		}
 
 		line++;
@@ -392,7 +391,7 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 			ff::String str = page->GetDebugToggle(subPageIndex, i, value);
 			const wchar_t* toggleText = (value != -1) ? (!value ? L" OFF:" : L" ON:") : L"";
 
-			font->DrawText(render, ff::String::format_new(L"<Ctrl-%lu>%s %s", i, toggleText, str.c_str()), ff::INVALID_SIZE, ff::Transform::Create(ff::PointFloat(8, startY + spacingY * line)), nullptr, 0, &outlineColor, 1);
+			font->DrawText(render, ff::String::format_new(L"<Ctrl-%lu>%s %s", i, toggleText, str.c_str()), ff::Transform::Create(ff::PointFloat(8, startY + spacingY * line)), ff::GetColorBlack());
 		}
 
 		render->PopNoOverlap();

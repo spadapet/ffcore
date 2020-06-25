@@ -32,6 +32,9 @@ namespace ff
 	UTIL_API const DirectX::XMFLOAT4X4& GetIdentityMatrix();
 	UTIL_API const DirectX::XMFLOAT3X3& GetIdentityMatrix3x3();
 
+	UTIL_API void PaletteIndexToColor(int index, DirectX::XMFLOAT4& color);
+	UTIL_API void PaletteIndexToColor(const int* index, DirectX::XMFLOAT4* color, size_t count);
+
 	bool IsCompressedFormat(TextureFormat format);
 	bool IsColorFormat(TextureFormat format);
 	DXGI_FORMAT ConvertTextureFormat(TextureFormat format);

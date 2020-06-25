@@ -51,9 +51,8 @@ public:
 	virtual bool Reset() override;
 
 	// ISpriteFont functions
-	virtual ff::PointFloat DrawText(ff::IRendererActive* render, ff::StringRef text, size_t charCount, const ff::Transform& transform, const ff::FontColorChange* colorChanges, size_t colorCount, const ff::FontColorChange* outlineColorChanges, size_t outlineColorCount) override;
-	virtual ff::PointFloat DrawPaletteText(ff::IRendererActive* render, ff::StringRef text, size_t charCount, const ff::Transform& transform, const ff::FontPaletteChange* colorChanges, size_t colorCount, const ff::FontPaletteChange* outlineColorChanges, size_t outlineColorCount) override;
-	virtual ff::PointFloat MeasureText(ff::StringRef text, size_t charCount, ff::PointFloat scale) override;
+	virtual ff::PointFloat DrawText(ff::IRendererActive* render, ff::StringRef text, const ff::Transform& transform, const DirectX::XMFLOAT4& outlineColor) override;
+	virtual ff::PointFloat MeasureText(ff::StringRef text, ff::PointFloat scale) override;
 	virtual float GetLineSpacing() override;
 
 	// IResourcePersist
@@ -67,7 +66,7 @@ public:
 
 private:
 	bool InitSprites();
-	ff::PointFloat InternalDrawText(ff::IRendererActive* render, ff::ISpriteList* sprites, ff::StringRef text, size_t charCount, const ff::Transform& transform, const ff::FontColorChange* colorChanges, size_t colorCount);
+	ff::PointFloat InternalDrawText(ff::IRendererActive* render, ff::ISpriteList* sprites, ff::StringRef text, const ff::Transform& transform);
 
 	static const size_t MAX_GLYPH_COUNT = 0x10000;
 
@@ -366,16 +365,9 @@ bool SpriteFont::InitSprites()
 	return true;
 }
 
-ff::PointFloat SpriteFont::InternalDrawText(
-	ff::IRendererActive* render,
-	ff::ISpriteList* sprites,
-	ff::StringRef text,
-	size_t charCount,
-	const ff::Transform& transform,
-	const ff::FontColorChange* colorChanges,
-	size_t colorCount)
+ff::PointFloat SpriteFont::InternalDrawText(ff::IRendererActive* render, ff::ISpriteList* sprites, ff::StringRef text, const ff::Transform& transform)
 {
-	noAssertRetVal(charCount && transform._scale.x != 0 && transform._scale.y != 0 && transform._color.w > 0, ff::PointFloat::Zeros());
+	noAssertRetVal(text.size() && transform._scale.x != 0 && transform._scale.y != 0 && transform._color.w > 0, ff::PointFloat::Zeros());
 
 	ff::IFontData* data = _data.Flush();
 	assertRetVal(data, ff::PointFloat::Zeros());
@@ -398,41 +390,65 @@ ff::PointFloat SpriteFont::InternalDrawText(
 		render->PushNoOverlap();
 	}
 
-	for (const wchar_t* chStart = text.c_str(), *ch = chStart, *chEnd = ch + ((charCount == ff::INVALID_SIZE) ? text.size() : charCount); ch < chEnd; ch++)
+	for (const wchar_t* ch = text.c_str(), *chEnd = ch + text.size(); ch != chEnd; )
 	{
-		while (colorCount && (size_t)(ch - chStart) >= colorChanges->_index)
-		{
-			basePos._color = colorChanges->_color;
-			colorChanges++;
-			colorCount--;
-		}
-
 		if (*ch == '\r' || *ch == '\n')
 		{
-			ch += (*ch == '\r' && ch + 1 != chEnd && ch[1] == '\n') ? 1 : 0;
+			ch += (*ch == '\r' && ch + 1 != chEnd && ch[1] == '\n') ? 2 : 1;
 			basePos._position.SetPoint(transform._position.x, basePos._position.y + lineSpacing);
 			maxPos.y += lineSpacing;
 			continue;
 		}
-
-		const CharAndGlyphInfo& glyph = _glyphs[_glyphs[*ch]._charToGlyph];
-
-		if (render && sprites && glyph._glyphToSprite && glyph._glyphToSprite < sprites->GetCount())
+		else if (*ch >= (wchar_t)ff::SpriteFontControl::NoOp && *ch <= (wchar_t)ff::SpriteFontControl::AfterLast)
 		{
-			render->DrawSprite(sprites->Get(glyph._glyphToSprite), basePos);
-		}
-
-		basePos._position.x += glyph._glyphWidth * basePos._scale.x;
-		maxPos.x = std::max(maxPos.x, basePos._position.x);
-
-		if (hasKerning && ch + 1 != chEnd)
-		{
-			UINT16 twoGlyphs[2] = { ch[0], ch[1] };
-			int twoDesignKerns[2];
-			if (SUCCEEDED(fontFace->GetKerningPairAdjustments(2, twoGlyphs, twoDesignKerns)))
+			ff::SpriteFontControl control = (ff::SpriteFontControl) * ch++;
+			switch (control)
 			{
-				basePos._position.x += twoDesignKerns[0] * scaledDesignUnitSize.x;
+			case ff::SpriteFontControl::SetOutlineColor:
+			case ff::SpriteFontControl::SetTextColor:
+				if ((control == ff::SpriteFontControl::SetOutlineColor && sprites == _outlineSprites) ||
+					(control == ff::SpriteFontControl::SetTextColor && sprites == _sprites))
+				{
+					basePos._color.x = ((ch != chEnd) ? (int)*ch++ : 0) / 255.0f;
+					basePos._color.y = ((ch != chEnd) ? (int)*ch++ : 0) / 255.0f;
+					basePos._color.z = ((ch != chEnd) ? (int)*ch++ : 0) / 255.0f;
+					basePos._color.w = ((ch != chEnd) ? (int)*ch++ : 0) / 255.0f;
+				}
+				break;
+
+			case ff::SpriteFontControl::SetOutlinePaletteColor:
+			case ff::SpriteFontControl::SetTextPaletteColor:
+				if ((control == ff::SpriteFontControl::SetOutlinePaletteColor && sprites == _outlineSprites) ||
+					(control == ff::SpriteFontControl::SetTextPaletteColor && sprites == _sprites))
+				{
+					ff::PaletteIndexToColor((ch != chEnd) ? (int)*ch++ : 0, basePos._color);
+				}
+				break;
 			}
+		}
+		else
+		{
+			const CharAndGlyphInfo& glyph = _glyphs[_glyphs[*ch]._charToGlyph];
+
+			if (render && sprites && glyph._glyphToSprite && glyph._glyphToSprite < sprites->GetCount())
+			{
+				render->DrawSprite(sprites->Get(glyph._glyphToSprite), basePos);
+			}
+
+			basePos._position.x += glyph._glyphWidth * basePos._scale.x;
+			maxPos.x = std::max(maxPos.x, basePos._position.x);
+
+			if (hasKerning && ch + 1 != chEnd)
+			{
+				UINT16 twoGlyphs[2] = { ch[0], ch[1] };
+				int twoDesignKerns[2];
+				if (SUCCEEDED(fontFace->GetKerningPairAdjustments(2, twoGlyphs, twoDesignKerns)))
+				{
+					basePos._position.x += twoDesignKerns[0] * scaledDesignUnitSize.x;
+				}
+			}
+
+			ch++;
 		}
 	}
 
@@ -444,63 +460,22 @@ ff::PointFloat SpriteFont::InternalDrawText(
 	return maxPos - transform._position;
 }
 
-ff::PointFloat SpriteFont::DrawText(
-	ff::IRendererActive* render,
-	ff::StringRef text,
-	size_t charCount,
-	const ff::Transform& transform,
-	const ff::FontColorChange* colorChanges,
-	size_t colorCount,
-	const ff::FontColorChange* outlineColorChanges,
-	size_t outlineColorCount)
+ff::PointFloat SpriteFont::DrawText(ff::IRendererActive* render, ff::StringRef text, const ff::Transform& transform, const DirectX::XMFLOAT4& outlineColor)
 {
-	if (outlineColorCount && _outlineSprites)
+	if (outlineColor.w > 0 && _outlineSprites)
 	{
-		InternalDrawText(render, _outlineSprites, text, charCount, transform, outlineColorCount ? outlineColorChanges : nullptr, outlineColorCount);
+		ff::Transform outlineTransform = transform;
+		outlineTransform._color = outlineColor;
+		InternalDrawText(render, _outlineSprites, text, outlineTransform);
 		render->NudgeDepth();
 	}
 
-	return InternalDrawText(render, _sprites, text, charCount, transform, colorCount ? colorChanges : nullptr, colorCount);
+	return InternalDrawText(render, _sprites, text, transform);
 }
 
-// From Renderer11.cpp:
-void PaletteIndexToColor(int index, DirectX::XMFLOAT4& color);
-
-ff::PointFloat SpriteFont::DrawPaletteText(
-	ff::IRendererActive* render,
-	ff::StringRef text,
-	size_t charCount,
-	const ff::Transform& transform,
-	const ff::FontPaletteChange* colorChanges,
-	size_t colorCount,
-	const ff::FontPaletteChange* outlineColorChanges,
-	size_t outlineColorCount)
+ff::PointFloat SpriteFont::MeasureText(ff::StringRef text, ff::PointFloat scale)
 {
-	DirectX::XMFLOAT4 color;
-	ff::Vector<ff::FontColorChange, 64> rgbColors;
-	ff::Vector<ff::FontColorChange, 64> rgbOutlineColors;
-
-	rgbColors.Reserve(colorCount);
-	rgbOutlineColors.Reserve(outlineColorCount);
-
-	for (size_t i = colorCount; i; i--, colorChanges++)
-	{
-		::PaletteIndexToColor(colorChanges->_color, color);
-		rgbColors.Push(ff::FontColorChange{ colorChanges->_index, color });
-	}
-
-	for (size_t i = outlineColorCount; i; i--, outlineColorChanges++)
-	{
-		::PaletteIndexToColor(outlineColorChanges->_color, color);
-		rgbOutlineColors.Push(ff::FontColorChange{ outlineColorChanges->_index, color });
-	}
-
-	return DrawText(render, text, charCount, transform, colorCount ? rgbColors.Data() : nullptr, colorCount, outlineColorCount ? rgbOutlineColors.Data() : nullptr, outlineColorCount);
-}
-
-ff::PointFloat SpriteFont::MeasureText(ff::StringRef text, size_t charCount, ff::PointFloat scale)
-{
-	return InternalDrawText(nullptr, nullptr, text, charCount, ff::Transform::Identity(), nullptr, 0);
+	return InternalDrawText(nullptr, nullptr, text, ff::Transform::Identity());
 }
 
 float SpriteFont::GetLineSpacing()
