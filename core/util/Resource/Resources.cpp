@@ -124,7 +124,7 @@ ff::Vector<ff::String> Resources::GetResourceNames() const
 ff::SharedResourceValue Resources::GetResource(ff::StringRef name)
 {
 	auto iter = _values.GetKey(name);
-	assertRetVal(iter, ::CreateNullResource(name));
+	noAssertRetVal(iter, ::CreateNullResource(name));
 	ValueInfo& info = iter->GetEditableValue();
 
 	ff::LockMutex lock(_mutex);

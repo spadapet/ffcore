@@ -52,25 +52,28 @@ std::unique_ptr<DirectX::ScratchImage> ff::PngImageReader::Read(DXGI_FORMAT requ
 	return scratch;
 }
 
-ff::Vector<BYTE> ff::PngImageReader::GetPalette() const
+std::unique_ptr<DirectX::ScratchImage> ff::PngImageReader::GetPalette() const
 {
-	ff::Vector<BYTE> colors;
+	std::unique_ptr<DirectX::ScratchImage> scratch;
 
 	if (_hasPalette)
 	{
-		colors.Resize(256 * 4);
-		std::memset(colors.Data(), 0, colors.ByteSize());
+		scratch = std::make_unique<DirectX::ScratchImage>();
+		assertHrRetVal(scratch->Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 256, 1, 1, 1), nullptr);
+
+		const DirectX::Image& image = *scratch->GetImages();
+		std::memset(image.pixels, 0, image.rowPitch * image.height);
 
 		for (size_t i = 0; i < (size_t)_paletteSize; i++)
 		{
-			colors[i * 4 + 0] = _palette[i].red;
-			colors[i * 4 + 1] = _palette[i].green;
-			colors[i * 4 + 2] = _palette[i].blue;
-			colors[i * 4 + 3] = (_hasTransPalette && i < (size_t)_transPaletteSize) ? _transPalette[i] : 0xFF;
+			image.pixels[i * 4 + 0] = _palette[i].red;
+			image.pixels[i * 4 + 1] = _palette[i].green;
+			image.pixels[i * 4 + 2] = _palette[i].blue;
+			image.pixels[i * 4 + 3] = (_hasTransPalette && i < (size_t)_transPaletteSize) ? _transPalette[i] : 0xFF;
 		}
 	}
 
-	return colors;
+	return scratch;
 }
 
 ff::StringRef ff::PngImageReader::GetError() const
@@ -240,11 +243,11 @@ ff::PngImageWriter::~PngImageWriter()
 	::png_destroy_write_struct(&_png, &_info);
 }
 
-bool ff::PngImageWriter::Write(const DirectX::Image& image, ff::IData* palette)
+bool ff::PngImageWriter::Write(const DirectX::Image& image, const DirectX::Image* paletteImage)
 {
 	try
 	{
-		return InternalWrite(image, palette);
+		return InternalWrite(image, paletteImage);
 	}
 	catch (ff::String errorText)
 	{
@@ -258,7 +261,7 @@ ff::StringRef ff::PngImageWriter::GetError() const
 	return _errorText;
 }
 
-bool ff::PngImageWriter::InternalWrite(const DirectX::Image& image, IData* palette)
+bool ff::PngImageWriter::InternalWrite(const DirectX::Image& image, const DirectX::Image* paletteImage)
 {
 	int bitDepth = 8;
 	int colorType;
@@ -291,9 +294,9 @@ bool ff::PngImageWriter::InternalWrite(const DirectX::Image& image, IData* palet
 		PNG_COMPRESSION_TYPE_DEFAULT,
 		PNG_FILTER_TYPE_DEFAULT);
 
-	if (palette)
+	if (paletteImage)
 	{
-		size_t colorCount = palette->GetSize() / 4;
+		size_t colorCount = paletteImage->width;
 		::png_color_16 transColor{ 0 };
 		bool foundTrans = false;
 
@@ -303,7 +306,7 @@ bool ff::PngImageWriter::InternalWrite(const DirectX::Image& image, IData* palet
 		ff::Vector<BYTE> trans;
 		trans.Resize(colorCount);
 
-		const BYTE* src = palette->GetMem();
+		const BYTE* src = paletteImage->pixels;
 		for (size_t i = 0; i < colorCount; i++, src += 4)
 		{
 			colors[i].red = src[0];

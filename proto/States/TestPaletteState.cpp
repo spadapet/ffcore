@@ -77,10 +77,10 @@ TestPaletteState::TestPaletteState(ff::AppGlobals* globals)
 	, _paletteSpritesResource(L"TestPaletteSprites")
 	, _fontResource(L"TestFont2")
 {
-	ff::IGraphDevice* graph = globals->GetGraph();
 	ff::TypedResource<ff::IPaletteData> paletteResource(L"TestPalette");
-	_palette = paletteResource->CreatePalette(graph);
+	_palette = paletteResource->CreatePalette();
 
+	ff::IGraphDevice* graph = globals->GetGraph();
 	_paletteTextureSmall = graph->CreateTexture(TestPalette::SMALL_WORLD_RECT.Size().ToType<int>(), ff::TextureFormat::R8_UINT);
 	_paletteTargetSmall = graph->CreateRenderTargetTexture(_paletteTextureSmall);
 	_paletteDepthSmall = graph->CreateRenderDepth(_paletteTextureSmall->GetSize());

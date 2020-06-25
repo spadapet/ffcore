@@ -443,8 +443,12 @@ float4 SpritePalettePS(SpritePixel input) : SV_TARGET
 	uint paletteIndex = input.tex >> 8;
 
 	uint index = SamplePaletteSpriteTexture(int3(input.uv * _texturePaletteSizes[textureIndex].xy, 0), textureIndex);
-	float4 color = input.color * _palette.Load(int3(index, paletteIndex, 0));
+	if (index == 0)
+	{
+		discard;
+	}
 
+	float4 color = input.color * _palette.Load(int3(index, paletteIndex, 0));
 	if (color.a == 0)
 	{
 		discard;
@@ -469,7 +473,6 @@ uint PaletteOutSpritePS(SpritePixel input) : SV_TARGET
 {
 	float4 color = SampleSpriteTexture(input.uv, input.tex);
 	uint index = (uint)(input.color.r * 256) * (uint)(color.a != 0);
-
 	if (index == 0)
 	{
 		discard;
@@ -481,7 +484,6 @@ uint PaletteOutSpritePS(SpritePixel input) : SV_TARGET
 uint PaletteOutSpritePalettePS(SpritePixel input) : SV_TARGET
 {
 	uint index = SamplePaletteSpriteTexture(int3(input.uv * _texturePaletteSizes[input.tex].xy, 0), input.tex);
-
 	if (index == 0)
 	{
 		discard;

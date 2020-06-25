@@ -509,16 +509,9 @@ ff::SpriteType ff::GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, c
 	return newType;
 }
 
-static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::IPaletteData** paletteData)
+static DirectX::ScratchImage LoadTexturePng(ff::StringRef path, DXGI_FORMAT format, size_t mips, DirectX::ScratchImage* paletteScratch)
 {
-	if (paletteData)
-	{
-		*paletteData = nullptr;
-	}
-
 	DirectX::ScratchImage scratchFinal;
-	assertRetVal(device, scratchFinal);
-
 	ff::ComPtr<ff::IData> pngData;
 	assertRetVal(ff::ReadWholeFileMemMapped(path, &pngData), scratchFinal);
 	ff::PngImageReader png(pngData->GetMem(), pngData->GetSize());
@@ -539,13 +532,12 @@ static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::String
 		format = scratchFinal.GetMetadata().format;
 	}
 
-	if (format == DXGI_FORMAT_R8_UINT && paletteData)
+	if (format == DXGI_FORMAT_R8_UINT && paletteScratch)
 	{
-		ff::Vector<BYTE> colors = png.GetPalette();
-		if (!colors.IsEmpty())
+		std::unique_ptr<DirectX::ScratchImage> paletteScratch2 = png.GetPalette();
+		if (paletteScratch2)
 		{
-			ff::ComPtr<ff::IData> colorsData = ff::CreateDataVector(std::move(colors));
-			ff::CreatePaletteData(colorsData, paletteData);
+			*paletteScratch = std::move(*paletteScratch2);
 		}
 	}
 
@@ -611,14 +603,42 @@ static DirectX::ScratchImage LoadTexturePng(ff::IGraphDevice* device, ff::String
 	return scratchFinal;
 }
 
-DirectX::ScratchImage ff::LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, IPaletteData** paletteData)
+static DirectX::ScratchImage LoadTexturePal(ff::StringRef path, DXGI_FORMAT format, size_t mips)
+{
+	DirectX::ScratchImage scratchFinal;
+	assertRetVal(format == DXGI_FORMAT_R8G8B8A8_UNORM && mips < 2, scratchFinal);
+
+	ff::ComPtr<ff::IData> data;
+	assertRetVal(ff::ReadWholeFileMemMapped(path, &data) && data->GetSize() && data->GetSize() % 3 == 0, scratchFinal);
+
+	assertHrRetVal(scratchFinal.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, ff::PALETTE_SIZE, 1, 1, 1), scratchFinal);
+	const DirectX::Image* image = scratchFinal.GetImages();
+	BYTE* dest = image->pixels;
+	std::memset(dest, 0, ff::PALETTE_ROW_BYTES);
+
+	for (const BYTE* start = data->GetMem(), *end = start + data->GetSize(), *cur = start; cur < end; cur += 3, dest += 4)
+	{
+		dest[0] = cur[0]; // R
+		dest[1] = cur[1]; // G
+		dest[2] = cur[2]; // B
+		dest[3] = 0xFF; // A
+	}
+
+	return scratchFinal;
+}
+
+DirectX::ScratchImage ff::LoadTextureData(ff::StringRef path, DXGI_FORMAT format, size_t mips, DirectX::ScratchImage* paletteScratch)
 {
 	ff::String pathExt = ff::GetPathExtension(path);
 	ff::LowerCaseInPlace(pathExt);
 
-	if (pathExt == L"png")
+	if (pathExt == L"pal")
 	{
-		return ::LoadTexturePng(device, path, format, mips, paletteData);
+		return ::LoadTexturePal(path, format, mips);
+	}
+	else if (pathExt == L"png")
+	{
+		return ::LoadTexturePng(path, format, mips, paletteScratch);
 	}
 	else
 	{

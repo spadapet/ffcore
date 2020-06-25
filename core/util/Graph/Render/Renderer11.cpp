@@ -909,15 +909,13 @@ bool Renderer11::Init()
 
 	// Default palette
 	{
-		static const BYTE emptyPaletteColors[256 * 4] = { 0 };
+		DirectX::ScratchImage scratchPalette;
+		assertHrRetVal(scratchPalette.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, ff::PALETTE_SIZE, 1, 1, 1), false);
+		std::memset(scratchPalette.GetImages()->pixels, 0, ff::PALETTE_ROW_BYTES);
 
-		ff::ComPtr<ff::IData> defaultPaletteData;
-		assertRetVal(ff::CreateDataInStaticMem(emptyPaletteColors, _countof(emptyPaletteColors), &defaultPaletteData), false);
-
-		ff::ComPtr<ff::IPaletteData> defaultPaletteData2;
-		assertRetVal(ff::CreatePaletteData(defaultPaletteData, &defaultPaletteData2), false);
-
-		_paletteStack.Push(defaultPaletteData2->CreatePalette(_device));
+		ff::ComPtr<ff::IPaletteData> defaultPaletteData;
+		assertRetVal(ff::CreatePaletteData(_device, std::move(scratchPalette), &defaultPaletteData), false);
+		_paletteStack.Push(defaultPaletteData->CreatePalette());
 	}
 
 	_paletteTexture = _device->CreateTexture(ff::PointInt(256, (int)::MAX_PALETTES), ff::TextureFormat::RGBA32);
@@ -1074,11 +1072,16 @@ void Renderer11::UpdatePaletteTexture()
 	{
 		ff::IPalette* palette = iter.GetValue().first;
 		unsigned int index = iter.GetValue().second;
+		size_t paletteRow = palette->GetCurrentRow();
+		ff::IPaletteData* paletteData = palette->GetData();
+		ff::hash_t rowHash = paletteData->GetRowHash(paletteRow);
 
-		if (_paletteTextureHashes[index] != palette->GetTextureHash())
+		if (_paletteTextureHashes[index] != rowHash)
 		{
-			_paletteTextureHashes[index] = palette->GetTextureHash();
-			ID3D11Resource* srcResource = palette->GetTexture()->AsTexture11()->GetTexture2d();
+			_paletteTextureHashes[index] = rowHash;
+			ID3D11Resource* srcResource = paletteData->GetTexture()->AsTexture11()->GetTexture2d();
+			srcBox.top = (UINT)paletteRow;
+			srcBox.bottom = srcBox.top + 1;
 			deviceContext.CopySubresourceRegion(destResource, 0, 0, index, 0, srcResource, 0, &srcBox);
 		}
 	}
@@ -1396,7 +1399,7 @@ unsigned int Renderer11::GetPaletteIndexNoFlush()
 		else
 		{
 			ff::IPalette* palette = _paletteStack.GetLast();
-			ff::hash_t paletteHash = palette->GetTextureHash();
+			ff::hash_t paletteHash = palette->GetData()->GetRowHash(palette->GetCurrentRow());
 			auto iter = _paletteToIndex.GetKey(paletteHash);
 
 			if (!iter && _paletteToIndex.Size() != ::MAX_PALETTES)

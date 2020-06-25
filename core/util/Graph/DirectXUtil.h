@@ -71,7 +71,7 @@ namespace ff
 
 #ifdef UTIL_DLL
 	ff::ComPtr<ID3D11ShaderResourceView> CreateDefaultTextureView(ID3D11DeviceX* device, ID3D11Texture2D* texture);
-	DirectX::ScratchImage LoadTextureData(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, IPaletteData** paletteData);
+	DirectX::ScratchImage LoadTextureData(ff::StringRef path, DXGI_FORMAT format, size_t mips, DirectX::ScratchImage* paletteScratch);
 	DirectX::ScratchImage ConvertTextureData(const DirectX::ScratchImage& data, DXGI_FORMAT format, size_t mips);
 	ff::SpriteType GetSpriteTypeForImage(const DirectX::ScratchImage& scratch, const ff::RectSize* rect = nullptr);
 #endif

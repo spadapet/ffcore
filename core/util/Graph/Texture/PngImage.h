@@ -12,7 +12,7 @@ namespace ff
 		~PngImageReader();
 
 		std::unique_ptr<DirectX::ScratchImage> Read(DXGI_FORMAT requestedFormat = DXGI_FORMAT_UNKNOWN);
-		ff::Vector<BYTE> GetPalette() const;
+		std::unique_ptr<DirectX::ScratchImage> GetPalette() const;
 		ff::StringRef GetError() const;
 
 	private:
@@ -60,11 +60,11 @@ namespace ff
 		PngImageWriter(IDataWriter* writer);
 		~PngImageWriter();
 
-		bool Write(const DirectX::Image& image, IData* palette);
+		bool Write(const DirectX::Image& image, const DirectX::Image* paletteImage);
 		ff::StringRef GetError() const;
 
 	private:
-		bool InternalWrite(const DirectX::Image& image, IData* palette);
+		bool InternalWrite(const DirectX::Image& image, const DirectX::Image* paletteImage);
 
 		static void PngErrorCallback(png_struct* png, const char* text);
 		static void PngWarningCallback(png_struct* png, const char* text);

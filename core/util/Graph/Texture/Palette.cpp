@@ -15,119 +15,70 @@ class __declspec(uuid("f30b7600-f6e2-47ca-a323-30af3186d3dd"))
 public:
 	DECLARE_HEADER(Palette);
 
-	virtual HRESULT _Construct(IUnknown* unkOuter) override;
-	bool Init(ff::IPaletteData* data);
+	bool Init(ff::IPaletteData* data, float cyclesPerSecond);
 
-	// IGraphDeviceChild functions
-	virtual ff::IGraphDevice* GetDevice() const override;
-	virtual bool Reset() override;
-
-	// IPalette functions
+	// IPalette
 	virtual void Advance() override;
-	virtual ff::IPaletteData* GetData() const override;
-	virtual ff::hash_t GetTextureHash() const override;
-	virtual ff::ITexture* GetTexture() override;
+	virtual size_t GetCurrentRow() const override;
+	virtual ff::IPaletteData* GetData() override;
 
 private:
-	ff::ComPtr<ff::IGraphDevice> _device;
 	ff::ComPtr<ff::IPaletteData> _data;
-	ff::ComPtr<ff::ITexture> _texture;
-	std::array<DWORD, ff::PALETTE_SIZE> _colors;
-	ff::hash_t _textureHash;
-	ff::hash_t _colorsHash;
+	float _cps;
+	float _advances;
+	size_t _row;
 };
 
 BEGIN_INTERFACES(Palette)
 	HAS_INTERFACE(ff::IPalette)
 END_INTERFACES()
 
-bool CreatePalette(ff::IGraphDevice* device, ff::IPaletteData* data, ff::IPalette** obj)
+bool CreatePalette(ff::IPaletteData* data, float cyclesPerSecond, ff::IPalette** obj)
 {
 	assertRetVal(obj, false);
 	*obj = nullptr;
 
 	ff::ComPtr<Palette, ff::IPalette> newObj;
-	assertHrRetVal(ff::ComAllocator<Palette>::CreateInstance(device, &newObj), false);
-	assertRetVal(newObj->Init(data), false);
+	assertHrRetVal(ff::ComAllocator<Palette>::CreateInstance(&newObj), false);
+	assertRetVal(newObj->Init(data, cyclesPerSecond), false);
 
 	*obj = newObj.Detach();
 	return true;
 }
 
 Palette::Palette()
-	: _textureHash(0)
-	, _colorsHash(0)
+	: _cps(0)
+	, _advances(0)
+	, _row(0)
 {
 }
 
 Palette::~Palette()
 {
-	if (_device)
-	{
-		_device->RemoveChild(this);
-	}
 }
 
-HRESULT Palette::_Construct(IUnknown* unkOuter)
+bool Palette::Init(ff::IPaletteData* data, float cyclesPerSecond)
 {
-	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
-	_device->AddChild(this);
-
-	return __super::_Construct(unkOuter);
-}
-
-bool Palette::Init(ff::IPaletteData* data)
-{
-	assertRetVal(data && data->GetColors() && data->GetColors()->GetSize() == _colors.size() * 4, false);
+	assertRetVal(data, false);
 
 	_data = data;
-	_colorsHash = ff::HashBytes(_data->GetColors()->GetMem(), _data->GetColors()->GetSize());
-	std::memcpy(_colors.data(), _data->GetColors()->GetMem(), _data->GetColors()->GetSize());
-
-	return true;
-}
-
-ff::IGraphDevice* Palette::GetDevice() const
-{
-	return _device;
-}
-
-bool Palette::Reset()
-{
-	_texture = nullptr;
-	_textureHash = 0;
+	_cps = cyclesPerSecond;
 
 	return true;
 }
 
 void Palette::Advance()
 {
-	// ...update _colors and _colorsHash
+	size_t count = _data->GetRowCount();
+	_row = (size_t)(++_advances * _cps * count / 60.0f) % count;
 }
 
-ff::IPaletteData* Palette::GetData() const
+ff::IPaletteData* Palette::GetData()
 {
 	return _data;
 }
 
-ff::hash_t Palette::GetTextureHash() const
+size_t Palette::GetCurrentRow() const
 {
-	return _colorsHash;
-}
-
-ff::ITexture* Palette::GetTexture()
-{
-	if (_texture == nullptr)
-	{
-		_texture = _device->CreateTexture(ff::PointInt((int)ff::PALETTE_SIZE, 1), ff::TextureFormat::RGBA32, 1, 1, 1, _data->GetColors());
-		_textureHash = ff::HashBytes(_data->GetColors()->GetMem(), _data->GetColors()->GetSize());
-	}
-
-	if (_textureHash != _colorsHash)
-	{
-		_texture->Update(0, 0, ff::RectSize(0, 0, ff::PALETTE_SIZE, 1), _colors.data(), ff::PALETTE_SIZE * 4, ff::TextureFormat::RGBA32);
-		_textureHash = _colorsHash;
-	}
-
-	return _texture;
+	return _row;
 }

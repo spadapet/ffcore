@@ -150,9 +150,15 @@ bool CreateTexture11(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT f
 {
 	assertRetVal(texture, false);
 
-	ff::ComPtr<ff::IPaletteData> paletteData;
-	DirectX::ScratchImage data = ff::LoadTextureData(device, path, format, mips, &paletteData);
+	DirectX::ScratchImage paletteScratch;
+	DirectX::ScratchImage data = ff::LoadTextureData(path, format, mips, &paletteScratch);
 	assertRetVal(data.GetImageCount(), false);
+
+	ff::ComPtr<ff::IPaletteData> paletteData;
+	if (paletteScratch.GetImageCount())
+	{
+		assertRetVal(ff::CreatePaletteData(device, std::move(paletteScratch), &paletteData), false);
+	}
 
 	ff::ComPtr<ff::ITexture> obj;
 	assertRetVal(::CreateTexture11(device, std::move(data), paletteData, &obj), false);
@@ -190,7 +196,7 @@ bool StaticTexture11::Init(DirectX::ScratchImage&& data, ff::IPaletteData* palet
 
 	if (paletteData && GetDxgiFormat() == DXGI_FORMAT_R8_UINT)
 	{
-		_palette = paletteData->CreatePalette(_device);
+		_palette = paletteData->CreatePalette();
 	}
 
 	return true;
@@ -350,8 +356,15 @@ bool StaticTexture11::LoadFromSource(const ff::Dict& dict)
 	DXGI_FORMAT format = ff::ParseDxgiTextureFormat(dict.Get<ff::StringValue>(PROP_FORMAT, ff::String(L"rgba32")));
 	assertRetVal(format != DXGI_FORMAT_UNKNOWN, false);
 
+	DirectX::ScratchImage paletteScratch;
+	DirectX::ScratchImage data = ff::LoadTextureData(fullFile, format, mipsProp, &paletteScratch);
+
 	ff::ComPtr<ff::IPaletteData> paletteData;
-	DirectX::ScratchImage data = ff::LoadTextureData(_device, fullFile, format, mipsProp, &paletteData);
+	if (paletteScratch.GetImageCount())
+	{
+		assertRetVal(ff::CreatePaletteData(_device, std::move(paletteScratch), &paletteData), false);
+	}
+
 	assertRetVal(Init(std::move(data), paletteData), false);
 
 	return true;
@@ -362,12 +375,10 @@ bool StaticTexture11::LoadFromCache(const ff::Dict& dict)
 	ff::ComPtr<ff::IData> data = dict.Get<ff::DataValue>(PROP_DATA);
 	_spriteType = (ff::SpriteType)dict.Get<ff::IntValue>(PROP_SPRITE_TYPE);
 
-	ff::ComPtr<ff::IData> paletteData = dict.Get<ff::DataValue>(PROP_PALETTE);
-	if (paletteData)
+	ff::ComPtr<ff::IPaletteData> paletteData;
+	if (paletteData.QueryFrom(dict.Get<ff::ObjectValue>(PROP_PALETTE)))
 	{
-		ff::ComPtr<ff::IPaletteData> paletteData2;
-		assertRetVal(ff::CreatePaletteData(paletteData, &paletteData2), false);
-		_palette = paletteData2->CreatePalette(_device);
+		_palette = paletteData->CreatePalette();
 	}
 
 	assertHrRetVal(DirectX::LoadFromDDSMemory(
@@ -398,7 +409,7 @@ bool StaticTexture11::SaveToCache(ff::Dict& dict)
 
 	if (_palette)
 	{
-		dict.Set<ff::DataValue>(PROP_PALETTE, _palette->GetData()->GetColors());
+		dict.Set<ff::ObjectValue>(PROP_PALETTE, _palette->GetData());
 	}
 
 	return true;
@@ -430,8 +441,13 @@ bool StaticTexture11::SaveToFile(ff::StringRef file)
 		assertRetVal(ff::CreateDataFile(file2, false, &dataFile), false);
 		assertRetVal(ff::CreateDataWriter(dataFile, 0, &writer), false);
 
+		DirectX::ScratchImage paletteScratchHolder;
+		const DirectX::ScratchImage* paletteScratch = _palette
+			? _palette->GetData()->GetTexture()->AsTextureDxgi()->Capture(paletteScratchHolder)
+			: nullptr;
+
 		ff::PngImageWriter png(writer);
-		png.Write(scratchImage->GetImages()[i], _palette ? _palette->GetData()->GetColors() : nullptr);
+		png.Write(scratchImage->GetImages()[i], paletteScratch ? paletteScratch->GetImages() : nullptr);
 	}
 
 	return true;

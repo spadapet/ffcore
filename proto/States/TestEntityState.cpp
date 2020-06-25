@@ -75,7 +75,7 @@ TestEntityState::TestEntityState(ff::AppGlobals* globals)
 	, _fontResource(L"TestFont2")
 {
 	ff::TypedResource<ff::IPaletteData> paletteData(L"TestPalette");
-	_palette = paletteData->CreatePalette(globals->GetGraph());
+	_palette = paletteData->CreatePalette();
 }
 
 std::shared_ptr<ff::State> TestEntityState::Advance(ff::AppGlobals* globals)
