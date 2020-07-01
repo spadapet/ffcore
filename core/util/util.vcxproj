@@ -426,7 +426,8 @@
   <Target Name="AfterBuild">
     <!-- Copy output files to other projects that reference them -->
     <PropertyGroup>
-      <DestProjects>proto;respack;util.test;Game</DestProjects>
+      <DestProjects>proto;respack;util.test</DestProjects>
+      <DestProjects Condition=" '$(CopyUtilProjects)' != '' ">$(CopyUtilProjects);$(DestProjects)</DestProjects>
     </PropertyGroup>
     <ItemGroup>
       <DestProjects Include="$(DestProjects)" />

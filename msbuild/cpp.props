@@ -6,7 +6,11 @@
     <FFCoreRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), ..))</FFCoreRoot>
     <DevRoot Condition=" '$(DevRoot)' == '' ">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::ValueOrDefault($([MSBuild]::GetDirectoryNameOfFileAbove($(FFCoreRoot).., .gitmodules)), $(FFCoreRoot)))))</DevRoot>
     <OutRoot Condition=" '$(OutRoot)' == '' ">$(DevRoot)out\</OutRoot>
+  </PropertyGroup>
 
+  <Import Condition=" Exists('$(DevRoot)build.props') " Project="$(DevRoot)build.props" />
+
+  <PropertyGroup>
     <!-- Project config -->
     <AppType Condition=" '$(AppType)' == '' ">Desktop</AppType>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
