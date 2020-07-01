@@ -17,7 +17,6 @@ namespace ff
 	class IRenderTarget;
 	class IRenderTargetWindow;
 	class IResourceAccess;
-	class IValueAccess;
 	class XamlTextureProvider;
 	class XamlProvider;
 	class XamlView;
@@ -31,7 +30,15 @@ namespace ff
 
 		static XamlGlobalState* Get();
 
-		UTIL_API bool Startup(ff::StringRef noesisLicenseName, ff::StringRef noesisLicenseKey, ff::IResourceAccess* resources, ff::IValueAccess* values, ff::StringRef resourcesName, bool sRGB = false);
+		UTIL_API bool Startup(
+			ff::IResourceAccess* resources,
+			ff::StringRef resourcesName,
+			ff::StringRef noesisLicenseName,
+			ff::StringRef noesisLicenseKey,
+			ff::StringRef defaultFont = ff::GetEmptyString(),
+			float defaultFontSize = 12.0f,
+			bool sRGB = false);
+
 		UTIL_API void Shutdown();
 		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
@@ -41,7 +48,6 @@ namespace ff
 
 		UTIL_API ff::AppGlobals* GetAppGlobals() const;
 		ff::IResourceAccess* GetResourceAccess() const;
-		ff::IValueAccess* GetValueAccess() const;
 		Noesis::RenderDevice* GetRenderDevice() const;
 
 		void RegisterView(XamlView* view);
@@ -68,7 +74,6 @@ namespace ff
 
 		ff::AppGlobals* _appGlobals;
 		ff::IResourceAccess* _resources;
-		ff::IValueAccess* _values;
 		ff::Vector<XamlView*> _views;
 		ff::Vector<XamlView*> _inputViews;
 		ff::Vector<XamlView*> _renderedViews;

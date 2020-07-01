@@ -24,11 +24,10 @@ public:
 	{
 		_uiGlobals = std::make_shared<ff::XamlGlobalState>(globals);
 		_uiGlobals->Startup(
-			ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2"),
-			ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV"),
 			ff::GetThisModule().GetResources(),
-			ff::GetThisModule().GetValueTable(),
-			ff::String::from_static(L"ApplicationResources.xaml"));
+			ff::String::from_static(L"ApplicationResources.xaml"),
+			ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2"),
+			ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV"));
 	}
 
 	virtual void OnGameThreadShutdown(ff::AppGlobals* globals) override
@@ -87,7 +86,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, LPWSTR commandLine, int showC
 {
 	ff::SetMainModule(s_moduleName, s_moduleId, instance);
 
-	return ff::DesktopGlobals::RunWithWindow(ff::AppGlobalsFlags::All, AppGlobalsHelper()) ? 0 : 1;
+	std::shared_ptr<ff::IAppGlobalsHelper> helper = std::make_shared<AppGlobalsHelper>();
+	return ff::DesktopGlobals::RunWithWindow(ff::AppGlobalsFlags::All, helper) ? 0 : 1;
 }
 
 #endif

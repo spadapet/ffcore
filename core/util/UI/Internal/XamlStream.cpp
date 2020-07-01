@@ -5,16 +5,16 @@
 #include "UI/Internal/XamlStream.h"
 #include "Value/Values.h"
 
-ff::XamlStream::XamlStream(ff::AutoResourceValue resource)
-	: _resource(resource)
+ff::XamlStream::XamlStream(ff::AutoResourceValue&& resource)
+	: _resource(std::move(resource))
 {
-	assert(resource.DidInit());
+	assert(_resource.DidInit());
 }
 
 ff::XamlStream::XamlStream(ff::IDataReader* reader)
 	: _reader(reader)
 {
-	assert(reader);
+	assert(_reader);
 }
 
 ff::XamlStream::~XamlStream()

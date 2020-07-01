@@ -46,19 +46,21 @@ ff::CustomWindow ff::DesktopGlobals::CreateMainWindow(StringRef name)
 	return ff::CustomWindow();
 }
 
-bool ff::DesktopGlobals::RunWithWindow(AppGlobalsFlags flags, IAppGlobalsHelper& helper)
+bool ff::DesktopGlobals::RunWithWindow(AppGlobalsFlags flags, std::shared_ptr<IAppGlobalsHelper>& helper)
 {
 	ff::ThreadGlobalsScope<ff::ProcessGlobals> globals;
 	ff::DesktopGlobals app;
-	ff::CustomWindow mainWindow = ff::DesktopGlobals::CreateMainWindow(helper.GetWindowName());
+	ff::CustomWindow mainWindow = ff::DesktopGlobals::CreateMainWindow(helper->GetWindowName());
+	bool status = false;
 
-	if (app.Startup(ff::AppGlobalsFlags::All, mainWindow.Handle(), &helper))
+	if (app.Startup(ff::AppGlobalsFlags::All, mainWindow.Handle(), helper.get()))
 	{
 		ff::PumpMessagesUntilQuit();
-		return true;
+		status = true;
 	}
 
-	return false;
+	helper.reset();
+	return status;
 }
 
 bool ff::DesktopGlobals::Startup(AppGlobalsFlags flags, HWND hwnd, IAppGlobalsHelper* helper)

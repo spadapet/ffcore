@@ -9,7 +9,7 @@ namespace ff
 	class XamlStream : public Noesis::Stream
 	{
 	public:
-		XamlStream(ff::AutoResourceValue resource);
+		XamlStream(ff::AutoResourceValue&& resource);
 		XamlStream(ff::IDataReader* reader);
 		virtual ~XamlStream() override;
 

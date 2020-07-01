@@ -43,7 +43,10 @@ Noesis::Ptr<Noesis::Stream> ff::XamlFontProvider::OpenFont(const char* folder8, 
 	if (name.size() > 0 && name[0] == L'#')
 	{
 		ff::AutoResourceValue value = _globals->GetResourceAccess()->GetResource(name);
-		return Noesis::MakePtr<XamlStream>(value);
+		if (value.DidInit())
+		{
+			return Noesis::MakePtr<XamlStream>(std::move(value));
+		}
 	}
 
 	return nullptr;

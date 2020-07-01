@@ -41,42 +41,6 @@ static const wchar_t* s_logLevels[] =
 	L"Error",
 };
 
-// The provider ID is a hash of the name, not a random GUID. That way listeners only need to know the name.
-// {ec820af9-537e-5097-eb27-b527653f73b5}
-TRACELOGGING_DEFINE_PROVIDER(s_traceLoggingProvider, "Microsoft.VisualStudio.DesignTools.XamlTrace",
-	(0xec820af9, 0x537e, 0x5097, 0xeb, 0x27, 0xb5, 0x27, 0x65, 0x3f, 0x73, 0xb5));
-
-static void OnBindingFailure(const char* message)
-{
-	if (::TraceLoggingProviderEnabled(s_traceLoggingProvider, 0, 0))
-	{
-		static std::regex bindingFailedRegex("Binding failed: Path=(.*?), Source=(.*?)\\('.*?'\\), Target=(.*?)\\('.*?'\\), TargetProperty=(.*)");
-
-		std::cmatch matches;
-		if (std::regex_match(message, matches, bindingFailedRegex) && matches.size() == 5)
-		{
-			std::string pathMatch = matches[1].str();
-			std::string sourceMatch = matches[2].str();
-			std::string targetMatch = matches[3].str();
-			std::string targetPropertyMatch = matches[4].str();
-
-			TraceLoggingWrite(s_traceLoggingProvider, "BindingFailed",
-				TraceLoggingUtf8String("Error", "Severity"),
-				TraceLoggingUtf8String(sourceMatch.c_str(), "SourceType"),
-				TraceLoggingUtf8String(pathMatch.c_str(), "Path"),
-				TraceLoggingUtf8String(targetPropertyMatch.c_str(), "TargetProperty"),
-				TraceLoggingUtf8String(targetMatch.c_str(), "TargetType"),
-				TraceLoggingUtf8String(message, "Description"));
-		}
-		else
-		{
-			TraceLoggingWrite(s_traceLoggingProvider, "BindingFailed",
-				TraceLoggingUtf8String("Warning", "Severity"),
-				TraceLoggingUtf8String(message, "Description"));
-		}
-	}
-}
-
 static void NoesisLogHandler(const char* filename, uint32_t line, uint32_t level, const char* channel, const char* message)
 {
 	const wchar_t* logLevel = (level < NS_COUNTOF(s_logLevels)) ? s_logLevels[level] : L"";
@@ -84,11 +48,6 @@ static void NoesisLogHandler(const char* filename, uint32_t line, uint32_t level
 	ff::String message2 = ff::String::from_utf8(message);
 
 	ff::Log::GlobalTraceF(L"[NOESIS/%s/%s] %s\n", channel2.c_str(), logLevel, message2.c_str());
-
-	if (channel2 == L"Binding")
-	{
-		OnBindingFailure(message);
-	}
 
 	if (s_logHandler)
 	{
@@ -175,7 +134,6 @@ static Noesis::MemoryCallbacks s_memoryCallbacks =
 ff::XamlGlobalState::XamlGlobalState(ff::AppGlobals* appGlobals)
 	: _appGlobals(appGlobals)
 	, _resources(nullptr)
-	, _values(nullptr)
 	, _focusedView(nullptr)
 {
 	assert(!s_globals);
@@ -188,12 +146,19 @@ ff::XamlGlobalState::~XamlGlobalState()
 	s_globals = nullptr;
 }
 
-bool ff::XamlGlobalState::Startup(ff::StringRef noesisLicenseName, ff::StringRef noesisLicenseKey, ff::IResourceAccess* resources, ff::IValueAccess* values, ff::StringRef resourcesName, bool sRGB)
+bool ff::XamlGlobalState::Startup(
+	ff::IResourceAccess* resources,
+	ff::StringRef resourcesName,
+	ff::StringRef noesisLicenseName,
+	ff::StringRef noesisLicenseKey,
+	ff::StringRef defaultFont,
+	float defaultFontSize,
+	bool sRGB)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
-	assertRetVal(!s_assertHandler && !_resources && resources && values && _appGlobals->GetGraph()->AsGraphDevice11(), false);
+	assertRetVal(!s_assertHandler && !_resources && resources && _appGlobals->GetGraph()->AsGraphDevice11(), false);
 
-	::TraceLoggingRegister(s_traceLoggingProvider);
+	// Global handlers
 
 	s_assertHandler = Noesis::SetAssertHandler(::NoesisAssertHandler);
 	s_errorHandler = Noesis::SetErrorHandler(::NoesisErrorHandler);
@@ -201,27 +166,36 @@ bool ff::XamlGlobalState::Startup(ff::StringRef noesisLicenseName, ff::StringRef
 	Noesis::SetMemoryCallbacks(s_memoryCallbacks);
 	Noesis::GUI::Init(ff::StringToUTF8(noesisLicenseName).Data(), ff::StringToUTF8(noesisLicenseKey).Data());
 
-	const char* fallbackFonts[] = { "Segoe UI" };
-	Noesis::GUI::SetFontFallbacks(fallbackFonts, _countof(fallbackFonts));
-	Noesis::GUI::SetFontDefaultProperties(12.0f, Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
-
-	_resources = resources;
-	_values = values;
-	_renderDevice = Noesis::MakePtr<XamlRenderDevice11>(_appGlobals->GetGraph(), sRGB);
-	_xamlProvider = Noesis::MakePtr<XamlProvider>(this);
-	_fontProvider = Noesis::MakePtr<XamlFontProvider>(this);
-	_textureProvider = Noesis::MakePtr<XamlTextureProvider>(this);
+	// Callbacks
 
 	Noesis::GUI::SetCursorCallback(this, ff::XamlGlobalState::StaticUpdateCursorCallback);
 	Noesis::GUI::SetOpenUrlCallback(this, ff::XamlGlobalState::StaticOpenUrlCallback);
 	Noesis::GUI::SetPlayAudioCallback(this, ff::XamlGlobalState::StaticPlaySoundCallback);
 	Noesis::GUI::SetSoftwareKeyboardCallback(this, ff::XamlGlobalState::StaticSoftwareKeyboardCallback);
 
+	// Resource providers
+
+	_resources = resources;
+	_renderDevice = Noesis::MakePtr<XamlRenderDevice11>(_appGlobals->GetGraph(), sRGB);
+	_xamlProvider = Noesis::MakePtr<XamlProvider>(this);
+	_fontProvider = Noesis::MakePtr<XamlFontProvider>(this);
+	_textureProvider = Noesis::MakePtr<XamlTextureProvider>(this);
+
 	Noesis::GUI::SetXamlProvider(_xamlProvider);
 	Noesis::GUI::SetTextureProvider(_textureProvider);
 	Noesis::GUI::SetFontProvider(_fontProvider);
 
 	RegisterComponents();
+
+	// Default font
+	{
+		ff::Vector<char> defaultFont8 = ff::StringToUTF8(defaultFont);
+		const char* defaultFonts = defaultFont8.Size() ? defaultFont8.Data() : "Segoe UI";
+		Noesis::GUI::SetFontFallbacks(&defaultFonts, 1);
+		Noesis::GUI::SetFontDefaultProperties(defaultFontSize, Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
+	}
+
+	// Application resources
 
 	if (!resourcesName.empty())
 	{
@@ -257,7 +231,6 @@ void ff::XamlGlobalState::Shutdown()
 	_textureProvider = nullptr;
 	_renderDevice = nullptr;
 	_resources = nullptr;
-	_values = nullptr;
 
 	Noesis::GUI::Shutdown();
 
@@ -269,8 +242,6 @@ void ff::XamlGlobalState::Shutdown()
 
 	Noesis::SetAssertHandler(s_assertHandler);
 	s_assertHandler = nullptr;
-
-	::TraceLoggingUnregister(s_traceLoggingProvider);
 }
 
 std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
@@ -302,11 +273,6 @@ ff::AppGlobals* ff::XamlGlobalState::GetAppGlobals() const
 ff::IResourceAccess* ff::XamlGlobalState::GetResourceAccess() const
 {
 	return _resources;
-}
-
-ff::IValueAccess* ff::XamlGlobalState::GetValueAccess() const
-{
-	return _values;
 }
 
 Noesis::RenderDevice* ff::XamlGlobalState::GetRenderDevice() const

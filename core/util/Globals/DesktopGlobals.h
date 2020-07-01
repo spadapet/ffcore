@@ -15,7 +15,7 @@ namespace ff
 
 		UTIL_API static DesktopGlobals* Get();
 		UTIL_API static CustomWindow CreateMainWindow(StringRef name);
-		UTIL_API static bool RunWithWindow(AppGlobalsFlags flags, IAppGlobalsHelper& helper);
+		UTIL_API static bool RunWithWindow(AppGlobalsFlags flags, std::shared_ptr<IAppGlobalsHelper>& helper);
 
 		UTIL_API bool Startup(AppGlobalsFlags flags, HWND hwnd = nullptr, IAppGlobalsHelper* helper = nullptr);
 		UTIL_API void Shutdown();
