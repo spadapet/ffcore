@@ -71,7 +71,7 @@ static bool NoesisAssertHandler(const char* file, uint32_t line, const char* exp
 static void NoesisErrorHandler(const char* file, uint32_t line, const char* message, bool fatal)
 {
 #ifdef _DEBUG
-	if (::IsDebuggerPresent())
+	if (fatal && ::IsDebuggerPresent())
 	{
 		__debugbreak();
 	}
