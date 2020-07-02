@@ -13,12 +13,13 @@ namespace Noesis
 namespace ff
 {
 	class AppGlobals;
-	class XamlFontProvider;
 	class IRenderTarget;
 	class IRenderTargetWindow;
 	class IResourceAccess;
-	class XamlTextureProvider;
+	class IXamlGlobalHelper;
+	class XamlFontProvider;
 	class XamlProvider;
+	class XamlTextureProvider;
 	class XamlView;
 	class XamlViewState;
 
@@ -30,15 +31,7 @@ namespace ff
 
 		static XamlGlobalState* Get();
 
-		UTIL_API bool Startup(
-			ff::IResourceAccess* resources,
-			ff::StringRef resourcesName,
-			ff::StringRef noesisLicenseName,
-			ff::StringRef noesisLicenseKey,
-			ff::StringRef defaultFont = ff::GetEmptyString(),
-			float defaultFontSize = 12.0f,
-			bool sRGB = false);
-
+		UTIL_API bool Startup(ff::IXamlGlobalHelper* helper);
 		UTIL_API void Shutdown();
 		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);

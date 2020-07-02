@@ -10,6 +10,7 @@
 #include "States/TestUiState.h"
 #include "States/TitleState.h"
 #include "String/StringUtil.h"
+#include "UI/XamlGlobalHelper.h"
 #include "UI/XamlGlobalState.h"
 
 // {3930FE5D-70FE-42E6-93DA-574235C1A187}
@@ -17,17 +18,13 @@ static const GUID s_moduleId = { 0x3930fe5d, 0x70fe, 0x42e6,{ 0x93, 0xda, 0x57, 
 static ff::StaticString s_moduleName(L"Proto");
 static ff::ModuleFactory CreateThisModule(s_moduleName, s_moduleId, ff::GetDelayLoadInstance, ff::GetModuleStartup);
 
-class AppGlobalsHelper : public ff::IAppGlobalsHelper
+class AppGlobalsHelper : public ff::IAppGlobalsHelper, public ff::IXamlGlobalHelper
 {
 public:
 	virtual void OnGameThreadInitialized(ff::AppGlobals* globals) override
 	{
 		_uiGlobals = std::make_shared<ff::XamlGlobalState>(globals);
-		_uiGlobals->Startup(
-			ff::GetThisModule().GetResources(),
-			ff::String::from_static(L"ApplicationResources.xaml"),
-			ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2"),
-			ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV"));
+		_uiGlobals->Startup(this);
 	}
 
 	virtual void OnGameThreadShutdown(ff::AppGlobals* globals) override
@@ -48,6 +45,26 @@ public:
 		states->AddTop(std::make_shared<TitleState>(globals));
 		states->AddTop(_uiGlobals);
 		return states;
+	}
+
+	virtual ff::IResourceAccess* GetXamlResources() override
+	{
+		return ff::GetThisModule().GetResources();
+	}
+
+	virtual ff::String GetNoesisLicenseName() override
+	{
+		return ff::String::from_static(L"9e6fb182-647d-454a-8f95-fcdf88e3c3c2");
+	}
+
+	virtual ff::String GetNoesisLicenseKey() override
+	{
+		return ff::String::from_static(L"g8nV9oGB1fZ5EP22GHDZv3T6uCQdsGyA3YlNsw6AFmDSr4IV");
+	}
+
+	virtual ff::String GetApplicationResourcesName() override
+	{
+		return ff::String::from_static(L"ApplicationResources.xaml");
 	}
 
 private:

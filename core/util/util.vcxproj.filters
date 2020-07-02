@@ -566,6 +566,9 @@
     <ClCompile Include="Graph\Anim\KeyFrames.cpp">
       <Filter>Graph\Anim</Filter>
     </ClCompile>
+    <ClCompile Include="UI\XamlGlobalHelper.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1122,6 +1125,9 @@
     </ClInclude>
     <ClInclude Include="Graph\Anim\Transform.h">
       <Filter>Graph\Anim</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\XamlGlobalHelper.h">
+      <Filter>UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

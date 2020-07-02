@@ -16,6 +16,7 @@
 #include "Thread/ThreadDispatch.h"
 #include "Types/Timer.h"
 #include "UI/XamlConverters.h"
+#include "UI/XamlGlobalHelper.h"
 #include "UI/XamlGlobalState.h"
 #include "UI/XamlViewState.h"
 
@@ -146,17 +147,10 @@ ff::XamlGlobalState::~XamlGlobalState()
 	s_globals = nullptr;
 }
 
-bool ff::XamlGlobalState::Startup(
-	ff::IResourceAccess* resources,
-	ff::StringRef resourcesName,
-	ff::StringRef noesisLicenseName,
-	ff::StringRef noesisLicenseKey,
-	ff::StringRef defaultFont,
-	float defaultFontSize,
-	bool sRGB)
+bool ff::XamlGlobalState::Startup(ff::IXamlGlobalHelper* helper)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
-	assertRetVal(!s_assertHandler && !_resources && resources && _appGlobals->GetGraph()->AsGraphDevice11(), false);
+	assertRetVal(!s_assertHandler && helper && _appGlobals->GetGraph()->AsGraphDevice11(), false);
 
 	// Global handlers
 
@@ -164,7 +158,7 @@ bool ff::XamlGlobalState::Startup(
 	s_errorHandler = Noesis::SetErrorHandler(::NoesisErrorHandler);
 	s_logHandler = Noesis::SetLogHandler(::NoesisLogHandler);
 	Noesis::SetMemoryCallbacks(s_memoryCallbacks);
-	Noesis::GUI::Init(ff::StringToUTF8(noesisLicenseName).Data(), ff::StringToUTF8(noesisLicenseKey).Data());
+	Noesis::GUI::Init(ff::StringToUTF8(helper->GetNoesisLicenseName()).Data(), ff::StringToUTF8(helper->GetNoesisLicenseKey()).Data());
 
 	// Callbacks
 
@@ -175,8 +169,8 @@ bool ff::XamlGlobalState::Startup(
 
 	// Resource providers
 
-	_resources = resources;
-	_renderDevice = Noesis::MakePtr<XamlRenderDevice11>(_appGlobals->GetGraph(), sRGB);
+	_resources = helper->GetXamlResources();
+	_renderDevice = Noesis::MakePtr<XamlRenderDevice11>(_appGlobals->GetGraph(), helper->IsSRGB());
 	_xamlProvider = Noesis::MakePtr<XamlProvider>(this);
 	_fontProvider = Noesis::MakePtr<XamlFontProvider>(this);
 	_textureProvider = Noesis::MakePtr<XamlTextureProvider>(this);
@@ -186,25 +180,29 @@ bool ff::XamlGlobalState::Startup(
 	Noesis::GUI::SetFontProvider(_fontProvider);
 
 	RegisterComponents();
+	helper->RegisterNoesisComponents();
 
 	// Default font
 	{
-		ff::Vector<char> defaultFont8 = ff::StringToUTF8(defaultFont);
+		ff::Vector<char> defaultFont8 = ff::StringToUTF8(helper->GetDefaultFont());
 		const char* defaultFonts = defaultFont8.Size() ? defaultFont8.Data() : "Segoe UI";
 		Noesis::GUI::SetFontFallbacks(&defaultFonts, 1);
-		Noesis::GUI::SetFontDefaultProperties(defaultFontSize, Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
+		Noesis::GUI::SetFontDefaultProperties(helper->GetDefaultFontSize(), Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
 	}
 
 	// Application resources
-
-	if (!resourcesName.empty())
 	{
-		ff::Vector<char> resourcesUtf8 = ff::StringToUTF8(resourcesName);
-		_applicationResources = Noesis::GUI::LoadXaml<Noesis::ResourceDictionary>(resourcesUtf8.ConstData());
-		assertRetVal(_applicationResources, false);
-	}
+		ff::String resourcesName = helper->GetApplicationResourcesName();
+		if (!resourcesName.empty())
+		{
+			ff::Vector<char> resourcesUtf8 = ff::StringToUTF8(resourcesName);
+			_applicationResources = Noesis::GUI::LoadXaml<Noesis::ResourceDictionary>(resourcesUtf8.ConstData());
+			assertRetVal(_applicationResources, false);
 
-	Noesis::GUI::SetApplicationResources(_applicationResources);
+			helper->OnApplicationResourcesLoaded(_applicationResources);
+			Noesis::GUI::SetApplicationResources(_applicationResources);
+		}
+	}
 
 	::NeosisDumpMemUsage();
 

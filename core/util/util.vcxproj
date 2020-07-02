@@ -185,6 +185,7 @@
     <ClCompile Include="UI\Internal\XamlView11.cpp" />
     <ClCompile Include="UI\NotifyPropertyChangedBase.cpp" />
     <ClCompile Include="UI\XamlConverters.cpp" />
+    <ClCompile Include="UI\XamlGlobalHelper.cpp" />
     <ClCompile Include="UI\XamlGlobalState.cpp" />
     <ClCompile Include="UI\XamlView.cpp" />
     <ClCompile Include="UI\XamlViewState.cpp" />
@@ -369,6 +370,7 @@
     <ClInclude Include="UI\Internal\XamlView11.h" />
     <ClInclude Include="UI\NotifyPropertyChangedBase.h" />
     <ClInclude Include="UI\XamlConverters.h" />
+    <ClInclude Include="UI\XamlGlobalHelper.h" />
     <ClInclude Include="UI\XamlGlobalState.h" />
     <ClInclude Include="UI\XamlView.h" />
     <ClInclude Include="UI\XamlViewState.h" />
