@@ -119,7 +119,7 @@ HRESULT SpriteFont::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 ff::IGraphDevice* SpriteFont::GetDevice() const

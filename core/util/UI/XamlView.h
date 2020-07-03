@@ -16,7 +16,7 @@ namespace ff
 	class XamlView : public std::enable_shared_from_this<XamlView>
 	{
 	public:
-		XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering);
+		XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* content, bool perPixelAntiAlias, bool subPixelRendering);
 		virtual ~XamlView();
 
 		void Destroy();

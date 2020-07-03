@@ -185,7 +185,7 @@ HRESULT StaticTexture11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
 	_device->AddChild(static_cast<ff::ITexture*>(this));
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool StaticTexture11::Init(DirectX::ScratchImage&& data, ff::IPaletteData* paletteData)

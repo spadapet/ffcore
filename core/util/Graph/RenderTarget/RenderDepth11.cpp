@@ -87,7 +87,7 @@ HRESULT RenderDepth11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_FAIL);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool RenderDepth11::Init(ff::PointInt size, size_t multiSamples)

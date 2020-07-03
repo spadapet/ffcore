@@ -124,7 +124,7 @@ HRESULT RenderTargetWindow11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_FAIL);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool RenderTargetWindow11::Init(HWND hwnd)

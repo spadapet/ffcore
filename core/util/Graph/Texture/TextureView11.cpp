@@ -105,7 +105,7 @@ HRESULT TextureView11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool TextureView11::Init(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount)

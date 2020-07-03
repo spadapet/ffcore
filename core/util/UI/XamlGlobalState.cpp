@@ -71,7 +71,7 @@ static bool NoesisAssertHandler(const char* file, uint32_t line, const char* exp
 static void NoesisErrorHandler(const char* file, uint32_t line, const char* message, bool fatal)
 {
 #ifdef _DEBUG
-	if (fatal && ::IsDebuggerPresent())
+	if (::IsDebuggerPresent())
 	{
 		__debugbreak();
 	}
@@ -242,25 +242,20 @@ void ff::XamlGlobalState::Shutdown()
 	s_assertHandler = nullptr;
 }
 
-std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
+std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias, bool subPixelRendering)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
 
 	ff::Vector<char> xamlFile8 = ff::StringToUTF8(xamlFile);
-	return CreateView(Noesis::GUI::LoadXaml<Noesis::FrameworkElement>(xamlFile8.ConstData()), target, perPixelAntiAlias, subPixelRendering);
+	return CreateView(Noesis::GUI::LoadXaml<Noesis::FrameworkElement>(xamlFile8.ConstData()), perPixelAntiAlias, subPixelRendering);
 }
 
-std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
+std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(Noesis::FrameworkElement* content, bool perPixelAntiAlias, bool subPixelRendering)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
 
 	assertRetVal(content, nullptr);
-	return std::make_shared<ff::XamlView11>(this, content, target, perPixelAntiAlias, subPixelRendering);
-}
-
-std::shared_ptr<ff::XamlViewState> ff::XamlGlobalState::CreateViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target)
-{
-	return std::make_shared<XamlViewState>(view, target);
+	return std::make_shared<ff::XamlView11>(this, content, perPixelAntiAlias, subPixelRendering);
 }
 
 ff::AppGlobals* ff::XamlGlobalState::GetAppGlobals() const

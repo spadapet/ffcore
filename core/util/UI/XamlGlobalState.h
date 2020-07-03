@@ -33,9 +33,8 @@ namespace ff
 
 		UTIL_API bool Startup(ff::IXamlGlobalHelper* helper);
 		UTIL_API void Shutdown();
-		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
-		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, ff::IRenderTarget* target = nullptr, bool perPixelAntiAlias = false, bool subPixelRendering = false);
-		UTIL_API std::shared_ptr<XamlViewState> CreateViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target);
+		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias = false, bool subPixelRendering = false);
+		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API const ff::Vector<XamlView*>& GetInputViews() const;
 		UTIL_API const ff::Vector<XamlView*>& GetRenderedViews() const;
 

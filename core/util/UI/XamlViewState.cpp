@@ -1,13 +1,15 @@
 #include "pch.h"
 #include "Globals/AppGlobals.h"
+#include "Graph/RenderTarget/RenderDepth.h"
 #include "Graph/RenderTarget/RenderTargetSwapChain.h"
 #include "UI/XamlGlobalState.h"
 #include "UI/XamlView.h"
 #include "UI/XamlViewState.h"
 
-ff::XamlViewState::XamlViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target)
+ff::XamlViewState::XamlViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target, ff::IRenderDepth* depth)
 	: _view(view)
 	, _target(target)
+	, _depth(depth)
 {
 	ff::AppGlobals* appGlobals = _view->GetGlobals()->GetAppGlobals();
 
@@ -53,5 +55,5 @@ void ff::XamlViewState::OnFrameRendering(ff::AppGlobals* globals, ff::AdvanceTyp
 
 void ff::XamlViewState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::IRenderDepth* depth)
 {
-	_view->Render(target, depth);
+	_view->Render(_target, _depth);
 }

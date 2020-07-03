@@ -137,7 +137,7 @@ HRESULT RenderTargetTexture11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_FAIL);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool RenderTargetTexture11::Init(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipLevel)

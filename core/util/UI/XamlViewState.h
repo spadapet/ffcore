@@ -11,8 +11,8 @@ namespace ff
 	class XamlViewState : public ff::State
 	{
 	public:
-		XamlViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target);
-		virtual ~XamlViewState() override;
+		UTIL_API XamlViewState(std::shared_ptr<XamlView> view, ff::IRenderTarget* target, ff::IRenderDepth* depth);
+		UTIL_API virtual ~XamlViewState() override;
 
 		UTIL_API XamlView* GetView() const;
 
@@ -23,6 +23,7 @@ namespace ff
 	private:
 		std::shared_ptr<XamlView> _view;
 		ff::ComPtr<ff::IRenderTarget> _target;
+		ff::ComPtr<ff::IRenderDepth> _depth;
 		ff::EventCookie _sizeChangedCookie;
 	};
 }

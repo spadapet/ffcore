@@ -222,7 +222,7 @@ HRESULT StagingTexture11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
 	_device->AddChild(static_cast<ff::ITexture*>(this));
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool StagingTexture11::Init(const D3D11_TEXTURE2D_DESC& textureDesc, ff::IData* initialData)

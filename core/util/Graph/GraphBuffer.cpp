@@ -71,7 +71,7 @@ HRESULT GraphBuffer11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
 	_device->AddChild(static_cast<ff::IGraphBuffer*>(this));
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool GraphBuffer11::Init(ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData)

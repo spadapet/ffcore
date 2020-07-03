@@ -184,7 +184,7 @@ HRESULT AudioEffect::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 void AudioEffect::OnBufferEnd(AudioEffectPlaying* pPlaying)
@@ -348,7 +348,7 @@ HRESULT AudioEffectPlaying::_Construct(IUnknown* unkOuter)
 	_device->AddChild(this);
 	_device->AddPlaying(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 void AudioEffectPlaying::_DeleteThis()

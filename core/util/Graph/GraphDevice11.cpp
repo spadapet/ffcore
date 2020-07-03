@@ -167,7 +167,7 @@ HRESULT GraphDevice11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_factory.QueryFrom(unkOuter), E_INVALIDARG);
 	_factory->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool GraphDevice11::Init()

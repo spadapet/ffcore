@@ -188,7 +188,7 @@ HRESULT RenderTargetWindowMetro11::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_FAIL);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 bool RenderTargetWindowMetro11::Init(Windows::UI::Xaml::Window^ window, Windows::UI::ViewManagement::ApplicationView^ view, Windows::UI::Xaml::Controls::SwapChainPanel^ panel)

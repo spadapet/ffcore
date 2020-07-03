@@ -97,7 +97,7 @@ namespace ff
 	template<typename T, typename I>
 	ComPtr<T, I>& ComPtr<T, I>::operator=(const ComPtr<T, I>& rhs)
 	{
-		__super::operator=(rhs);
+		SmartPtr<T, I>::operator=(rhs);
 		return *this;
 	}
 

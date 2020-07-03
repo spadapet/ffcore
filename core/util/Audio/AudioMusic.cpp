@@ -255,7 +255,7 @@ HRESULT AudioMusic::_Construct(IUnknown* unkOuter)
 	assertRetVal(_device.QueryFrom(unkOuter), E_INVALIDARG);
 	_device->AddChild(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 void AudioMusic::OnMusicDone(AudioMusicPlaying* playing)
@@ -375,7 +375,7 @@ HRESULT AudioMusicPlaying::_Construct(IUnknown* unkOuter)
 	_device->AddChild(this);
 	_device->AddPlaying(this);
 
-	return __super::_Construct(unkOuter);
+	return ff::ComBase::_Construct(unkOuter);
 }
 
 void AudioMusicPlaying::_Destruct()
@@ -387,7 +387,7 @@ void AudioMusicPlaying::_Destruct()
 		_mediaCallback->SetParent(nullptr);
 	}
 
-	__super::_Destruct();
+	ff::ComBase::_Destruct();
 }
 
 AudioMusicPlaying::State AudioMusicPlaying::GetState() const

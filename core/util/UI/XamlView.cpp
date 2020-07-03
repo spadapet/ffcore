@@ -7,7 +7,7 @@
 #include "UI/XamlGlobalState.h"
 #include "UI/XamlView.h"
 
-ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* content, ff::IRenderTarget* target, bool perPixelAntiAlias, bool subPixelRendering)
+ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* content, bool perPixelAntiAlias, bool subPixelRendering)
 	: _globals(globals)
 	, _focused(false)
 	, _enabled(true)
@@ -35,8 +35,6 @@ ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* conte
 	_viewBox->SetStretchDirection(Noesis::StretchDirection::StretchDirection_Both);
 	_viewBox->SetStretch(Noesis::Stretch::Stretch_Fill);
 	_viewBox->SetChild(_viewGrid);
-
-	SetSize(target);
 }
 
 ff::XamlView::~XamlView()
