@@ -13,7 +13,7 @@
         <Command>&quot;$(FFCoreRoot)\msbuild\respack.exe&quot; $(ResJsonDebugOption) -in &quot;%(FullPath)&quot; -out &quot;$(GeneratedFilesDir)%(Filename).pack&quot; $(ResJsonRefOption) $(ResJsonAdditionalOptions)</Command>
         <Outputs>$(GeneratedFilesDir)%(Filename).pack</Outputs>
         <TreatOutputAsContent Condition=" '$(AppType)' == 'Metro' ">true</TreatOutputAsContent>
-        <AdditionalInputs>%(RootDir)%(Directory)**\*</AdditionalInputs>
+        <AdditionalInputs>%(RootDir)%(Directory)**\*;$(AdditionalResJsonInputs)</AdditionalInputs>
       </ResJson>
     </ItemGroup>
 

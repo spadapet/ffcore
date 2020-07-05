@@ -173,6 +173,7 @@
     <ClCompile Include="Types\Hash.cpp" />
     <ClCompile Include="Types\MemAlloc.cpp" />
     <ClCompile Include="Types\Timer.cpp" />
+    <ClCompile Include="UI\DelegateCommand.cpp" />
     <ClCompile Include="UI\Internal\XamlFontProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlKeyMap.cpp" />
     <ClCompile Include="UI\Internal\XamlProvider.cpp" />
@@ -358,6 +359,7 @@
     <ClInclude Include="Types\SmartPtr.h" />
     <ClInclude Include="Types\Timer.h" />
     <ClInclude Include="Types\Vector.h" />
+    <ClInclude Include="UI\DelegateCommand.h" />
     <ClInclude Include="UI\Internal\XamlFontProvider.h" />
     <ClInclude Include="UI\Internal\XamlKeyMap.h" />
     <ClInclude Include="UI\Internal\XamlProvider.h" />
