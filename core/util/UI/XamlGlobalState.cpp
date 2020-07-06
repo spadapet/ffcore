@@ -542,8 +542,12 @@ void ff::XamlGlobalState::StaticSoftwareKeyboardCallback(void* user, Noesis::UIE
 	globals->SoftwareKeyboardCallback(focused, open);
 }
 
+void NsRegisterReflectionAppInteractivity();
+
 void ff::XamlGlobalState::RegisterComponents()
 {
+	::NsRegisterReflectionAppInteractivity();
+
 	Noesis::RegisterComponent<ff::BoolToCollapsedConverter>();
 	Noesis::RegisterComponent<ff::BoolToObjectConverter>();
 	Noesis::RegisterComponent<ff::BoolToVisibleConverter>();
