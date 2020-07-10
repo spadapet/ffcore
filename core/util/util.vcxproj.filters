@@ -707,9 +707,6 @@
     <ClCompile Include="UI\Interactivity\TriggerCollection.cpp">
       <Filter>UI\Interactivity</Filter>
     </ClCompile>
-    <ClCompile Include="UI\XamlStyleInteraction.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1278,9 +1275,6 @@
     </ClInclude>
     <ClInclude Include="UI\Interactivity\DataBindingHelper.h">
       <Filter>UI\Interactivity</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\XamlStyleInteraction.h">
-      <Filter>UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
