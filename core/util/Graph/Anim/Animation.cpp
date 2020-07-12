@@ -94,7 +94,7 @@ void AnimationPlayer::AdvanceAnimation(ff::ItemCollector<ff::AnimationEvent>* fr
 	bool firstAdvance = !_advances;
 	float beginFrame = _frame;
 	_advances += 1.0f;
-	_frame = _start + (_advances * _fps / 60.0f);
+	_frame = _start + (_advances * _fps / ff::ADVANCES_PER_SECOND_F);
 
 	if (frameEvents)
 	{
@@ -198,7 +198,7 @@ static ff::ModuleStartup Register([](ff::Module& module)
 
 Animation::Animation()
 	: _length(0)
-	, _fps(60)
+	, _fps(ff::ADVANCES_PER_SECOND_F)
 	, _method(ff::KeyFrames::MethodType::None)
 {
 }

@@ -400,7 +400,7 @@ void ff::DebugPageState::RenderText(AppGlobals* globals, IRenderTarget* target, 
 
 void ff::DebugPageState::RenderCharts(AppGlobals* globals, IRenderTarget* target)
 {
-	const float viewFps = 60;
+	const float viewFps = ff::ADVANCES_PER_SECOND_F;
 	const float viewSeconds = MAX_QUEUE_SIZE / viewFps;
 	const float scale = 16;
 	const float viewFpsInverse = 1 / viewFps;

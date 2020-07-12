@@ -1,24 +1,33 @@
 #include "pch.h"
 #include "COM/ComAlloc.h"
+#include "Input/DeviceEvent.h"
 #include "Input/Joystick/JoystickDevice.h"
 #include "Input/Joystick/JoystickInput.h"
 
 #if METRO_APP
 
 class __declspec(uuid("3292c799-eb7a-4337-b2c2-87861ec1a03f"))
-	JoystickInput : public ff::ComBase, public ff::IJoystickInput
+	JoystickInput
+	: public ff::ComBase
+	, public ff::IJoystickInput
+	, public ff::IDeviceEventProvider
 {
 public:
 	DECLARE_HEADER(JoystickInput);
 
 	bool Init();
 
-	// IJoystickInput
+	// IInputDevice
 	virtual void Advance() override;
-	virtual void Reset() override;
+	virtual void KillPending() override;
+	virtual bool IsConnected() const override;
 
+	// IJoystickInput
 	virtual size_t GetCount() const override;
 	virtual ff::IJoystickDevice* GetJoystick(size_t index) const override;
+
+	// IDeviceEventProvider
+	virtual void SetSink(ff::IDeviceEventSink * sink) override;
 
 private:
 	ref class JoyEvents
@@ -48,6 +57,7 @@ private:
 
 BEGIN_INTERFACES(JoystickInput)
 	HAS_INTERFACE(ff::IJoystickInput)
+	HAS_INTERFACE(ff::IDeviceEventProvider)
 END_INTERFACES()
 
 bool ff::CreateJoystickInput(IJoystickInput** obj)
@@ -55,7 +65,7 @@ bool ff::CreateJoystickInput(IJoystickInput** obj)
 	assertRetVal(obj, false);
 	*obj = nullptr;
 
-	ComPtr<JoystickInput> pInput;
+	ComPtr<JoystickInput, ff::IJoystickInput> pInput;
 	assertHrRetVal(ComAllocator<JoystickInput>::CreateInstance(&pInput), false);
 	assertRetVal(pInput->Init(), false);
 
@@ -146,10 +156,25 @@ void JoystickInput::Advance()
 	}
 }
 
-void JoystickInput::Reset()
+void JoystickInput::KillPending()
 {
-	_joysticks.Clear();
-	verify(Init());
+	for (ff::IXboxJoystick* device : _joysticks)
+	{
+		device->KillPending();
+	}
+}
+
+bool JoystickInput::IsConnected() const
+{
+	for (ff::IXboxJoystick* device : _joysticks)
+	{
+		if (device->IsConnected())
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 size_t JoystickInput::GetCount() const
@@ -161,6 +186,18 @@ ff::IJoystickDevice* JoystickInput::GetJoystick(size_t index) const
 {
 	assertRetVal(index >= 0 && index < _joysticks.Size(), nullptr);
 	return _joysticks[index];
+}
+
+void JoystickInput::SetSink(ff::IDeviceEventSink* sink)
+{
+	for (size_t i = 0; i < GetCount(); i++)
+	{
+		ff::ComPtr<ff::IDeviceEventProvider> provider;
+		if (provider.QueryFrom(GetJoystick(i)))
+		{
+			provider->SetSink(sink);
+		}
+	}
 }
 
 void JoystickInput::OnGamepadAdded(Platform::Object^ sender, Windows::Gaming::Input::Gamepad^ gamepad)

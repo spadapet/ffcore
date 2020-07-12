@@ -151,6 +151,7 @@ void MetroGlobalsEvents::OnActiveChanged(Platform::Object^ sender, Windows::UI::
 {
 	assertRet(_globals);
 	_globals->OnActiveChanged();
+	_globals->OnFocusChanged();
 }
 
 void MetroGlobalsEvents::OnVisibilityChanged(Platform::Object^ sender, Windows::UI::Core::VisibilityChangedEventArgs^ args)
@@ -284,6 +285,11 @@ bool ff::MetroGlobals::IsWindowActive()
 bool ff::MetroGlobals::IsWindowVisible()
 {
 	return _window && _window->Visible;
+}
+
+bool ff::MetroGlobals::IsWindowFocused()
+{
+	return IsWindowActive();
 }
 
 ff::ComPtr<ff::IRenderTargetWindow> ff::MetroGlobals::CreateRenderTargetWindow()

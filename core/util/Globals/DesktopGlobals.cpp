@@ -108,6 +108,14 @@ bool ff::DesktopGlobals::ListenWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LP
 		}
 		break;
 
+	case WM_SETFOCUS:
+	case WM_KILLFOCUS:
+		if (hwnd == _hwnd)
+		{
+			OnFocusChanged();
+		}
+		break;
+
 	case WM_SIZE:
 		if (hwnd == _hwndTop)
 		{
@@ -188,6 +196,11 @@ bool ff::DesktopGlobals::IsWindowVisible()
 	return _hwnd && !::IsIconic(_hwnd);
 }
 
+bool ff::DesktopGlobals::IsWindowFocused()
+{
+	return _hwnd && ::GetFocus() == _hwnd;
+}
+
 ff::ComPtr<ff::IRenderTargetWindow> ff::DesktopGlobals::CreateRenderTargetWindow()
 {
 	return GetGraph()->CreateRenderTargetWindow(_hwnd);
@@ -210,7 +223,7 @@ ff::ComPtr<ff::IKeyboardDevice> ff::DesktopGlobals::CreateKeyboardDevice()
 ff::ComPtr<ff::IJoystickInput> ff::DesktopGlobals::CreateJoystickInput()
 {
 	ff::ComPtr<ff::IJoystickInput> joystickInput;
-	assertRetVal(ff::CreateJoystickInput(&joystickInput), nullptr);
+	assertRetVal(ff::CreateJoystickInput(_hwnd, &joystickInput), nullptr);
 	return joystickInput;
 }
 

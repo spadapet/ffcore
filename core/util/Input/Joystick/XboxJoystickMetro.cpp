@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "COM/ComAlloc.h"
+#include "Input/DeviceEvent.h"
 #include "Input/InputMapping.h"
 #include "Input/Joystick/JoystickDevice.h"
 #include "Module/Module.h"
@@ -7,7 +8,9 @@
 #if METRO_APP
 
 class __declspec(uuid("a46186b2-1e05-4a3b-bce0-547b42c2bcf5"))
-	XboxJoystick : public ff::ComBase, public ff::IXboxJoystick
+	XboxJoystick
+	: public ff::ComBase
+	, public ff::IXboxJoystick
 {
 public:
 	DECLARE_HEADER(XboxJoystick);
@@ -50,18 +53,18 @@ public:
 	virtual void SetGamepad(Windows::Gaming::Input::Gamepad^ gamepad) override;
 
 private:
+	static const int VK_GAMEPAD_FIRST = VK_GAMEPAD_A;
+	static const int VK_GAMEPAD_COUNT = VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT - VK_GAMEPAD_A + 1;
+
 	void CheckPresses(const Windows::Gaming::Input::GamepadReading& prevState);
 	BYTE& GetPressed(int vk);
 	BYTE GetPressed(int vk) const;
-
-	static const int VK_GAMEPAD_FIRST = VK_GAMEPAD_A;
-	static const int VK_GAMEPAD_COUNT = VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT - VK_GAMEPAD_A + 1;
 
 	Windows::Gaming::Input::Gamepad^ _gamepad;
 	Windows::Gaming::Input::GamepadReading _state;
 	float _triggerPressing[2];
 	ff::PointFloat _stickPressing[2];
-	BYTE _pressed[VK_GAMEPAD_COUNT];
+	std::array<BYTE, VK_GAMEPAD_COUNT> _pressed;
 };
 
 BEGIN_INTERFACES(XboxJoystick)
@@ -75,7 +78,7 @@ bool ff::CreateXboxJoystick(Windows::Gaming::Input::Gamepad^ gamepad, IXboxJoyst
 	assertRetVal(device, false);
 	*device = nullptr;
 
-	ComPtr<XboxJoystick> pDevice;
+	ComPtr<XboxJoystick, ff::IJoystickDevice> pDevice;
 	assertHrRetVal(ComAllocator<XboxJoystick>::CreateInstance(&pDevice), false);
 	assertRetVal(pDevice->Init(gamepad), false);
 
@@ -103,6 +106,7 @@ bool XboxJoystick::Init(Windows::Gaming::Input::Gamepad^ gamepad)
 void XboxJoystick::Advance()
 {
 	Windows::Gaming::Input::GamepadReading prevState = _state;
+	std::array<BYTE, VK_GAMEPAD_COUNT> prevPressed = _pressed;
 
 	if (_gamepad)
 	{
@@ -120,7 +124,7 @@ void XboxJoystick::Advance()
 
 void XboxJoystick::KillPending()
 {
-	// state is polled, so there is never pending input
+	// UWP handles key down/up events
 }
 
 static bool WasPressed(

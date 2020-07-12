@@ -4,8 +4,8 @@
 ff::GlobalTime::GlobalTime()
 {
 	ff::ZeroObject(*this);
-	_advancesPerSecond = 60;
-	_advancesPerSecondD = 60.0;
+	_advancesPerSecond = ff::ADVANCES_PER_SECOND;
+	_advancesPerSecondD = ff::ADVANCES_PER_SECOND_D;
 	_secondsPerAdvance = 1.0 / _advancesPerSecondD;
 	_timeScale = 1.0;
 }

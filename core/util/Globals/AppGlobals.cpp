@@ -102,6 +102,11 @@ ff::IJoystickInput* ff::AppGlobals::GetJoysticks() const
 	return _joysticks;
 }
 
+ff::IJoystickInput* ff::AppGlobals::GetJoysticksDebug() const
+{
+	return _joysticksDebug;
+}
+
 ff::IRenderTargetWindow* ff::AppGlobals::GetTarget() const
 {
 	return _target;
@@ -441,6 +446,11 @@ void ff::AppGlobals::OnVisibilityChanged()
 	}
 }
 
+void ff::AppGlobals::OnFocusChanged()
+{
+	KillPendingInput();
+}
+
 void ff::AppGlobals::OnSizeChanged()
 {
 	UpdateSwapChain();
@@ -638,11 +648,17 @@ bool ff::AppGlobals::InitializeJoystick()
 
 	::WriteLog(L"APP_INIT_JOYSTICKS");
 	assertRetVal(_joysticks = CreateJoystickInput(), false);
+	assertRetVal(_joysticksDebug = CreateJoystickInput(), false);
 
 	ComPtr<IDeviceEventProvider> provider;
 	if (provider.QueryFrom(_joysticks))
 	{
 		provider->SetSink(_deviceEvents);
+	}
+
+	if (provider.QueryFrom(_joysticksDebug))
+	{
+		provider->SetSink(_deviceEventsDebug);
 	}
 
 	return true;
@@ -894,6 +910,39 @@ void ff::AppGlobals::ValidateGraphDevice()
 	}
 }
 
+void ff::AppGlobals::KillPendingInput()
+{
+	if (_keyboard)
+	{
+		_keyboard->KillPending();
+	}
+
+	if (_pointer)
+	{
+		_pointer->KillPending();
+	}
+
+	if (_joysticks)
+	{
+		_joysticks->KillPending();
+	}
+
+	if (_keyboardDebug)
+	{
+		_keyboardDebug->KillPending();
+	}
+
+	if (_pointerDebug)
+	{
+		_pointerDebug->KillPending();
+	}
+
+	if (_joysticksDebug)
+	{
+		_joysticksDebug->KillPending();
+	}
+}
+
 void ff::AppGlobals::FrameAdvanceAndRender()
 {
 	FrameAdvanceDebugResources();
@@ -961,6 +1010,11 @@ void ff::AppGlobals::FrameAdvanceDebugResources()
 	if (_pointerDebug)
 	{
 		_pointerDebug->Advance();
+	}
+
+	if (_joysticksDebug)
+	{
+		_joysticksDebug->Advance();
 	}
 
 	if (_deviceEventsDebug)

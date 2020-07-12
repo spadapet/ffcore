@@ -48,6 +48,6 @@ namespace ff
 
 #else
 	size_t GetMaxXboxJoystickCount();
-	bool CreateXboxJoystick(size_t index, IJoystickDevice** device);
+	bool CreateXboxJoystick(HWND hwnd, size_t index, IJoystickDevice** device);
 #endif
 }

@@ -16,7 +16,6 @@ public:
 	DECLARE_HEADER(KeyboardDevice);
 
 	bool Init(Windows::UI::Xaml::Window^ window);
-	void Destroy();
 
 	// IInputDevice
 	virtual void Advance() override;
@@ -46,16 +45,14 @@ private:
 		void OnCharacterReceived(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::CharacterReceivedEventArgs^ args);
 		void OnKeyDown(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
 		void OnKeyUp(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
-		void OnWindowActivated(Platform::Object^ sender, Windows::UI::Core::WindowActivatedEventArgs^ args);
 
 		KeyboardDevice* _parent;
-		Windows::Foundation::EventRegistrationToken _tokens[4];
+		Windows::Foundation::EventRegistrationToken _tokens[3];
 	};
 
 	void OnCharacterReceived(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::CharacterReceivedEventArgs^ args);
 	void OnKeyDown(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
 	void OnKeyUp(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
-	void OnWindowActivated(Platform::Object^ sender, Windows::UI::Core::WindowActivatedEventArgs^ args);
 
 	static const size_t KEY_COUNT = 256;
 
@@ -95,10 +92,6 @@ KeyboardDevice::KeyEvents::KeyEvents(KeyboardDevice* pParent)
 	_tokens[2] = _parent->_window->CoreWindow->KeyUp +=
 		ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow^, Windows::UI::Core::KeyEventArgs^>(
 			this, &KeyEvents::OnKeyUp);
-
-	_tokens[3] = _parent->_window->Activated +=
-		ref new Windows::UI::Xaml::WindowActivatedEventHandler(
-			this, &KeyEvents::OnWindowActivated);
 }
 
 KeyboardDevice::KeyEvents::~KeyEvents()
@@ -113,7 +106,6 @@ void KeyboardDevice::KeyEvents::Destroy()
 		_parent->_window->CoreWindow->CharacterReceived -= _tokens[0];
 		_parent->_window->CoreWindow->KeyDown -= _tokens[1];
 		_parent->_window->CoreWindow->KeyUp -= _tokens[2];
-		_parent->_window->Activated -= _tokens[3];
 		_parent = nullptr;
 	}
 }
@@ -134,12 +126,6 @@ void KeyboardDevice::KeyEvents::OnKeyUp(Windows::UI::Core::CoreWindow^ sender, W
 {
 	assertRet(_parent);
 	_parent->OnKeyUp(sender, args);
-}
-
-void KeyboardDevice::KeyEvents::OnWindowActivated(Platform::Object^ sender, Windows::UI::Core::WindowActivatedEventArgs^ args)
-{
-	assertRet(_parent);
-	_parent->OnWindowActivated(sender, args);
 }
 
 // static
@@ -164,7 +150,11 @@ KeyboardDevice::KeyboardDevice()
 
 KeyboardDevice::~KeyboardDevice()
 {
-	Destroy();
+	if (_events)
+	{
+		_events->Destroy();
+		_events = nullptr;
+	}
 }
 
 bool KeyboardDevice::Init(Windows::UI::Xaml::Window^ window)
@@ -174,17 +164,6 @@ bool KeyboardDevice::Init(Windows::UI::Xaml::Window^ window)
 	_events = ref new KeyEvents(this);
 
 	return true;
-}
-
-void KeyboardDevice::Destroy()
-{
-	KillPending();
-
-	if (_events)
-	{
-		_events->Destroy();
-		_events = nullptr;
-	}
 }
 
 void KeyboardDevice::Advance()
@@ -307,11 +286,6 @@ void KeyboardDevice::OnKeyUp(Windows::UI::Core::CoreWindow^ sender, Windows::UI:
 
 	ff::LockMutex lock(_mutex);
 	_pendingKeyInfo._keys[vk] = false;
-}
-
-void KeyboardDevice::OnWindowActivated(Platform::Object^ sender, Windows::UI::Core::WindowActivatedEventArgs^ args)
-{
-	KillPending();
 }
 
 #endif

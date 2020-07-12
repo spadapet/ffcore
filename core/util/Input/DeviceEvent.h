@@ -77,9 +77,6 @@ namespace ff
 	{
 	public:
 		virtual bool Advance() = 0;
-		virtual void KillPending() = 0;
-		virtual void Pause() = 0;
-		virtual void Unpause() = 0;
 		virtual void AddEvent(const DeviceEvent& event) = 0;
 	};
 

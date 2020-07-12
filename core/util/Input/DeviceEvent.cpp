@@ -68,16 +68,12 @@ public:
 
 	// IDeviceEventSink
 	virtual bool Advance() override;
-	virtual void KillPending() override;
-	virtual void Pause() override;
-	virtual void Unpause() override;
 	virtual void AddEvent(const ff::DeviceEvent& event) override;
 
 private:
 	ff::Mutex _mutex;
 	ff::Vector<ff::DeviceEvent> _events;
 	ff::Vector<ff::DeviceEvent> _eventsPending;
-	bool _paused;
 };
 
 BEGIN_INTERFACES(DeviceEventSink)
@@ -92,7 +88,6 @@ ff::ComPtr<ff::IDeviceEventSink> ff::CreateDeviceEventSink()
 }
 
 DeviceEventSink::DeviceEventSink()
-	: _paused(false)
 {
 }
 
@@ -114,32 +109,11 @@ bool DeviceEventSink::Advance()
 	return !_events.IsEmpty();
 }
 
-void DeviceEventSink::KillPending()
-{
-	ff::LockMutex lock(_mutex);
-	_eventsPending.Clear();
-}
-
-void DeviceEventSink::Pause()
-{
-	ff::LockMutex lock(_mutex);
-	_paused = true;
-}
-
-void DeviceEventSink::Unpause()
-{
-	ff::LockMutex lock(_mutex);
-	_paused = false;
-}
-
 void DeviceEventSink::AddEvent(const ff::DeviceEvent& event)
 {
 	if (event._type != ff::DeviceEventType::None)
 	{
 		ff::LockMutex lock(_mutex);
-		if (!_paused)
-		{
-			_eventsPending.Push(event);
-		}
+		_eventsPending.Push(event);
 	}
 }

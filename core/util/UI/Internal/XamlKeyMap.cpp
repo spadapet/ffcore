@@ -126,6 +126,19 @@ struct XamlKeyMap
 
 		_keys[VK_NUMLOCK] = Noesis::Key_NumLock;
 		_keys[VK_SCROLL] = Noesis::Key_Scroll;
+
+		_keys[VK_GAMEPAD_DPAD_LEFT] = Noesis::Key_GamepadLeft;
+		_keys[VK_GAMEPAD_DPAD_UP] = Noesis::Key_GamepadUp;
+		_keys[VK_GAMEPAD_DPAD_RIGHT] = Noesis::Key_GamepadRight;
+		_keys[VK_GAMEPAD_DPAD_DOWN] = Noesis::Key_GamepadDown;
+		_keys[VK_GAMEPAD_LEFT_THUMBSTICK_LEFT] = Noesis::Key_GamepadLeft;
+		_keys[VK_GAMEPAD_LEFT_THUMBSTICK_UP] = Noesis::Key_GamepadUp;
+		_keys[VK_GAMEPAD_LEFT_THUMBSTICK_RIGHT] = Noesis::Key_GamepadRight;
+		_keys[VK_GAMEPAD_LEFT_THUMBSTICK_DOWN] = Noesis::Key_GamepadDown;
+		_keys[VK_GAMEPAD_A] = Noesis::Key_GamepadAccept;
+		_keys[VK_GAMEPAD_B] = Noesis::Key_GamepadCancel;
+		_keys[VK_GAMEPAD_MENU] = Noesis::Key_GamepadMenu;
+		_keys[VK_GAMEPAD_VIEW] = Noesis::Key_GamepadView;
 	}
 
 	Noesis::Key GetKey(unsigned int vk)

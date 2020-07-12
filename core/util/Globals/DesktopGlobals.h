@@ -29,6 +29,7 @@ namespace ff
 		virtual bool GetSwapChainSize(ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation) override;
 		virtual bool IsWindowActive() override;
 		virtual bool IsWindowVisible() override;
+		virtual bool IsWindowFocused() override;
 		virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow() override;
 		virtual ff::ComPtr<ff::IPointerDevice> CreatePointerDevice() override;
 		virtual ff::ComPtr<ff::IKeyboardDevice> CreateKeyboardDevice() override;

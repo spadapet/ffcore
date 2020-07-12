@@ -61,6 +61,7 @@ namespace ff
 		UTIL_API IKeyboardDevice* GetKeys() const;
 		UTIL_API IKeyboardDevice* GetKeysDebug() const;
 		UTIL_API IJoystickInput* GetJoysticks() const;
+		UTIL_API IJoystickInput* GetJoysticksDebug() const;
 		UTIL_API IRenderTargetWindow* GetTarget() const;
 		UTIL_API IRenderDepth* GetDepth() const;
 		UTIL_API IDeviceEventSink* GetDeviceEvents() const;
@@ -107,6 +108,7 @@ namespace ff
 		void OnAppResuming();
 		void OnActiveChanged();
 		void OnVisibilityChanged();
+		void OnFocusChanged();
 		void OnSizeChanged();
 		void OnLogicalDpiChanged();
 		void OnDisplayContentsInvalidated();
@@ -116,6 +118,7 @@ namespace ff
 		virtual bool GetSwapChainSize(ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation) = 0;
 		virtual bool IsWindowActive() = 0;
 		virtual bool IsWindowVisible() = 0;
+		virtual bool IsWindowFocused() = 0;
 		virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow() = 0;
 		virtual ff::ComPtr<ff::IPointerDevice> CreatePointerDevice() = 0;
 		virtual ff::ComPtr<ff::IKeyboardDevice> CreateKeyboardDevice() = 0;
@@ -148,6 +151,7 @@ namespace ff
 		bool UpdateTargetVisible();
 		bool UpdateDpiScale();
 		void ValidateGraphDevice();
+		void KillPendingInput();
 
 		// Update during game loop
 		void FrameAdvanceAndRender();
@@ -181,6 +185,7 @@ namespace ff
 		ComPtr<IKeyboardDevice> _keyboard;
 		ComPtr<IKeyboardDevice> _keyboardDebug;
 		ComPtr<IJoystickInput> _joysticks;
+		ComPtr<IJoystickInput> _joysticksDebug;
 		ComPtr<IPointerDevice> _pointer;
 		ComPtr<IPointerDevice> _pointerDebug;
 		ComPtr<IDeviceEventSink> _deviceEvents;

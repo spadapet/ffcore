@@ -99,8 +99,6 @@ bool KeyboardDevice::Init(HWND hwnd)
 
 void KeyboardDevice::Destroy()
 {
-	KillPending();
-
 	if (_hwnd)
 	{
 		ff::ThreadGlobals::Get()->RemoveWindowListener(_hwnd, this);
@@ -180,11 +178,6 @@ bool KeyboardDevice::ListenWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 	{
 	case WM_DESTROY:
 		Destroy();
-		break;
-
-	case WM_SETFOCUS:
-	case WM_KILLFOCUS:
-		KillPending();
 		break;
 
 	case WM_KEYDOWN:

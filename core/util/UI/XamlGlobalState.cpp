@@ -70,24 +70,24 @@ static bool NoesisAssertHandler(const char* file, uint32_t line, const char* exp
 
 static void NoesisErrorHandler(const char* file, uint32_t line, const char* message, bool fatal)
 {
+	if (s_errorHandler)
+	{
+		s_errorHandler(file, line, message, fatal);
+	}
+
 #ifdef _DEBUG
 	if (::IsDebuggerPresent())
 	{
 		__debugbreak();
 	}
 #endif
-
-	if (s_errorHandler)
-	{
-		s_errorHandler(file, line, message, fatal);
-	}
 }
 
 static void* NoesisAlloc(void* user, size_t size)
 {
 	void* ptr = std::malloc(size);
 #if DEBUG_MEM_ALLOC
-	ff::Log::DebugTraceF(L"[NOESIS/Mem] ALLOC: %lu (%lu)\n", ptr, size);
+	ff::Log::DebugTraceF(L"[NOESIS/Mem] ALLOC: 0x%lx (%lu)\n", ptr, size);
 #endif
 	return ptr;
 }
@@ -96,7 +96,7 @@ static void* NoesisRealloc(void* user, void* ptr, size_t size)
 {
 	void* ptr2 = std::realloc(ptr, size);
 #if DEBUG_MEM_ALLOC
-	ff::Log::DebugTraceF(L"[NOESIS/Mem] REALLOC: %lu -> %lu (%lu)\n", ptr, ptr2, size);
+	ff::Log::DebugTraceF(L"[NOESIS/Mem] REALLOC: 0x%lx -> 0x%lx (%lu)\n", ptr, ptr2, size);
 #endif
 	return ptr2;
 }
@@ -104,7 +104,7 @@ static void* NoesisRealloc(void* user, void* ptr, size_t size)
 static void NoesisDealloc(void* user, void* ptr)
 {
 #if DEBUG_MEM_ALLOC
-	ff::Log::DebugTraceF(L"[NOESIS/Mem] FREE: %lu\n", ptr);
+	ff::Log::DebugTraceF(L"[NOESIS/Mem] FREE: 0x%lx\n", ptr);
 #endif
 	return std::free(ptr);
 }
@@ -113,7 +113,7 @@ static size_t NoesisAllocSize(void* user, void* ptr)
 {
 	size_t size = _msize(ptr);
 #if DEBUG_MEM_ALLOC
-	ff::Log::DebugTraceF(L"[NOESIS/Mem] SIZE: %lu (%lu)\n", ptr, size);
+	ff::Log::DebugTraceF(L"[NOESIS/Mem] SIZE: 0x%lx (%lu)\n", ptr, size);
 #endif
 	return size;
 }

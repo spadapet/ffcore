@@ -47,7 +47,7 @@ namespace ff
 	class CreateAnimation
 	{
 	public:
-		CreateAnimation(float length, float fps = 60.0f, KeyFrames::MethodType method = KeyFrames::MethodType::Default);
+		CreateAnimation(float length, float fps = ff::ADVANCES_PER_SECOND_F, KeyFrames::MethodType method = KeyFrames::MethodType::Default);
 		CreateAnimation(const CreateAnimation& rhs);
 		CreateAnimation(CreateAnimation&& rhs);
 

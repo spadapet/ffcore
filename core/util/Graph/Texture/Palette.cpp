@@ -70,7 +70,7 @@ bool Palette::Init(ff::IPaletteData* data, float cyclesPerSecond)
 void Palette::Advance()
 {
 	size_t count = _data->GetRowCount();
-	_row = (size_t)(++_advances * _cps * count / 60.0f) % count;
+	_row = (size_t)(++_advances * _cps * count / ff::ADVANCES_PER_SECOND_F) % count;
 }
 
 ff::IPaletteData* Palette::GetData()

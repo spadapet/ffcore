@@ -293,11 +293,6 @@ bool PointerDevice::ListenWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 		}
 		break;
 
-	case WM_SETFOCUS:
-	case WM_KILLFOCUS:
-		KillPending();
-		break;
-
 	case WM_CAPTURECHANGED:
 		if (!s_releasingCapture)
 		{
