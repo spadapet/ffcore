@@ -168,7 +168,6 @@
     <ClCompile Include="Types\Hash.cpp" />
     <ClCompile Include="Types\MemAlloc.cpp" />
     <ClCompile Include="Types\Timer.cpp" />
-    <ClCompile Include="UI\DelegateCommand.cpp" />
     <ClCompile Include="UI\Interactivity\App.Interactivity.cpp" />
     <ClCompile Include="UI\Interactivity\AttachableObject.cpp" />
     <ClCompile Include="UI\Interactivity\Behavior.cpp" />
@@ -214,7 +213,6 @@
     <ClCompile Include="UI\Interactivity\TriggerBase.Interactivity.cpp" />
     <ClCompile Include="UI\Interactivity\TriggerCollection.cpp" />
     <ClCompile Include="UI\Internal\XamlShaders11.cpp" />
-    <ClCompile Include="UI\XamlConverters.cpp" />
     <ClCompile Include="UI\Internal\XamlFontProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlKeyMap.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderDevice11.cpp" />
@@ -224,7 +222,9 @@
     <ClCompile Include="UI\Internal\XamlTextureProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlView11.cpp" />
     <ClCompile Include="UI\Internal\XamlProvider.cpp" />
-    <ClCompile Include="UI\NotifyPropertyChangedBase.cpp" />
+    <ClCompile Include="UI\Utility\Converters.cpp" />
+    <ClCompile Include="UI\Utility\DelegateCommand.cpp" />
+    <ClCompile Include="UI\Utility\NotifyPropertyChangedBase.cpp" />
     <ClCompile Include="UI\XamlGlobalHelper.cpp" />
     <ClCompile Include="UI\XamlGlobalState.cpp" />
     <ClCompile Include="UI\XamlView.cpp" />
@@ -399,10 +399,8 @@
     <ClInclude Include="Types\SmartPtr.h" />
     <ClInclude Include="Types\Timer.h" />
     <ClInclude Include="Types\Vector.h" />
-    <ClInclude Include="UI\DelegateCommand.h" />
     <ClInclude Include="UI\Interactivity\ComparisonLogic.h" />
     <ClInclude Include="UI\Interactivity\DataBindingHelper.h" />
-    <ClInclude Include="UI\XamlConverters.h" />
     <ClInclude Include="UI\Internal\XamlFontProvider.h" />
     <ClInclude Include="UI\Internal\XamlKeyMap.h" />
     <ClInclude Include="UI\Internal\XamlRenderDevice11.h" />
@@ -413,7 +411,9 @@
     <ClInclude Include="UI\Internal\XamlTextureProvider.h" />
     <ClInclude Include="UI\Internal\XamlView11.h" />
     <ClInclude Include="UI\Internal\XamlProvider.h" />
-    <ClInclude Include="UI\NotifyPropertyChangedBase.h" />
+    <ClInclude Include="UI\Utility\Converters.h" />
+    <ClInclude Include="UI\Utility\DelegateCommand.h" />
+    <ClInclude Include="UI\Utility\NotifyPropertyChangedBase.h" />
     <ClInclude Include="UI\XamlGlobalHelper.h" />
     <ClInclude Include="UI\XamlGlobalState.h" />
     <ClInclude Include="UI\XamlView.h" />
