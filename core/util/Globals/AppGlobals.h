@@ -150,7 +150,7 @@ namespace ff
 		bool UpdateTargetActive();
 		bool UpdateTargetVisible();
 		bool UpdateDpiScale();
-		void ValidateGraphDevice();
+		void ValidateGraphDevice(bool force);
 		void KillPendingInput();
 
 		// Update during game loop

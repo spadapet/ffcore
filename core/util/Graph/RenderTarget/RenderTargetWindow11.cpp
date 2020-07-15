@@ -72,9 +72,11 @@ private:
 	ff::ComPtr<ID3D11Texture2D> _backBuffer;
 	ff::ComPtr<ID3D11RenderTargetView> _target;
 	ff::Event<ff::PointInt, double, int> _sizeChangedEvent;
+	ff::Mutex _hwndMutex;
 	HWND _hwnd;
 	HWND _hwndTop;
 	bool _mainWindow;
+	bool _wasFullScreenOnClose;
 	double _dpiScale;
 };
 
@@ -100,6 +102,8 @@ bool CreateRenderTargetWindow11(ff::IGraphDevice* pDevice, HWND hwnd, ff::IRende
 RenderTargetWindow11::RenderTargetWindow11()
 	: _hwnd(nullptr)
 	, _hwndTop(nullptr)
+	, _mainWindow(false)
+	, _wasFullScreenOnClose(false)
 	, _dpiScale(1)
 {
 }
@@ -110,7 +114,7 @@ RenderTargetWindow11::~RenderTargetWindow11()
 
 	if (_swapChain)
 	{
-		_swapChain->SetFullscreenState(FALSE, nullptr);
+		_swapChain->SetFullscreenState(false, nullptr);
 	}
 
 	if (_device)
@@ -122,7 +126,7 @@ RenderTargetWindow11::~RenderTargetWindow11()
 HRESULT RenderTargetWindow11::_Construct(IUnknown* unkOuter)
 {
 	assertRetVal(_device.QueryFrom(unkOuter), E_FAIL);
-	_device->AddChild(this);
+	_device->AddChild(this, 1);
 
 	return ff::ComBase::_Construct(unkOuter);
 }
@@ -143,8 +147,12 @@ bool RenderTargetWindow11::Init(HWND hwnd)
 	return true;
 }
 
+// Game thread (accessing HWND on background thread)
 bool RenderTargetWindow11::InitSetSize()
 {
+	ff::LockMutex lock(_hwndMutex);
+	noAssertRetVal(_hwnd, false);
+
 	ff::PointInt pixelSize;
 	double dpiScale;
 	DXGI_MODE_ROTATION nativeOrientation;
@@ -195,6 +203,8 @@ bool RenderTargetWindow11::EnsureRenderTarget()
 
 void RenderTargetWindow11::Destroy()
 {
+	ff::LockMutex lock(_hwndMutex);
+
 	if (_hwndTop)
 	{
 		ff::ThreadGlobals::Get()->RemoveWindowListener(_hwndTop, this);
@@ -224,14 +234,14 @@ bool RenderTargetWindow11::SetSize(ff::PointInt pixelSize, double dpiScale, DXGI
 		swapDimensions ? pixelSize.y : pixelSize.x,
 		swapDimensions ? pixelSize.x : pixelSize.y);
 
-	if (_swapChain)
+	if (_swapChain) // on game thread
 	{
 		if (bufferSize != GetBufferSize())
 		{
 			assertRetVal(ResizeSwapChain(bufferSize), false);
 		}
 	}
-	else // first init
+	else // first init on UI thread
 	{
 		DXGI_SWAP_CHAIN_DESC1 desc;
 		ff::ZeroObject(desc);
@@ -359,9 +369,17 @@ ID3D11RenderTargetView* RenderTargetWindow11::GetTarget()
 bool RenderTargetWindow11::Present(bool vsync)
 {
 	assertRetVal(_swapChain && _target, false);
+	HRESULT hr = E_FAIL;
 
-	DXGI_PRESENT_PARAMETERS pp = { 0 };
-	HRESULT hr = _swapChain->Present1(vsync ? 1 : 0, 0, &pp);
+	if (_hwnd)
+	{
+		ff::LockMutex lock(_hwndMutex);
+		if (_hwnd)
+		{
+			DXGI_PRESENT_PARAMETERS pp = { 0 };
+			hr = _swapChain->Present1(vsync ? 1 : 0, 0, &pp);
+		}
+	}
 
 	_device->AsGraphDevice11()->GetContext()->DiscardView1(_target, nullptr, 0);
 	_device->AsGraphDevice11()->GetStateContext().SetTargets(nullptr, 0, nullptr);
@@ -378,17 +396,29 @@ bool RenderTargetWindow11::IsFullScreen()
 {
 	noAssertRetVal(_swapChain && _mainWindow, false);
 
-	ff::ComPtr<IDXGIOutput> pOutput;
-	BOOL bFullScreen = FALSE;
+	if (_hwnd)
+	{
+		ff::LockMutex lock(_hwndMutex);
+		if (_hwnd)
+		{
+			ff::ComPtr<IDXGIOutput> output;
+			BOOL fullScreen = FALSE;
+			return SUCCEEDED(_swapChain->GetFullscreenState(&fullScreen, &output)) && fullScreen;
+		}
+	}
 
-	return SUCCEEDED(_swapChain->GetFullscreenState(&bFullScreen, &pOutput)) && bFullScreen;
+	return _wasFullScreenOnClose;
 }
 
 bool RenderTargetWindow11::SetFullScreen(bool bFullScreen)
 {
-	if (!bFullScreen != !IsFullScreen() && SUCCEEDED(_swapChain->SetFullscreenState(bFullScreen, nullptr)))
+	if (_hwnd)
 	{
-		return InitSetSize();
+		ff::LockMutex lock(_hwndMutex);
+		if (_hwnd && !bFullScreen != !IsFullScreen() && SUCCEEDED(_swapChain->SetFullscreenState(bFullScreen, nullptr)))
+		{
+			return InitSetSize();
+		}
 	}
 
 	return false;
@@ -396,20 +426,14 @@ bool RenderTargetWindow11::SetFullScreen(bool bFullScreen)
 
 bool RenderTargetWindow11::ListenWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& nResult)
 {
-	if (hwnd == _hwnd)
+	if (hwnd == _hwnd && DeviceWindowProc(hwnd, msg, wParam, lParam, nResult))
 	{
-		if (DeviceWindowProc(hwnd, msg, wParam, lParam, nResult))
-		{
-			return true;
-		}
+		return true;
 	}
 
-	if (hwnd == _hwndTop)
+	if (hwnd == _hwndTop && DeviceTopWindowProc(hwnd, msg, wParam, lParam, nResult))
 	{
-		if (DeviceTopWindowProc(hwnd, msg, wParam, lParam, nResult))
-		{
-			return true;
-		}
+		return true;
 	}
 
 	return false;
@@ -419,6 +443,10 @@ bool RenderTargetWindow11::DeviceWindowProc(HWND hwnd, UINT msg, WPARAM wParam, 
 {
 	switch (msg)
 	{
+	case WM_CLOSE:
+		_wasFullScreenOnClose = IsFullScreen();
+		break;
+
 	case WM_DESTROY:
 		Destroy();
 		break;
@@ -432,6 +460,16 @@ bool RenderTargetWindow11::DeviceWindowProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					self->SetFullScreen(false);
 				});
 		}
+#ifdef _DEBUG
+		else if (wParam == VK_RETURN && ::GetKeyState(VK_CONTROL) < 0)
+		{
+			ff::ComPtr<RenderTargetWindow11> self = this;
+			ff::GetGameThreadDispatch()->Post([self]()
+				{
+					self->GetDevice()->Reset();
+				});
+		}
+#endif
 		break;
 
 	case WM_SYSKEYDOWN:

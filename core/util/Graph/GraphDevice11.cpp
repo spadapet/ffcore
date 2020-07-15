@@ -49,7 +49,7 @@ public:
 #else
 	virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow(HWND hwnd) override;
 #endif
-	virtual void AddChild(ff::IGraphDeviceChild* child) override;
+	virtual void AddChild(ff::IGraphDeviceChild* child, int resetPriority) override;
 	virtual void RemoveChild(ff::IGraphDeviceChild* child) override;
 
 	// IGraphDeviceDxgi
@@ -76,7 +76,7 @@ private:
 	ff::ComPtr<IDXGIAdapterX> _dxgiAdapter;
 	ff::ComPtr<IDXGIFactoryX> _dxgiFactory;
 	ff::ComPtr<IDXGIDeviceX> _dxgiDevice;
-	ff::Vector<ff::IGraphDeviceChild*> _children;
+	ff::Vector<std::pair<ff::IGraphDeviceChild*, int>> _children;
 	ff::GraphContext11 _stateContext;
 	ff::GraphStateCache11 _stateCache;
 };
@@ -309,19 +309,26 @@ ff::ComPtr<ff::IRenderTargetSwapChain> GraphDevice11::CreateRenderTargetSwapChai
 
 #endif
 
-void GraphDevice11::AddChild(ff::IGraphDeviceChild* child)
+void GraphDevice11::AddChild(ff::IGraphDeviceChild* child, int resetPriority)
 {
 	ff::LockMutex lock(_mutex);
 
-	assert(child && _children.Find(child) == ff::INVALID_SIZE);
-	_children.Push(child);
+	assert(child);
+	_children.Push(std::make_pair(child, resetPriority));
 }
 
 void GraphDevice11::RemoveChild(ff::IGraphDeviceChild* child)
 {
 	ff::LockMutex lock(_mutex);
 
-	verify(_children.DeleteItem(child));
+	for (const std::pair<ff::IGraphDeviceChild*, int>& pair : _children)
+	{
+		if (pair.first == child)
+		{
+			_children.DeleteItem(pair);
+			break;
+		}
+	}
 }
 
 bool GraphDevice11::Reset()
@@ -344,10 +351,15 @@ bool GraphDevice11::Reset()
 
 	assertRetVal(Init(), false);
 
+	std::stable_sort(_children.begin(), _children.end(), [](const std::pair<ff::IGraphDeviceChild*, int>& lhs, const std::pair<ff::IGraphDeviceChild*, int>& rhs)
+		{
+			return lhs.second < rhs.second;
+		});
+
 	bool status = true;
 	for (auto i = _children.rbegin(); i != _children.rend(); i++)
 	{
-		if (!(*i)->Reset())
+		if (!i->first->Reset())
 		{
 			status = false;
 		}

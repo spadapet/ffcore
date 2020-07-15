@@ -466,7 +466,7 @@ void ff::AppGlobals::OnLogicalDpiChanged()
 
 void ff::AppGlobals::OnDisplayContentsInvalidated()
 {
-	ValidateGraphDevice();
+	ValidateGraphDevice(true);
 }
 
 bool ff::AppGlobals::HasFlag(AppGlobalsFlags flag) const
@@ -768,7 +768,7 @@ void ff::AppGlobals::GameThread()
 
 			if (_target && !_target->Present(true))
 			{
-				ValidateGraphDevice();
+				ValidateGraphDevice(false);
 			}
 		}
 	}
@@ -889,14 +889,21 @@ bool ff::AppGlobals::UpdateDpiScale()
 	return false;
 }
 
-void ff::AppGlobals::ValidateGraphDevice()
+void ff::AppGlobals::ValidateGraphDevice(bool force)
 {
 	ComPtr<IGraphDevice> graph = _graph;
 	if (graph)
 	{
-		auto func = [graph]()
+		auto func = [force, graph]()
 		{
-			graph->ResetIfNeeded();
+			if (force)
+			{
+				graph->Reset();
+			}
+			else
+			{
+				graph->ResetIfNeeded();
+			}
 		};
 
 		if (_gameLoopDispatch)

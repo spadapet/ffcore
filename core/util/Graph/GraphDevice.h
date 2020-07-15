@@ -54,7 +54,7 @@ namespace ff
 		virtual ComPtr<IRenderTargetWindow> CreateRenderTargetWindow(HWND hwnd) = 0;
 #endif
 
-		virtual void AddChild(IGraphDeviceChild* child) = 0;
+		virtual void AddChild(IGraphDeviceChild* child, int resetPriority = 0) = 0;
 		virtual void RemoveChild(IGraphDeviceChild* child) = 0;
 	};
 
