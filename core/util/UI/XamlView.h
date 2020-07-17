@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Graph/GraphDeviceChild.h"
+
 namespace Noesis
 {
 	struct IView;
@@ -13,7 +15,7 @@ namespace ff
 	class XamlGlobalState;
 
 	// Renders XAML to any render target at any size
-	class XamlView : public std::enable_shared_from_this<XamlView>
+	class XamlView : public ff::IGraphDeviceChild, public std::enable_shared_from_this<XamlView>
 	{
 	public:
 		XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* content, bool perPixelAntiAlias, bool subPixelRendering);
@@ -44,6 +46,10 @@ namespace ff
 		UTIL_API bool IsEnabled() const;
 		UTIL_API void SetBlockInputBelow(bool block);
 		UTIL_API bool IsInputBelowBlocked() const;
+
+		// IGraphDeviceChild
+		virtual IGraphDevice* GetDevice() const override;
+		virtual bool Reset() override;
 
 	protected:
 		virtual void RenderBegin(ff::IRenderTarget* target, ff::IRenderDepth* depth, const ff::RectFloat* viewRect) = 0;

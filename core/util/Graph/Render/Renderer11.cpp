@@ -1256,7 +1256,8 @@ void Renderer11::EndRender()
 
 	Flush();
 
-	_device->AsGraphDevice11()->GetStateContext().SetResourcesPS(::NULL_TEXTURES.data(), 0, ::NULL_TEXTURES.size());
+	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
+	context.SetResourcesPS(::NULL_TEXTURES.data(), 0, ::NULL_TEXTURES.size());
 
 	_state = State::Valid;
 	_paletteStack.Resize(1);

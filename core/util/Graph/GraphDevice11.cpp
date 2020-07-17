@@ -175,6 +175,7 @@ bool GraphDevice11::Init()
 	assertRetVal(!_device && !_deviceContext, false);
 	assertRetVal(::InternalCreateDevice(&_device, &_deviceContext), false);
 	assertRetVal(_dxgiDevice.QueryFrom(_device), false);
+	assertHrRetVal(_dxgiDevice->SetMaximumFrameLatency(1), false);
 
 	_dxgiAdapter = ff::GetParentDXGI<IDXGIAdapterX>(_device);
 	assertRetVal(_dxgiAdapter, false);
@@ -333,17 +334,12 @@ void GraphDevice11::RemoveChild(ff::IGraphDeviceChild* child)
 
 bool GraphDevice11::Reset()
 {
+	_stateContext.Clear();
 	_stateContext.Reset(nullptr);
 	_stateCache.Reset(nullptr);
 
-	if (_deviceContext)
-	{
-		_deviceContext->ClearState();
-		_deviceContext->Flush();
-		_deviceContext = nullptr;
-	}
-
 	_device = nullptr;
+	_deviceContext = nullptr;
 	_device2d = nullptr;
 	_dxgiAdapter = nullptr;
 	_dxgiFactory = nullptr;

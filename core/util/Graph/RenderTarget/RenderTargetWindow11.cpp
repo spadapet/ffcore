@@ -126,7 +126,7 @@ RenderTargetWindow11::~RenderTargetWindow11()
 HRESULT RenderTargetWindow11::_Construct(IUnknown* unkOuter)
 {
 	assertRetVal(_device.QueryFrom(unkOuter), E_FAIL);
-	_device->AddChild(this, 1);
+	_device->AddChild(this, -100);
 
 	return ff::ComBase::_Construct(unkOuter);
 }
@@ -241,11 +241,9 @@ bool RenderTargetWindow11::SetSize(ff::PointInt pixelSize, double dpiScale, DXGI
 			assertRetVal(ResizeSwapChain(bufferSize), false);
 		}
 	}
-	else // first init on UI thread
+	else // first init on UI thread, reset is on game thread
 	{
-		DXGI_SWAP_CHAIN_DESC1 desc;
-		ff::ZeroObject(desc);
-
+		DXGI_SWAP_CHAIN_DESC1 desc{};
 		desc.Width = bufferSize.x;
 		desc.Height = bufferSize.y;
 		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -258,17 +256,10 @@ bool RenderTargetWindow11::SetSize(ff::PointInt pixelSize, double dpiScale, DXGI
 
 		ff::ComPtr<IDXGISwapChain1> swapChain;
 		ff::ComPtr<IDXGIFactoryX> factory = _device->AsGraphDeviceDxgi()->GetDxgiFactory();
-		HWND hwnd = _hwnd;
 
-		assertHrRetVal(factory->CreateSwapChainForHwnd(_device->AsGraphDevice11()->Get3d(), hwnd, &desc, nullptr, nullptr, &swapChain), false);
+		assertHrRetVal(factory->MakeWindowAssociation(_hwnd, DXGI_MWA_NO_WINDOW_CHANGES), false);
+		assertHrRetVal(factory->CreateSwapChainForHwnd(_device->AsGraphDevice11()->Get3d(), _hwnd, &desc, nullptr, nullptr, &swapChain), false);
 		assertRetVal(_swapChain.QueryFrom(swapChain), false);
-
-		ff::GetMainThreadDispatch()->Post([swapChain, factory, hwnd]()
-			{
-				verifyHr(factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES));
-			}, true);
-
-		assertHrRetVal(_device->AsGraphDeviceDxgi()->GetDxgi()->SetMaximumFrameLatency(1), false);
 	}
 
 	EnsureRenderTarget();
@@ -461,7 +452,7 @@ bool RenderTargetWindow11::DeviceWindowProc(HWND hwnd, UINT msg, WPARAM wParam, 
 				});
 		}
 #ifdef _DEBUG
-		else if (wParam == VK_RETURN && ::GetKeyState(VK_CONTROL) < 0)
+		else if (wParam == VK_RETURN && ::GetKeyState(VK_CONTROL) < 0 && ::GetKeyState(VK_SHIFT) < 0)
 		{
 			ff::ComPtr<RenderTargetWindow11> self = this;
 			ff::GetGameThreadDispatch()->Post([self]()

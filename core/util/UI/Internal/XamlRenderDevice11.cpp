@@ -201,6 +201,7 @@ void ff::XamlRenderDevice11::UpdateTexture(Noesis::Texture* texture, uint32_t le
 	box.bottom = y + height;
 	box.back = 1;
 
+	// TODO: Add Update to ITexture and cache in the saved image
 	unsigned int pitch = (desc.Format == DXGI_FORMAT_R8_UNORM) ? width : width * 4;
 	_graph->AsGraphDevice11()->GetStateContext().UpdateSubresource(resource, 0, &box, data, pitch, 0);
 }
@@ -362,6 +363,12 @@ ff::IGraphDevice* ff::XamlRenderDevice11::GetDevice() const
 
 bool ff::XamlRenderDevice11::Reset()
 {
+	_vertexCBHash = 0;
+	_pixelCBHash = 0;
+	_effectCBHash = 0;
+	_texDimensionsCBHash = 0;
+
+	CreateBuffers();
 	CreateStateObjects();
 	CreateShaders();
 
@@ -719,6 +726,11 @@ void ff::XamlRenderDevice11::CreateShaders()
 	static_assert(_countof(pShaders) == _countof(_programs));
 
 	ff::ComPtr<ff::IDataVector> shaderData = ff::DecompressShaders();
+
+	for (uint32_t i = 0; i < _countof(_layouts); i++)
+	{
+		_layouts[i].Release();
+	}
 
 	for (uint32_t i = 0; i < _countof(vShaders); i++)
 	{

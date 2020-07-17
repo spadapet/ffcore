@@ -19,6 +19,8 @@ ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* conte
 	, _content(content)
 	, _matrix(new DirectX::XMMATRIX[2])
 {
+	GetDevice()->AddChild(this);
+
 	_matrix[0] = DirectX::XMMatrixIdentity();
 	_matrix[1] = DirectX::XMMatrixIdentity();
 
@@ -39,6 +41,8 @@ ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* conte
 
 ff::XamlView::~XamlView()
 {
+	GetDevice()->RemoveChild(this);
+
 	Destroy();
 	delete[] _matrix;
 }
@@ -189,6 +193,31 @@ void ff::XamlView::SetBlockInputBelow(bool block)
 bool ff::XamlView::IsInputBelowBlocked() const
 {
 	return _blockedBelow;
+}
+
+ff::IGraphDevice* ff::XamlView::GetDevice() const
+{
+	return _globals->GetAppGlobals()->GetGraph();
+}
+
+bool ff::XamlView::Reset()
+{
+	//unsigned int flags = _view->GetFlags();
+	//_view->GetRenderer()->Shutdown();
+	//_view = Noesis::GUI::CreateView(_viewBox);
+	//_view->SetFlags(flags);
+	//_view->GetRenderer()->Init(_globals->GetRenderDevice());
+	//
+	//if (_focused)
+	//{
+	//	_view->Activate();
+	//}
+	//else
+	//{
+	//	_view->Deactivate();
+	//}
+
+	return true;
 }
 
 void ff::XamlView::Advance()
