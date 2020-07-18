@@ -83,17 +83,14 @@ struct OriginalTextureInfo
 	OriginalTextureInfo& operator=(const OriginalTextureInfo& rhs);
 
 	ff::ComPtr<ff::ITexture> _rgbTexture;
-	const DirectX::ScratchImage* _rgbScratch;
-	DirectX::ScratchImage _rgbScratchData;
+	std::shared_ptr<DirectX::ScratchImage> _rgbScratch;
 };
 
 OriginalTextureInfo::OriginalTextureInfo()
-	: _rgbScratch(nullptr)
 {
 }
 
 OriginalTextureInfo::OriginalTextureInfo(const OriginalTextureInfo& rhs)
-	: _rgbScratch(nullptr)
 {
 	*this = rhs;
 }
@@ -101,12 +98,7 @@ OriginalTextureInfo::OriginalTextureInfo(const OriginalTextureInfo& rhs)
 OriginalTextureInfo::OriginalTextureInfo(OriginalTextureInfo&& rhs)
 	: _rgbTexture(std::move(rhs._rgbTexture))
 	, _rgbScratch(rhs._rgbScratch)
-	, _rgbScratchData(std::move(_rgbScratchData))
 {
-	if (rhs._rgbScratch == &rhs._rgbScratchData)
-	{
-		_rgbScratch = &_rgbScratchData;
-	}
 }
 
 OriginalTextureInfo& OriginalTextureInfo::operator=(const OriginalTextureInfo& rhs)
@@ -417,7 +409,7 @@ static bool CreateOriginalTextures(ff::TextureFormat format, const ff::Vector<Op
 			textureInfo._rgbTexture = texture->Convert(captureFormat, 1);
 			assertRetVal(textureInfo._rgbTexture, false);
 
-			textureInfo._rgbScratch = textureInfo._rgbTexture->AsTextureDxgi()->Capture(textureInfo._rgbScratchData);
+			textureInfo._rgbScratch = textureInfo._rgbTexture->AsTextureDxgi()->Capture();
 			assertRetVal(textureInfo._rgbScratch, false);
 
 			originalTextures.SetKey(std::move(texture), std::move(textureInfo));

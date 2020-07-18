@@ -323,12 +323,6 @@
     <ClCompile Include="Graph\Render\Renderer11.cpp">
       <Filter>Graph\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Graph\Texture\StagingTexture11.cpp">
-      <Filter>Graph\Texture</Filter>
-    </ClCompile>
-    <ClCompile Include="Graph\Texture\StaticTexture11.cpp">
-      <Filter>Graph\Texture</Filter>
-    </ClCompile>
     <ClCompile Include="Graph\Texture\TextureView11.cpp">
       <Filter>Graph\Texture</Filter>
     </ClCompile>
@@ -709,6 +703,9 @@
     </ClCompile>
     <ClCompile Include="UI\Utility\NotifyPropertyChangedBase.cpp">
       <Filter>UI\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Texture\Texture11.cpp">
+      <Filter>Graph\Texture</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -31,7 +31,7 @@ namespace ff
 		virtual IPalette* GetPalette() const = 0;
 		virtual ComPtr<ITextureView> CreateView(size_t arrayStart, size_t arrayCount, size_t mipStart, size_t mipCount) = 0;
 		virtual ComPtr<ITexture> Convert(TextureFormat format, size_t mips) = 0;
-		virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, size_t rowPitch, TextureFormat dataFormat) = 0;
+		virtual void Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& rect, const void* data, TextureFormat dataFormat, bool updateLocalCache) = 0;
 
 		virtual ISprite* AsSprite() = 0;
 		virtual ITextureView* AsTextureView() = 0;
@@ -43,7 +43,7 @@ namespace ff
 	{
 	public:
 		virtual DXGI_FORMAT GetDxgiFormat() const = 0;
-		virtual const DirectX::ScratchImage* Capture(DirectX::ScratchImage& tempHolder) = 0;
+		virtual std::shared_ptr<DirectX::ScratchImage> Capture(bool useLocalCache = true) = 0;
 	};
 
 	class ITexture11

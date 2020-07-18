@@ -283,8 +283,12 @@ ff::IGraphDevice* RenderTargetWindow11::GetDevice() const
 
 bool RenderTargetWindow11::Reset()
 {
-	SetFullScreen(false);
-	_swapChain = nullptr;
+	if (_swapChain)
+	{
+		_swapChain->SetFullscreenState(FALSE, nullptr);
+		_swapChain = nullptr;
+	}
+
 	FlushBeforeResize();
 	assertRetVal(InitSetSize(), false);
 

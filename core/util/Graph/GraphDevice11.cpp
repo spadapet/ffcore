@@ -39,8 +39,7 @@ public:
 	virtual std::unique_ptr<ff::IRenderer> CreateRenderer() override;
 	virtual ff::ComPtr<ff::IGraphBuffer> CreateBuffer(ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData) override;
 	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::StringRef path, ff::TextureFormat format, size_t mips) override;
-	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples, ff::IData* initialData) override;
-	virtual ff::ComPtr<ff::ITexture> CreateStagingTexture(ff::PointInt size, ff::TextureFormat format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::IData* initialData) override;
+	virtual ff::ComPtr<ff::ITexture> CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples) override;
 	virtual ff::ComPtr<ff::IRenderDepth> CreateRenderDepth(ff::PointInt size, size_t samples) override;
 	virtual ff::ComPtr<ff::IRenderTarget> CreateRenderTargetTexture(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipLevel) override;
 #if METRO_APP
@@ -224,8 +223,7 @@ std::unique_ptr<ff::IRenderer> GraphDevice11::CreateRenderer()
 
 bool CreateTexture11(ff::IGraphDevice* device, ff::StringRef path, DXGI_FORMAT format, size_t mips, ff::ITexture** texture);
 bool CreateTexture11(ff::IGraphDevice* device, DirectX::ScratchImage&& data, ff::IPaletteData* paletteData, ff::ITexture** texture);
-bool CreateTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, size_t mips, size_t count, size_t samples, ff::IData* initialData, ff::ITexture** texture);
-bool CreateStagingTexture11(ff::IGraphDevice* device, ff::PointInt size, DXGI_FORMAT format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::IData* initialData, ff::ITexture** texture);
+bool CreateTexture11(ff::IGraphDevice* device, const D3D11_TEXTURE2D_DESC& desc, ff::IPaletteData* paletteData, ff::ITexture** texture);
 bool CreateGraphBuffer11(ff::IGraphDevice* device, ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData, ff::IGraphBuffer** buffer);
 
 ff::ComPtr<ff::IGraphBuffer> GraphDevice11::CreateBuffer(ff::GraphBufferType type, size_t size, bool writable, ff::IData* initialData)
@@ -246,16 +244,41 @@ ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(DirectX::ScratchImage&& da
 	return ::CreateTexture11(this, std::move(data), paletteData, &obj) ? obj : nullptr;
 }
 
-ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples, ff::IData* initialData)
+ff::ComPtr<ff::ITexture> GraphDevice11::CreateTexture(ff::PointInt size, ff::TextureFormat format, size_t mips, size_t count, size_t samples)
 {
-	ff::ComPtr<ff::ITexture> obj;
-	return ::CreateTexture11(this, size, ff::ConvertTextureFormat(format), mips, count, samples, initialData, &obj) ? obj : nullptr;
-}
+	assertRetVal(size.x > 0 && size.y > 0, nullptr);
+	assertRetVal(mips > 0 && count > 0 && samples > 0 && ff::NearestPowerOfTwo(samples) == samples, nullptr);
 
-ff::ComPtr<ff::ITexture> GraphDevice11::CreateStagingTexture(ff::PointInt size, ff::TextureFormat format, bool readable, bool writable, size_t mips, size_t count, size_t samples, ff::IData* initialData)
-{
+	DXGI_FORMAT dxgiFormat = ff::ConvertTextureFormat(format);
+
+	// compressed textures must have sizes that are multiples of four
+	if (DirectX::IsCompressed(dxgiFormat) && (size.x % 4 || size.y % 4))
+	{
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		format = ff::ConvertTextureFormat(dxgiFormat);
+	}
+
+	while (samples > 1)
+	{
+		UINT levels;
+		if (FAILED(_device->CheckMultisampleQualityLevels(dxgiFormat, (UINT)samples, &levels)) || !levels)
+		{
+			samples /= 2;
+		}
+	}
+
+	D3D11_TEXTURE2D_DESC desc{};
+	desc.Width = size.x;
+	desc.Height = size.y;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | (!DirectX::IsCompressed(dxgiFormat) ? D3D11_BIND_RENDER_TARGET : 0);
+	desc.Format = dxgiFormat;
+	desc.MipLevels = (UINT)mips;
+	desc.ArraySize = (UINT)count;
+	desc.SampleDesc.Count = (UINT)samples;
+
 	ff::ComPtr<ff::ITexture> obj;
-	return ::CreateStagingTexture11(this, size, ff::ConvertTextureFormat(format), readable, writable, mips, count, samples, initialData, &obj) ? obj : nullptr;
+	return ::CreateTexture11(this, desc, nullptr, &obj) ? obj : nullptr;
 }
 
 bool CreateRenderDepth11(ff::IGraphDevice* pDevice, ff::PointInt size, size_t multiSamples, ff::IRenderDepth** ppDepth);

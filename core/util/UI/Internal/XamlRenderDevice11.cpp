@@ -182,28 +182,8 @@ Noesis::Ptr<Noesis::Texture> ff::XamlRenderDevice11::CreateTexture(const char* l
 
 void ff::XamlRenderDevice11::UpdateTexture(Noesis::Texture* texture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* data)
 {
-	assertRet(!level);
-
-	XamlTexture* texture2 = XamlTexture::Get(texture);
-	ID3D11ShaderResourceView* view = texture2->GetTexture()->AsTextureView()->AsTextureView11()->GetView();
-
-	ff::ComPtr<ID3D11Resource> resource;
-	view->GetResource(&resource);
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	view->GetDesc(&desc);
-
-	D3D11_BOX box;
-	box.left = x;
-	box.top = y;
-	box.front = 0;
-	box.right = x + width;
-	box.bottom = y + height;
-	box.back = 1;
-
-	// TODO: Add Update to ITexture and cache in the saved image
-	unsigned int pitch = (desc.Format == DXGI_FORMAT_R8_UNORM) ? width : width * 4;
-	_graph->AsGraphDevice11()->GetStateContext().UpdateSubresource(resource, 0, &box, data, pitch, 0);
+	ff::ITexture* texture2 = XamlTexture::Get(texture)->GetTexture();
+	texture2->Update(0, level, ff::RectSize(x, y, x + width, y + height), data, texture2->GetFormat(), true);
 }
 
 void ff::XamlRenderDevice11::BeginRender(bool offscreen)
