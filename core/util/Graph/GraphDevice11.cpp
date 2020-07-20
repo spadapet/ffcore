@@ -30,8 +30,7 @@ public:
 	bool Init();
 
 	// IGraphDevice
-	virtual bool Reset() override;
-	virtual bool ResetIfNeeded() override;
+	virtual bool Reset(bool force) override;
 	virtual ff::GraphCounters ResetDrawCount() override;
 	virtual ff::IGraphDeviceDxgi* AsGraphDeviceDxgi() override;
 	virtual ff::IGraphDevice11* AsGraphDevice11() override;
@@ -78,6 +77,8 @@ private:
 	ff::Vector<std::pair<ff::IGraphDeviceChild*, int>> _children;
 	ff::GraphContext11 _stateContext;
 	ff::GraphStateCache11 _stateCache;
+	ff::hash_t _dxgiAdaptersHash;
+	ff::hash_t _dxgiAdapterOutputsHash;
 };
 
 BEGIN_INTERFACES(GraphDevice11)
@@ -93,6 +94,8 @@ ff::ComPtr<ff::IGraphDevice> CreateGraphDevice11(ff::IGraphicFactory* factory)
 }
 
 GraphDevice11::GraphDevice11()
+	: _dxgiAdaptersHash(0)
+	, _dxgiAdapterOutputsHash(0)
 {
 }
 
@@ -177,10 +180,9 @@ bool GraphDevice11::Init()
 	assertHrRetVal(_dxgiDevice->SetMaximumFrameLatency(1), false);
 
 	_dxgiAdapter = ff::GetParentDXGI<IDXGIAdapterX>(_device);
-	assertRetVal(_dxgiAdapter, false);
-
 	_dxgiFactory = ff::GetParentDXGI<IDXGIFactoryX>(_dxgiAdapter);
-	assertRetVal(_dxgiFactory, false);
+	_dxgiAdaptersHash = ff::GetAdaptersHash(_dxgiFactory);
+	_dxgiAdapterOutputsHash = ff::GetAdapterOutputsHash(_dxgiFactory, _dxgiAdapter);
 
 	_stateContext.Reset(_deviceContext);
 	_stateCache.Reset(_device);
@@ -355,8 +357,31 @@ void GraphDevice11::RemoveChild(ff::IGraphDeviceChild* child)
 	}
 }
 
-bool GraphDevice11::Reset()
+bool GraphDevice11::Reset(bool force)
 {
+	if (!force)
+	{
+		if (FAILED(_device->GetDeviceRemovedReason()))
+		{
+			force = true;
+		}
+		else if (!_dxgiFactory->IsCurrent())
+		{
+			ff::ComPtr<IDXGIFactoryX> latestFactory = _factory->AsGraphicFactoryDxgi()->GetDxgiFactory();
+
+			if (_dxgiAdaptersHash != ff::GetAdaptersHash(latestFactory))
+			{
+				force = true;
+			}
+			else if (_dxgiAdapterOutputsHash != ff::GetAdapterOutputsHash(latestFactory, _dxgiAdapter))
+			{
+				force = true;
+			}
+		}
+	}
+
+	noAssertRetVal(force, true);
+
 	_stateContext.Clear();
 	_stateContext.Reset(nullptr);
 	_stateCache.Reset(nullptr);
@@ -384,17 +409,8 @@ bool GraphDevice11::Reset()
 		}
 	}
 
+	assert(status);
 	return status;
-}
-
-bool GraphDevice11::ResetIfNeeded()
-{
-	if (!ff::IsFactoryCurrent(_dxgiFactory) || FAILED(_device->GetDeviceRemovedReason()))
-	{
-		assertRetVal(Reset(), false);
-	}
-
-	return true;
 }
 
 ff::GraphCounters GraphDevice11::ResetDrawCount()
@@ -411,7 +427,7 @@ ID2D1DeviceX* GraphDevice11::Get2d()
 {
 	if (!_device2d && _dxgiDevice)
 	{
-		ff::IGraphicFactory2d* d2d = ff::ProcessGlobals::Get()->GetGraphicFactory()->AsGraphicFactory2d();
+		ff::IGraphicFactory2d* d2d = _factory->AsGraphicFactory2d();
 		assertRetVal(d2d, nullptr);
 
 		ff::ComPtr<ID2D1FactoryX> factory2d = d2d->Get2dFactory();

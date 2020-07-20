@@ -1124,14 +1124,7 @@ void ff::AppGlobals::PendingGraphCommands::Flush(AppGlobals* globals)
 
 			if (globals->GetGraph())
 			{
-				if (force)
-				{
-					globals->GetGraph()->Reset();
-				}
-				else
-				{
-					globals->GetGraph()->ResetIfNeeded();
-				}
+				globals->GetGraph()->Reset(force);
 			}
 		}
 		else if (ff::HasAnyFlags(_flags, Flags::SwapChainBits))

@@ -41,9 +41,8 @@ namespace ff
 	TextureFormat ConvertTextureFormat(DXGI_FORMAT format);
 	UTIL_API DXGI_FORMAT ParseDxgiTextureFormat(StringRef szFormat);
 	UTIL_API TextureFormat ParseTextureFormat(StringRef szFormat);
-
-	bool IsSoftwareAdapter(IDXGIAdapterX* adapter);
-	bool IsFactoryCurrent(IDXGIFactoryX* factory);
+	ff::hash_t GetAdaptersHash(IDXGIFactoryX* factory);
+	ff::hash_t GetAdapterOutputsHash(IDXGIFactoryX* dxgi, IDXGIAdapterX* card);
 	ff::Vector<ff::ComPtr<IDXGIOutputX>> GetAdapterOutputs(IDXGIFactoryX* dxgi, IDXGIAdapterX* card);
 
 	struct SwapChainSize

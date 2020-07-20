@@ -240,7 +240,7 @@ ff::TextureFormat ff::ParseTextureFormat(StringRef szFormat)
 	return ff::ConvertTextureFormat(ParseDxgiTextureFormat(szFormat));
 }
 
-bool ff::IsSoftwareAdapter(IDXGIAdapterX* adapter)
+static bool IsSoftwareAdapter(IDXGIAdapterX* adapter)
 {
 	assertRetVal(adapter, true);
 
@@ -249,7 +249,7 @@ bool ff::IsSoftwareAdapter(IDXGIAdapterX* adapter)
 	return (desc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE) == DXGI_ADAPTER_FLAG3_SOFTWARE;
 }
 
-static ff::hash_t GetAdaptersHash(IDXGIFactoryX* factory)
+ff::hash_t ff::GetAdaptersHash(IDXGIFactoryX* factory)
 {
 	ff::Vector<LUID, 32> luids;
 
@@ -266,37 +266,59 @@ static ff::hash_t GetAdaptersHash(IDXGIFactoryX* factory)
 	return luids.Size() ? ff::HashBytes(luids.ConstData(), luids.ByteSize()) : 0;
 }
 
-bool ff::IsFactoryCurrent(IDXGIFactoryX* factory)
+static ff::ComPtr<IDXGIAdapterX> FixAdapter(IDXGIFactoryX* dxgi, ff::ComPtr<IDXGIAdapterX> card)
 {
-	assertRetVal(factory, false);
-
-	if (factory->IsCurrent())
+	if (dxgi && ::IsSoftwareAdapter(card))
 	{
-		return true;
+		ff::ComPtr<IDXGIAdapter1> defaultAdapter;
+		if (SUCCEEDED(dxgi->EnumAdapters1(0, &defaultAdapter)))
+		{
+			ff::ComPtr<IDXGIAdapterX> defaultAdapterX;
+			if (defaultAdapterX.QueryFrom(defaultAdapter))
+			{
+				card = defaultAdapterX;
+			}
+		}
 	}
 
-	ff::IGraphicFactoryDxgi* dxgi = ff::ProcessGlobals::Get()->GetGraphicFactory()->AsGraphicFactoryDxgi();
-	assertRetVal(dxgi && dxgi->GetDxgiFactory(), false);
+	DXGI_ADAPTER_DESC desc;
+	if (SUCCEEDED(card->GetDesc(&desc)))
+	{
+		ff::ComPtr<IDXGIAdapterX> adapterX;
+		if (SUCCEEDED(dxgi->EnumAdapterByLuid(desc.AdapterLuid, __uuidof(IDXGIAdapterX), (void**)&adapterX)))
+		{
+			card = adapterX;
+		}
+	}
 
-	return ::GetAdaptersHash(factory) == ::GetAdaptersHash(dxgi->GetDxgiFactory());
+	return card;
+}
+
+ff::hash_t ff::GetAdapterOutputsHash(IDXGIFactoryX* dxgi, IDXGIAdapterX* card)
+{
+	ff::Vector<HMONITOR, 32> monitors;
+	ff::ComPtr<IDXGIAdapterX> cardX = ::FixAdapter(dxgi, card);
+
+	ff::ComPtr<IDXGIOutput> output;
+	for (UINT i = 0; SUCCEEDED(cardX->EnumOutputs(i++, &output)); output = nullptr)
+	{
+		DXGI_OUTPUT_DESC desc;
+		if (SUCCEEDED(output->GetDesc(&desc)))
+		{
+			monitors.Push(desc.Monitor);
+		}
+	}
+
+	return monitors.Size() ? ff::HashBytes(monitors.ConstData(), monitors.ByteSize()) : 0;
 }
 
 ff::Vector<ff::ComPtr<IDXGIOutputX>> ff::GetAdapterOutputs(IDXGIFactoryX* dxgi, IDXGIAdapterX* card)
 {
 	ff::ComPtr<IDXGIOutput> output;
 	ff::Vector<ff::ComPtr<IDXGIOutputX>> outputs;
-	ff::ComPtr<IDXGIAdapter1> defaultAdapter;
-	ff::ComPtr<IDXGIAdapterX> defaultAdapterX;
+	ff::ComPtr<IDXGIAdapterX> cardX = ::FixAdapter(dxgi, card);
 
-	if (ff::IsSoftwareAdapter(card) && dxgi && SUCCEEDED(dxgi->EnumAdapters1(0, &defaultAdapter)))
-	{
-		if (defaultAdapterX.QueryFrom(defaultAdapter))
-		{
-			card = defaultAdapterX;
-		}
-	}
-
-	for (UINT i = 0; SUCCEEDED(card->EnumOutputs(i++, &output)); output = nullptr)
+	for (UINT i = 0; SUCCEEDED(cardX->EnumOutputs(i++, &output)); output = nullptr)
 	{
 		ff::ComPtr<IDXGIOutputX> outputX;
 		if (outputX.QueryFrom(output))

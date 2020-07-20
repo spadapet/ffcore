@@ -33,8 +33,7 @@ namespace ff
 		IGraphDevice : public IUnknown
 	{
 	public:
-		virtual bool Reset() = 0;
-		virtual bool ResetIfNeeded() = 0;
+		virtual bool Reset(bool force) = 0;
 		virtual GraphCounters ResetDrawCount() = 0;
 
 		virtual IGraphDeviceDxgi* AsGraphDeviceDxgi() = 0;
