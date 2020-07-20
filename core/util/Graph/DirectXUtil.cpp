@@ -358,15 +358,15 @@ ff::PointInt ff::GetMonitorResolution(HWND hwnd, IDXGIFactoryX* dxgi, IDXGIAdapt
 	return size;
 }
 
-bool ff::GetSwapChainSize(HWND hwnd, ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation)
+bool ff::GetSwapChainSize(HWND hwnd, ff::SwapChainSize& size)
 {
 	RECT clientRect;
 	assertRetVal(hwnd && ::GetClientRect(hwnd, &clientRect), false);
 
-	dpiScale = ::GetDpiForWindow(hwnd) / 96.0;
-	pixelSize = ff::PointInt(clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
-	nativeOrientation = DXGI_MODE_ROTATION_IDENTITY;
-	currentOrientation = DXGI_MODE_ROTATION_IDENTITY;
+	size._dpiScale = ::GetDpiForWindow(hwnd) / 96.0;
+	size._pixelSize = ff::PointInt(clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
+	size._nativeOrientation = DXGI_MODE_ROTATION_IDENTITY;
+	size._currentOrientation = DXGI_MODE_ROTATION_IDENTITY;
 
 	HMONITOR monitor = ::MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
 	MONITORINFOEX mi;
@@ -379,7 +379,7 @@ bool ff::GetSwapChainSize(HWND hwnd, ff::PointInt& pixelSize, double& dpiScale, 
 		dm.dmSize = sizeof(dm);
 		if (::EnumDisplaySettings(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm))
 		{
-			currentOrientation = (DXGI_MODE_ROTATION)(dm.dmDisplayOrientation + 1);
+			size._currentOrientation = (DXGI_MODE_ROTATION)(dm.dmDisplayOrientation + 1);
 		}
 	}
 

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "COM/ComAlloc.h"
-#include "Globals/MetroGlobals.h"
+#include "Globals/AppGlobals.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/GraphFactory.h"
 #include "Graph/RenderTarget/RenderTargetWindow.h"
@@ -24,7 +24,7 @@ public:
 	DECLARE_HEADER(RenderTargetWindowMetro11);
 
 	virtual HRESULT _Construct(IUnknown* unkOuter) override;
-	bool Init(Windows::UI::Xaml::Window^ window, Windows::UI::ViewManagement::ApplicationView^ view, Windows::UI::Xaml::Controls::SwapChainPanel^ panel);
+	bool Init(ff::AppGlobals* globals, Windows::UI::Xaml::Window^ window, Windows::UI::ViewManagement::ApplicationView^ view, Windows::UI::Xaml::Controls::SwapChainPanel^ panel);
 
 	// IGraphDeviceChild
 	virtual ff::IGraphDevice* GetDevice() const override;
@@ -45,7 +45,7 @@ public:
 
 	// IRenderTargetSwapChain
 	virtual bool Present(bool vsync) override;
-	virtual bool SetSize(ff::PointInt pixelSize, double dpiScale, DXGI_MODE_ROTATION nativeOrientation, DXGI_MODE_ROTATION currentOrientation) override;
+	virtual bool SetSize(const ff::SwapChainSize& size) override;
 	virtual ff::Event<ff::PointInt, double, int>& SizeChanged() override;
 
 	// IRenderTargetWindow
@@ -73,21 +73,19 @@ private:
 
 	void OnAcceleratorKeyDown(Windows::UI::Core::CoreDispatcher^ sender, Windows::UI::Core::AcceleratorKeyEventArgs^ args);
 
+	ff::AppGlobals* _globals;
 	ff::ComPtr<ff::IGraphDevice> _device;
 	ff::ComPtr<IDXGISwapChainX> _swapChain;
 	ff::ComPtr<ID3D11Texture2D> _backBuffer;
 	ff::ComPtr<ID3D11RenderTargetView> _target;
 
 	Windows::UI::Xaml::Controls::SwapChainPanel^ _panel;
-	DXGI_MODE_ROTATION _nativeOrientation;
-	DXGI_MODE_ROTATION _currentOrientation;
 	Windows::UI::ViewManagement::ApplicationView^ _view;
 	Windows::UI::Xaml::Window^ _window;
 	KeyEvents^ _keyEvents;
 
 	ff::Event<ff::PointInt, double, int> _sizeChangedEvent;
-	ff::PointInt _panelSize;
-	double _dpiScale;
+	ff::SwapChainSize _size;
 	bool _cachedFullScreenMode;
 	bool _fullScreenMode;
 };
@@ -126,7 +124,7 @@ void RenderTargetWindowMetro11::KeyEvents::OnAcceleratorKeyDown(Windows::UI::Cor
 	_parent->OnAcceleratorKeyDown(sender, args);
 }
 
-bool CreateRenderTargetWindow11(ff::IGraphDevice* pDevice, Windows::UI::Xaml::Window^ window, ff::IRenderTargetWindow** obj)
+bool CreateRenderTargetWindow11(ff::AppGlobals* globals, ff::IGraphDevice* pDevice, Windows::UI::Xaml::Window^ window, ff::IRenderTargetWindow** obj)
 {
 	assertRetVal(obj, false);
 	*obj = nullptr;
@@ -141,33 +139,32 @@ bool CreateRenderTargetWindow11(ff::IGraphDevice* pDevice, Windows::UI::Xaml::Wi
 	assertHrRetVal(ff::ComAllocator<RenderTargetWindowMetro11>::CreateInstance(pDevice, &myObj), false);
 
 	Windows::UI::ViewManagement::ApplicationView^ view = Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
-	assertRetVal(myObj->Init(window, view, panel), false);
+	assertRetVal(myObj->Init(globals, window, view, panel), false);
 
 	*obj = myObj.Detach();
 	return true;
 }
 
-bool CreateRenderTargetSwapChain11(ff::IGraphDevice* pDevice, Windows::UI::Xaml::Controls::SwapChainPanel^ panel, ff::IRenderTargetSwapChain** obj)
+bool CreateRenderTargetSwapChain11(ff::AppGlobals* globals, ff::IGraphDevice* pDevice, Windows::UI::Xaml::Controls::SwapChainPanel^ panel, ff::IRenderTargetSwapChain** obj)
 {
 	assertRetVal(obj, false);
 	*obj = nullptr;
 
 	ff::ComPtr<RenderTargetWindowMetro11, ff::IRenderTarget> myObj;
 	assertHrRetVal(ff::ComAllocator<RenderTargetWindowMetro11>::CreateInstance(pDevice, &myObj), false);
-	assertRetVal(myObj->Init(nullptr, nullptr, panel), false);
+	assertRetVal(myObj->Init(globals, nullptr, nullptr, panel), false);
 
 	*obj = myObj.Detach();
 	return true;
 }
 
 RenderTargetWindowMetro11::RenderTargetWindowMetro11()
-	: _panelSize(0, 0)
-	, _dpiScale(1)
+	: _globals(nullptr)
+	, _size{}
 	, _cachedFullScreenMode(false)
 	, _fullScreenMode(false)
-	, _nativeOrientation(DXGI_MODE_ROTATION_UNSPECIFIED)
-	, _currentOrientation(DXGI_MODE_ROTATION_UNSPECIFIED)
 {
+	_size._dpiScale = 1;
 }
 
 RenderTargetWindowMetro11::~RenderTargetWindowMetro11()
@@ -191,20 +188,26 @@ HRESULT RenderTargetWindowMetro11::_Construct(IUnknown* unkOuter)
 	return ff::ComBase::_Construct(unkOuter);
 }
 
-bool RenderTargetWindowMetro11::Init(Windows::UI::Xaml::Window^ window, Windows::UI::ViewManagement::ApplicationView^ view, Windows::UI::Xaml::Controls::SwapChainPanel^ panel)
+bool RenderTargetWindowMetro11::Init(ff::AppGlobals* globals, Windows::UI::Xaml::Window^ window, Windows::UI::ViewManagement::ApplicationView^ view, Windows::UI::Xaml::Controls::SwapChainPanel^ panel)
 {
-	assertRetVal(_device && panel != nullptr, false);
+	assertRetVal(_device && globals && panel != nullptr, false);
 
+	_globals = globals;
 	_window = window;
 	_view = view;
 	_panel = panel;
 	_keyEvents = (_window != nullptr) ? ref new KeyEvents(this) : nullptr;
 
 	ff::PointDouble panelScale(_panel->CompositionScaleX, _panel->CompositionScaleY);
-	ff::PointInt panelSize((int)(panelScale.x * _panel->ActualWidth), (int)(panelScale.y * _panel->ActualHeight));
 	Windows::Graphics::Display::DisplayInformation^ displayInfo = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
-	assertRetVal(SetSize(panelSize, panelScale.x, ff::GetDxgiRotation(displayInfo->NativeOrientation), ff::GetDxgiRotation(displayInfo->CurrentOrientation)), false);
+	ff::SwapChainSize size;
+	size._pixelSize = ff::PointInt((int)(panelScale.x * _panel->ActualWidth), (int)(panelScale.y * _panel->ActualHeight));
+	size._dpiScale = panelScale.x;
+	size._nativeOrientation = ff::GetDxgiRotation(displayInfo->NativeOrientation);
+	size._currentOrientation = ff::GetDxgiRotation(displayInfo->CurrentOrientation);
+
+	assertRetVal(SetSize(size), false);
 
 	return true;
 }
@@ -218,29 +221,18 @@ bool CreateRenderTarget11(
 	size_t nMipLevel,
 	ID3D11RenderTargetView** ppView);
 
-bool RenderTargetWindowMetro11::SetSize(ff::PointInt pixelSize, double dpiScale, DXGI_MODE_ROTATION nativeOrientation, DXGI_MODE_ROTATION currentOrientation)
+bool RenderTargetWindowMetro11::SetSize(const ff::SwapChainSize& size)
 {
-	if (pixelSize.x < 1 || pixelSize.y < 1)
-	{
-		pixelSize.x = std::max(_panelSize.x, 1);
-		pixelSize.y = std::max(_panelSize.y, 1);
-	}
-
-	DXGI_MODE_ROTATION displayRotation = ff::ComputeDisplayRotation(nativeOrientation, currentOrientation);
-	_panelSize = pixelSize;
-	_dpiScale = dpiScale;
-	_nativeOrientation = nativeOrientation;
-	_currentOrientation = currentOrientation;
+	_size._pixelSize = ff::PointInt(std::max(size._pixelSize.x, 1), std::max(size._pixelSize.y, 1));
+	_size._dpiScale = size._dpiScale;
+	_size._nativeOrientation = size._nativeOrientation;
+	_size._currentOrientation = size._currentOrientation;
 	_cachedFullScreenMode = false;
 	_fullScreenMode = false;
 
-	bool swapDimensions =
-		displayRotation == DXGI_MODE_ROTATION_ROTATE90 ||
-		displayRotation == DXGI_MODE_ROTATION_ROTATE270;
-
-	ff::PointInt bufferSize(
-		swapDimensions ? pixelSize.y : pixelSize.x,
-		swapDimensions ? pixelSize.x : pixelSize.y);
+	DXGI_MODE_ROTATION displayRotation = ff::ComputeDisplayRotation(size._nativeOrientation, size._currentOrientation);
+	bool swapDimensions = (displayRotation == DXGI_MODE_ROTATION_ROTATE90 || displayRotation == DXGI_MODE_ROTATION_ROTATE270);
+	ff::PointInt bufferSize(swapDimensions ? _size._pixelSize.y : _size._pixelSize.x, swapDimensions ? _size._pixelSize.x : _size._pixelSize.y);
 
 	if (_swapChain)
 	{
@@ -258,9 +250,7 @@ bool RenderTargetWindowMetro11::SetSize(ff::PointInt pixelSize, double dpiScale,
 	}
 	else // first init
 	{
-		DXGI_SWAP_CHAIN_DESC1 desc;
-		ff::ZeroObject(desc);
-
+		DXGI_SWAP_CHAIN_DESC1 desc{};
 		desc.Width = bufferSize.x;
 		desc.Height = bufferSize.y;
 		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -272,8 +262,7 @@ bool RenderTargetWindowMetro11::SetSize(ff::PointInt pixelSize, double dpiScale,
 		desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
 		ff::ComPtr<IDXGISwapChain1> swapChain;
-		assertHrRetVal(_device->AsGraphDeviceDxgi()->GetDxgiFactory()->CreateSwapChainForComposition(
-			_device->AsGraphDevice11()->Get3d(), &desc, nullptr, &swapChain), false);
+		assertHrRetVal(_device->AsGraphDeviceDxgi()->GetDxgiFactory()->CreateSwapChainForComposition(_device->AsGraphDevice11()->Get3d(), &desc, nullptr, &swapChain), false);
 		assertRetVal(_swapChain.QueryFrom(swapChain), false);
 		Windows::UI::Xaml::Controls::SwapChainPanel^ panel = _panel;
 
@@ -283,8 +272,6 @@ bool RenderTargetWindowMetro11::SetSize(ff::PointInt pixelSize, double dpiScale,
 				assertRet(nativePanel.QueryFrom(panel));
 				verifyHr(nativePanel->SetSwapChain(swapChain));
 			}, true);
-
-		assertHrRetVal(_device->AsGraphDeviceDxgi()->GetDxgi()->SetMaximumFrameLatency(1), false);
 	}
 
 	// Create render target
@@ -296,8 +283,8 @@ bool RenderTargetWindowMetro11::SetSize(ff::PointInt pixelSize, double dpiScale,
 
 	// Scale the back buffer to the panel
 	DXGI_MATRIX_3X2_F inverseScale = { 0 };
-	inverseScale._11 = 1 / (float)dpiScale;
-	inverseScale._22 = 1 / (float)dpiScale;
+	inverseScale._11 = 1 / (float)_size._dpiScale;
+	inverseScale._22 = 1 / (float)_size._dpiScale;
 
 	assertHrRetVal(_swapChain->SetRotation(displayRotation), false);
 	assertHrRetVal(_swapChain->SetMatrixTransform(&inverseScale), false);
@@ -323,7 +310,7 @@ bool RenderTargetWindowMetro11::Reset()
 	_backBuffer = nullptr;
 	_swapChain = nullptr;
 
-	assertRetVal(SetSize(_panelSize, _dpiScale, _nativeOrientation, _currentOrientation), false);
+	assertRetVal(SetSize(_size), false);
 
 	return true;
 }
@@ -370,7 +357,7 @@ int RenderTargetWindowMetro11::GetRotatedDegrees() const
 
 double RenderTargetWindowMetro11::GetDpiScale() const
 {
-	return _dpiScale;
+	return _size._dpiScale;
 }
 
 void RenderTargetWindowMetro11::Clear(const DirectX::XMFLOAT4* pColor)
@@ -444,18 +431,18 @@ bool RenderTargetWindowMetro11::SetFullScreen(bool fullScreen)
 
 void RenderTargetWindowMetro11::OnAcceleratorKeyDown(Windows::UI::Core::CoreDispatcher^ sender, Windows::UI::Core::AcceleratorKeyEventArgs^ args)
 {
-	if (args->EventType == Windows::UI::Core::CoreAcceleratorKeyEventType::SystemKeyDown &&
-		args->VirtualKey == Windows::System::VirtualKey::Enter &&
-		args->KeyStatus.IsMenuKeyDown)
+	if (args->EventType == Windows::UI::Core::CoreAcceleratorKeyEventType::SystemKeyDown && args->KeyStatus.IsMenuKeyDown)
 	{
-		args->Handled = true;
-
-		ff::ComPtr<RenderTargetWindowMetro11> self = this;
-		ff::GetGameThreadDispatch()->Post([self]()
-			{
-				self->SetFullScreen(!self->IsFullScreen());
-			});
-		args = args;
+		if (args->VirtualKey == Windows::System::VirtualKey::Enter)
+		{
+			args->Handled = true;
+			_globals->SetFullScreen(!IsFullScreen());
+		}
+		else if (args->VirtualKey == Windows::System::VirtualKey::Back)
+		{
+			args->Handled = true;
+			_globals->ValidateGraphDevice(true);
+		}
 	}
 }
 

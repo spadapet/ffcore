@@ -19,6 +19,7 @@ namespace ff
 	class IRenderDepth;
 	class IRenderTargetWindow;
 	class IThreadDispatch;
+	struct SwapChainSize;
 
 	enum class AppGlobalsFlags
 	{
@@ -86,6 +87,7 @@ namespace ff
 		UTIL_API bool IsFullScreen();
 		UTIL_API bool SetFullScreen(bool fullScreen);
 		UTIL_API bool CanSetFullScreen();
+		UTIL_API void ValidateGraphDevice(bool force);
 
 		// App state
 		UTIL_API bool LoadState();
@@ -115,7 +117,7 @@ namespace ff
 
 		virtual bool OnInitialized() = 0;
 		virtual double GetLogicalDpi() = 0;
-		virtual bool GetSwapChainSize(ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation) = 0;
+		virtual bool GetSwapChainSize(ff::SwapChainSize& size) = 0;
 		virtual bool IsWindowActive() = 0;
 		virtual bool IsWindowVisible() = 0;
 		virtual bool IsWindowFocused() = 0;
@@ -150,7 +152,6 @@ namespace ff
 		bool UpdateTargetActive();
 		bool UpdateTargetVisible();
 		bool UpdateDpiScale();
-		void ValidateGraphDevice(bool force);
 		void KillPendingInput();
 
 		// Update during game loop
@@ -210,5 +211,38 @@ namespace ff
 
 		// Events
 		ff::Event<bool> _activeChangedEvent;
+
+		// Graphic commands
+		class PendingGraphCommands
+		{
+		public:
+			PendingGraphCommands();
+
+			void Flush(AppGlobals* globals);
+			void SetFullScreen(bool fullScreen);
+			void ValidateGraphDevice(bool force);
+			void UpdateSwapChain(const ff::SwapChainSize& size);
+
+		private:
+			enum class Flags
+			{
+				None = 0,
+
+				FullScreenFalse = 0x001,
+				FullScreenTrue = 0x002,
+				FullScreenBits = 0x00F,
+
+				ValidateCheck = 0x010,
+				ValidateForce = 0x020,
+				ValidateBits = 0x0F0,
+
+				SwapChainSize = 0x100,
+				SwapChainBits = 0xF00,
+			};
+
+			Mutex _mutex;
+			SwapChainSize _size;
+			Flags _flags;
+		} _graphCommands;
 	};
 }

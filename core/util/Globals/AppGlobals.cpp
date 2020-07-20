@@ -224,7 +224,8 @@ bool ff::AppGlobals::IsFullScreen()
 
 bool ff::AppGlobals::SetFullScreen(bool fullScreen)
 {
-	return CanSetFullScreen() && _target->SetFullScreen(fullScreen);
+	_graphCommands.SetFullScreen(fullScreen);
+	return true;
 }
 
 bool ff::AppGlobals::CanSetFullScreen()
@@ -466,7 +467,7 @@ void ff::AppGlobals::OnLogicalDpiChanged()
 
 void ff::AppGlobals::OnDisplayContentsInvalidated()
 {
-	ValidateGraphDevice(true);
+	ValidateGraphDevice(false);
 }
 
 bool ff::AppGlobals::HasFlag(AppGlobalsFlags flag) const
@@ -821,29 +822,10 @@ void ff::AppGlobals::UpdateSwapChain()
 {
 	assertRet(ff::GetMainThreadDispatch()->IsCurrentThread());
 
-	if (_target)
+	ff::SwapChainSize size;
+	if (GetSwapChainSize(size))
 	{
-		ff::PointInt pixelSize;
-		double dpiScale;
-		DXGI_MODE_ROTATION nativeOrientation;
-		DXGI_MODE_ROTATION currentOrientation;
-
-		if (GetSwapChainSize(pixelSize, dpiScale, nativeOrientation, currentOrientation))
-		{
-			auto func = [this, pixelSize, dpiScale, nativeOrientation, currentOrientation]()
-			{
-				_target->SetSize(pixelSize, dpiScale, nativeOrientation, currentOrientation);
-			};
-
-			if (_gameLoopDispatch)
-			{
-				_gameLoopDispatch->Post(func);
-			}
-			else
-			{
-				func();
-			}
-		}
+		_graphCommands.UpdateSwapChain(size);
 	}
 }
 
@@ -891,30 +873,7 @@ bool ff::AppGlobals::UpdateDpiScale()
 
 void ff::AppGlobals::ValidateGraphDevice(bool force)
 {
-	ComPtr<IGraphDevice> graph = _graph;
-	if (graph)
-	{
-		auto func = [force, graph]()
-		{
-			if (force)
-			{
-				graph->Reset();
-			}
-			else
-			{
-				graph->ResetIfNeeded();
-			}
-		};
-
-		if (_gameLoopDispatch)
-		{
-			_gameLoopDispatch->Post(func);
-		}
-		else
-		{
-			func();
-		}
-	}
+	_graphCommands.ValidateGraphDevice(force);
 }
 
 void ff::AppGlobals::KillPendingInput()
@@ -1008,6 +967,7 @@ void ff::AppGlobals::FrameAdvanceResources()
 void ff::AppGlobals::FrameAdvanceDebugResources()
 {
 	_gameLoopDispatch->Flush();
+	_graphCommands.Flush(this);
 
 	if (_keyboardDebug)
 	{
@@ -1132,4 +1092,78 @@ void ff::AppGlobals::FrameRender(AdvanceType advanceType)
 	_globalTime._renderCount++;
 
 	_gameState->OnFrameRendered(this, advanceType, _target, _depth);
+}
+
+ff::AppGlobals::PendingGraphCommands::PendingGraphCommands()
+	: _flags(Flags::None)
+	, _size{}
+{
+}
+
+void ff::AppGlobals::PendingGraphCommands::Flush(AppGlobals* globals)
+{
+	while (_flags != Flags::None)
+	{
+		ff::LockMutex lock(_mutex);
+		if (ff::HasAnyFlags(_flags, Flags::FullScreenBits))
+		{
+			bool fullScreen = ff::HasAllFlags(_flags, Flags::FullScreenTrue);
+			_flags = ff::ClearFlags(_flags, Flags::FullScreenBits);
+			lock.Unlock();
+
+			if (globals->GetTarget() && globals->GetTarget()->CanSetFullScreen())
+			{
+				globals->GetTarget()->SetFullScreen(fullScreen);
+			}
+		}
+		else if (ff::HasAnyFlags(_flags, Flags::ValidateBits))
+		{
+			bool force = ff::HasAllFlags(_flags, Flags::ValidateForce);
+			_flags = ff::ClearFlags(_flags, Flags::ValidateBits);
+			lock.Unlock();
+
+			if (globals->GetGraph())
+			{
+				if (force)
+				{
+					globals->GetGraph()->Reset();
+				}
+				else
+				{
+					globals->GetGraph()->ResetIfNeeded();
+				}
+			}
+		}
+		else if (ff::HasAnyFlags(_flags, Flags::SwapChainBits))
+		{
+			ff::SwapChainSize size = _size;
+			_flags = ff::ClearFlags(_flags, Flags::SwapChainBits);
+			_size = ff::SwapChainSize{};
+			lock.Unlock();
+
+			if (globals->GetTarget())
+			{
+				globals->GetTarget()->SetSize(size);
+			}
+		}
+	}
+}
+
+void ff::AppGlobals::PendingGraphCommands::SetFullScreen(bool fullScreen)
+{
+	ff::LockMutex lock(_mutex);
+	_flags = ff::SetFlags(ff::ClearFlags(_flags, Flags::FullScreenBits), fullScreen ? Flags::FullScreenTrue : Flags::FullScreenFalse);
+}
+
+void ff::AppGlobals::PendingGraphCommands::ValidateGraphDevice(bool force)
+{
+	ff::LockMutex lock(_mutex);
+	_flags = ff::SetFlags(ff::ClearFlags(_flags, Flags::ValidateBits), force ? Flags::ValidateForce : Flags::ValidateCheck);
+}
+
+void ff::AppGlobals::PendingGraphCommands::UpdateSwapChain(const ff::SwapChainSize& size)
+{
+	ff::LockMutex lock(_mutex);
+	_flags = ff::SetFlags(ff::ClearFlags(_flags, Flags::SwapChainBits), Flags::SwapChainSize);
+	_size = size;
 }

@@ -170,9 +170,9 @@ double ff::DesktopGlobals::GetLogicalDpi()
 		: (double)::GetDpiForSystem();
 }
 
-bool ff::DesktopGlobals::GetSwapChainSize(ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation)
+bool ff::DesktopGlobals::GetSwapChainSize(ff::SwapChainSize& size)
 {
-	return ff::GetSwapChainSize(_hwnd, pixelSize, dpiScale, nativeOrientation, currentOrientation);
+	return ff::GetSwapChainSize(_hwnd, size);
 }
 
 bool ff::DesktopGlobals::IsWindowActive()
@@ -203,7 +203,7 @@ bool ff::DesktopGlobals::IsWindowFocused()
 
 ff::ComPtr<ff::IRenderTargetWindow> ff::DesktopGlobals::CreateRenderTargetWindow()
 {
-	return GetGraph()->CreateRenderTargetWindow(_hwnd);
+	return GetGraph()->CreateRenderTargetWindow(this, _hwnd);
 }
 
 ff::ComPtr<ff::IPointerDevice> ff::DesktopGlobals::CreatePointerDevice()

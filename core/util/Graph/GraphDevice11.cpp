@@ -43,10 +43,10 @@ public:
 	virtual ff::ComPtr<ff::IRenderDepth> CreateRenderDepth(ff::PointInt size, size_t samples) override;
 	virtual ff::ComPtr<ff::IRenderTarget> CreateRenderTargetTexture(ff::ITexture* texture, size_t arrayStart, size_t arrayCount, size_t mipLevel) override;
 #if METRO_APP
-	virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow(Windows::UI::Xaml::Window^ hwnd) override;
-	virtual ff::ComPtr<ff::IRenderTargetSwapChain> CreateRenderTargetSwapChain(Windows::UI::Xaml::Controls::SwapChainPanel^ panel) override;
+	virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow(ff::AppGlobals* globals, Windows::UI::Xaml::Window^ hwnd) override;
+	virtual ff::ComPtr<ff::IRenderTargetSwapChain> CreateRenderTargetSwapChain(ff::AppGlobals* globals, Windows::UI::Xaml::Controls::SwapChainPanel^ panel) override;
 #else
-	virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow(HWND hwnd) override;
+	virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow(ff::AppGlobals* globals, HWND hwnd) override;
 #endif
 	virtual void AddChild(ff::IGraphDeviceChild* child, int resetPriority) override;
 	virtual void RemoveChild(ff::IGraphDeviceChild* child) override;
@@ -301,34 +301,34 @@ ff::ComPtr<ff::IRenderTarget> GraphDevice11::CreateRenderTargetTexture(ff::IText
 
 #if METRO_APP
 
-bool CreateRenderTargetWindow11(ff::IGraphDevice* pDevice, Windows::UI::Xaml::Window^ hwnd, ff::IRenderTargetWindow** ppRender);
+bool CreateRenderTargetWindow11(ff::AppGlobals* globals, ff::IGraphDevice* pDevice, Windows::UI::Xaml::Window^ hwnd, ff::IRenderTargetWindow** ppRender);
 
-ff::ComPtr<ff::IRenderTargetWindow> GraphDevice11::CreateRenderTargetWindow(Windows::UI::Xaml::Window^ hwnd)
+ff::ComPtr<ff::IRenderTargetWindow> GraphDevice11::CreateRenderTargetWindow(ff::AppGlobals* globals, Windows::UI::Xaml::Window^ hwnd)
 {
 	ff::ComPtr<ff::IRenderTargetWindow> obj;
-	return ::CreateRenderTargetWindow11(this, hwnd, &obj) ? obj : nullptr;
+	return ::CreateRenderTargetWindow11(globals, this, hwnd, &obj) ? obj : nullptr;
 }
 
 #else
 
-bool CreateRenderTargetWindow11(ff::IGraphDevice* pDevice, HWND hwnd, ff::IRenderTargetWindow** ppRender);
+bool CreateRenderTargetWindow11(ff::AppGlobals* globals, ff::IGraphDevice* pDevice, HWND hwnd, ff::IRenderTargetWindow** ppRender);
 
-ff::ComPtr<ff::IRenderTargetWindow> GraphDevice11::CreateRenderTargetWindow(HWND hwnd)
+ff::ComPtr<ff::IRenderTargetWindow> GraphDevice11::CreateRenderTargetWindow(ff::AppGlobals* globals, HWND hwnd)
 {
 	ff::ComPtr<ff::IRenderTargetWindow> obj;
-	return ::CreateRenderTargetWindow11(this, hwnd, &obj) ? obj : nullptr;
+	return ::CreateRenderTargetWindow11(globals, this, hwnd, &obj) ? obj : nullptr;
 }
 
 #endif
 
 #if METRO_APP
 
-bool CreateRenderTargetSwapChain11(ff::IGraphDevice* pDevice, Windows::UI::Xaml::Controls::SwapChainPanel^ panel, ff::IRenderTargetSwapChain** obj);
+bool CreateRenderTargetSwapChain11(ff::AppGlobals* globals, ff::IGraphDevice* pDevice, Windows::UI::Xaml::Controls::SwapChainPanel^ panel, ff::IRenderTargetSwapChain** obj);
 
-ff::ComPtr<ff::IRenderTargetSwapChain> GraphDevice11::CreateRenderTargetSwapChain(Windows::UI::Xaml::Controls::SwapChainPanel^ panel)
+ff::ComPtr<ff::IRenderTargetSwapChain> GraphDevice11::CreateRenderTargetSwapChain(ff::AppGlobals* globals, Windows::UI::Xaml::Controls::SwapChainPanel^ panel)
 {
 	ff::ComPtr<ff::IRenderTargetSwapChain> obj;
-	return ::CreateRenderTargetSwapChain11(this, panel, &obj) ? obj : nullptr;
+	return ::CreateRenderTargetSwapChain11(globals, this, panel, &obj) ? obj : nullptr;
 }
 
 #endif

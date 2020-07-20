@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "COM/ComAlloc.h"
+#include "Globals/AppGlobals.h"
 #include "Globals/ProcessGlobals.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/GraphFactory.h"
@@ -27,7 +28,7 @@ public:
 
 	virtual HRESULT _Construct(IUnknown* unkOuter) override;
 
-	bool Init(HWND hwnd);
+	bool Init(ff::AppGlobals* globals, HWND hwnd);
 
 	// IGraphDeviceChild
 	virtual ff::IGraphDevice* GetDevice() const override;
@@ -47,7 +48,7 @@ public:
 	virtual ID3D11RenderTargetView* GetTarget() override;
 
 	// IRenderTargetWindow
-	virtual bool SetSize(ff::PointInt pixelSize, double dpiScale, DXGI_MODE_ROTATION nativeOrientation, DXGI_MODE_ROTATION currentOrientation) override;
+	virtual bool SetSize(const ff::SwapChainSize& size) override;
 	virtual ff::Event<ff::PointInt, double, int>& SizeChanged() override;
 	virtual bool Present(bool vsync) override;
 	virtual bool CanSetFullScreen() const override;
@@ -67,6 +68,7 @@ private:
 	bool DeviceWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result);
 	bool DeviceTopWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result);
 
+	ff::AppGlobals* _globals;
 	ff::ComPtr<ff::IGraphDevice> _device;
 	ff::ComPtr<IDXGISwapChainX> _swapChain;
 	ff::ComPtr<ID3D11Texture2D> _backBuffer;
@@ -86,21 +88,22 @@ BEGIN_INTERFACES(RenderTargetWindow11)
 	HAS_INTERFACE(ff::IRenderTargetWindow)
 END_INTERFACES()
 
-bool CreateRenderTargetWindow11(ff::IGraphDevice* pDevice, HWND hwnd, ff::IRenderTargetWindow** ppRender)
+bool CreateRenderTargetWindow11(ff::AppGlobals* globals, ff::IGraphDevice* pDevice, HWND hwnd, ff::IRenderTargetWindow** ppRender)
 {
 	assertRetVal(ppRender, false);
 	*ppRender = nullptr;
 
 	ff::ComPtr<RenderTargetWindow11, ff::IRenderTarget> pRender;
 	assertHrRetVal(ff::ComAllocator<RenderTargetWindow11>::CreateInstance(pDevice, &pRender), false);
-	assertRetVal(pRender->Init(hwnd), false);
+	assertRetVal(pRender->Init(globals, hwnd), false);
 
 	*ppRender = pRender.Detach();
 	return true;
 }
 
 RenderTargetWindow11::RenderTargetWindow11()
-	: _hwnd(nullptr)
+	: _globals(nullptr)
+	, _hwnd(nullptr)
 	, _hwndTop(nullptr)
 	, _mainWindow(false)
 	, _wasFullScreenOnClose(false)
@@ -114,7 +117,7 @@ RenderTargetWindow11::~RenderTargetWindow11()
 
 	if (_swapChain)
 	{
-		_swapChain->SetFullscreenState(false, nullptr);
+		_swapChain->SetFullscreenState(FALSE, nullptr);
 	}
 
 	if (_device)
@@ -131,10 +134,11 @@ HRESULT RenderTargetWindow11::_Construct(IUnknown* unkOuter)
 	return ff::ComBase::_Construct(unkOuter);
 }
 
-bool RenderTargetWindow11::Init(HWND hwnd)
+bool RenderTargetWindow11::Init(ff::AppGlobals* globals, HWND hwnd)
 {
-	assertRetVal(_device && hwnd, false);
+	assertRetVal(_device && globals && hwnd, false);
 
+	_globals = globals;
 	_mainWindow = (GetWindowStyle(hwnd) & WS_CHILD) == 0;
 	_hwnd = hwnd;
 	_hwndTop = _mainWindow ? hwnd : GetAncestor(hwnd, GA_ROOT);
@@ -153,13 +157,9 @@ bool RenderTargetWindow11::InitSetSize()
 	ff::LockMutex lock(_hwndMutex);
 	noAssertRetVal(_hwnd, false);
 
-	ff::PointInt pixelSize;
-	double dpiScale;
-	DXGI_MODE_ROTATION nativeOrientation;
-	DXGI_MODE_ROTATION currentOrientation;
-
-	assertRetVal(ff::GetSwapChainSize(_hwnd, pixelSize, dpiScale, nativeOrientation, currentOrientation), false);
-	assertRetVal(SetSize(pixelSize, dpiScale, nativeOrientation, currentOrientation), false);
+	ff::SwapChainSize size;
+	assertRetVal(ff::GetSwapChainSize(_hwnd, size), false);
+	assertRetVal(SetSize(size), false);
 
 	return true;
 }
@@ -218,21 +218,14 @@ void RenderTargetWindow11::Destroy()
 	}
 }
 
-bool RenderTargetWindow11::SetSize(ff::PointInt pixelSize, double dpiScale, DXGI_MODE_ROTATION nativeOrientation, DXGI_MODE_ROTATION currentOrientation)
+bool RenderTargetWindow11::SetSize(const ff::SwapChainSize& size)
 {
-	pixelSize.x = std::max(pixelSize.x, 1);
-	pixelSize.y = std::max(pixelSize.y, 1);
+	_dpiScale = size._dpiScale;
 
-	_dpiScale = dpiScale;
-
-	DXGI_MODE_ROTATION displayRotation = ff::ComputeDisplayRotation(nativeOrientation, currentOrientation);
-	bool swapDimensions =
-		displayRotation == DXGI_MODE_ROTATION_ROTATE90 ||
-		displayRotation == DXGI_MODE_ROTATION_ROTATE270;
-
-	ff::PointInt bufferSize(
-		swapDimensions ? pixelSize.y : pixelSize.x,
-		swapDimensions ? pixelSize.x : pixelSize.y);
+	DXGI_MODE_ROTATION displayRotation = ff::ComputeDisplayRotation(size._nativeOrientation, size._currentOrientation);
+	bool swapDimensions = (displayRotation == DXGI_MODE_ROTATION_ROTATE90 || displayRotation == DXGI_MODE_ROTATION_ROTATE270);
+	ff::PointInt pixelSize(std::max(size._pixelSize.x, 1), std::max(size._pixelSize.y, 1));
+	ff::PointInt bufferSize(swapDimensions ? pixelSize.y : pixelSize.x, swapDimensions ? pixelSize.x : pixelSize.y);
 
 	if (_swapChain) // on game thread
 	{
@@ -257,8 +250,8 @@ bool RenderTargetWindow11::SetSize(ff::PointInt pixelSize, double dpiScale, DXGI
 		ff::ComPtr<IDXGISwapChain1> swapChain;
 		ff::ComPtr<IDXGIFactoryX> factory = _device->AsGraphDeviceDxgi()->GetDxgiFactory();
 
-		assertHrRetVal(factory->MakeWindowAssociation(_hwnd, DXGI_MWA_NO_WINDOW_CHANGES), false);
 		assertHrRetVal(factory->CreateSwapChainForHwnd(_device->AsGraphDevice11()->Get3d(), _hwnd, &desc, nullptr, nullptr, &swapChain), false);
+		assertHrRetVal(factory->MakeWindowAssociation(_hwnd, DXGI_MWA_NO_WINDOW_CHANGES), false);
 		assertRetVal(_swapChain.QueryFrom(swapChain), false);
 	}
 
@@ -283,14 +276,22 @@ ff::IGraphDevice* RenderTargetWindow11::GetDevice() const
 
 bool RenderTargetWindow11::Reset()
 {
+	BOOL fullScreen = FALSE;
 	if (_swapChain)
 	{
+		ff::ComPtr<IDXGIOutput> output;
+		_swapChain->GetFullscreenState(&fullScreen, &output);
 		_swapChain->SetFullscreenState(FALSE, nullptr);
 		_swapChain = nullptr;
 	}
 
 	FlushBeforeResize();
 	assertRetVal(InitSetSize(), false);
+
+	if (_swapChain && fullScreen)
+	{
+		_swapChain->SetFullscreenState(TRUE, nullptr);
+	}
 
 	return true;
 }
@@ -449,36 +450,24 @@ bool RenderTargetWindow11::DeviceWindowProc(HWND hwnd, UINT msg, WPARAM wParam, 
 	case WM_KEYDOWN:
 		if (wParam == VK_LWIN || wParam == VK_RWIN)
 		{
-			ff::ComPtr<RenderTargetWindow11> self = this;
-			ff::GetGameThreadDispatch()->Post([self]()
-				{
-					self->SetFullScreen(false);
-				});
+			_globals->SetFullScreen(false);
 		}
-#ifdef _DEBUG
-		else if (wParam == VK_RETURN && ::GetKeyState(VK_CONTROL) < 0 && ::GetKeyState(VK_SHIFT) < 0)
-		{
-			ff::ComPtr<RenderTargetWindow11> self = this;
-			ff::GetGameThreadDispatch()->Post([self]()
-				{
-					self->GetDevice()->Reset();
-				});
-		}
-#endif
 		break;
 
 	case WM_SYSKEYDOWN:
 		if (wParam == VK_RETURN) // ALT-ENTER to toggle full screen mode
 		{
-			ff::ComPtr<RenderTargetWindow11> self = this;
-			ff::GetGameThreadDispatch()->Post([self]()
-				{
-					self->SetFullScreen(!self->IsFullScreen());
-				});
-
+			_globals->SetFullScreen(!IsFullScreen());
 			result = 0;
 			return true;
 		}
+#ifdef _DEBUG
+		else if (wParam == VK_BACK)
+		{
+			_globals->ValidateGraphDevice(true);
+		}
+#endif
+
 		break;
 
 	case WM_SYSCHAR:
@@ -501,11 +490,7 @@ bool RenderTargetWindow11::DeviceTopWindowProc(HWND hwnd, UINT msg, WPARAM wPara
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) == WA_INACTIVE && _mainWindow)
 		{
-			ff::ComPtr<RenderTargetWindow11> self = this;
-			ff::GetGameThreadDispatch()->Post([self]()
-				{
-					self->SetFullScreen(false);
-				});
+			_globals->SetFullScreen(false);
 		}
 		break;
 	}

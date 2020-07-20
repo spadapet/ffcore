@@ -10,6 +10,7 @@ namespace DirectX
 
 namespace ff
 {
+	class AppGlobals;
 	class GraphContext11;
 	class GraphStateCache11;
 	class IData;
@@ -47,10 +48,10 @@ namespace ff
 		virtual ComPtr<IRenderDepth> CreateRenderDepth(PointInt size = PointInt(1, 1), size_t samples = 1) = 0;
 		virtual ComPtr<IRenderTarget> CreateRenderTargetTexture(ITexture* texture, size_t arrayStart = 0, size_t arrayCount = 1, size_t mipLevel = 0) = 0;
 #if METRO_APP
-		virtual ComPtr<IRenderTargetWindow> CreateRenderTargetWindow(Windows::UI::Xaml::Window^ hwnd) = 0;
-		virtual ComPtr<IRenderTargetSwapChain> CreateRenderTargetSwapChain(Windows::UI::Xaml::Controls::SwapChainPanel^ panel) = 0;
+		virtual ComPtr<IRenderTargetWindow> CreateRenderTargetWindow(AppGlobals* globals, Windows::UI::Xaml::Window^ hwnd) = 0;
+		virtual ComPtr<IRenderTargetSwapChain> CreateRenderTargetSwapChain(AppGlobals* globals, Windows::UI::Xaml::Controls::SwapChainPanel^ panel) = 0;
 #else
-		virtual ComPtr<IRenderTargetWindow> CreateRenderTargetWindow(HWND hwnd) = 0;
+		virtual ComPtr<IRenderTargetWindow> CreateRenderTargetWindow(AppGlobals* globals, HWND hwnd) = 0;
 #endif
 
 		virtual void AddChild(IGraphDeviceChild* child, int resetPriority = 0) = 0;

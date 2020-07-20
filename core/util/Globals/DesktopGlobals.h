@@ -26,7 +26,7 @@ namespace ff
 	protected:
 		virtual bool OnInitialized() override;
 		virtual double GetLogicalDpi() override;
-		virtual bool GetSwapChainSize(ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation) override;
+		virtual bool GetSwapChainSize(ff::SwapChainSize& size) override;
 		virtual bool IsWindowActive() override;
 		virtual bool IsWindowVisible() override;
 		virtual bool IsWindowFocused() override;

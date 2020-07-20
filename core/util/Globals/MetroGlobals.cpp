@@ -265,14 +265,14 @@ double ff::MetroGlobals::GetLogicalDpi()
 	return _displayInfo->LogicalDpi;
 }
 
-bool ff::MetroGlobals::GetSwapChainSize(ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation)
+bool ff::MetroGlobals::GetSwapChainSize(ff::SwapChainSize& size)
 {
 	noAssertRetVal(_swapPanel, false);
 
-	dpiScale = _swapPanel->CompositionScaleX;
-	pixelSize = (ff::PointDouble(_swapPanel->ActualWidth, _swapPanel->ActualHeight) * dpiScale).ToType<int>();
-	nativeOrientation = ff::GetDxgiRotation(_displayInfo->NativeOrientation);
-	currentOrientation = ff::GetDxgiRotation(_displayInfo->CurrentOrientation);
+	size._dpiScale = _swapPanel->CompositionScaleX;
+	size._pixelSize = (ff::PointDouble(_swapPanel->ActualWidth, _swapPanel->ActualHeight) * size._dpiScale).ToType<int>();
+	size._nativeOrientation = ff::GetDxgiRotation(_displayInfo->NativeOrientation);
+	size._currentOrientation = ff::GetDxgiRotation(_displayInfo->CurrentOrientation);
 
 	return true;
 }
@@ -294,7 +294,7 @@ bool ff::MetroGlobals::IsWindowFocused()
 
 ff::ComPtr<ff::IRenderTargetWindow> ff::MetroGlobals::CreateRenderTargetWindow()
 {
-	return GetGraph()->CreateRenderTargetWindow(_window);
+	return GetGraph()->CreateRenderTargetWindow(this, _window);
 }
 
 ff::ComPtr<ff::IPointerDevice> ff::MetroGlobals::CreatePointerDevice()

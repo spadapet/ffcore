@@ -46,12 +46,20 @@ namespace ff
 	bool IsFactoryCurrent(IDXGIFactoryX* factory);
 	ff::Vector<ff::ComPtr<IDXGIOutputX>> GetAdapterOutputs(IDXGIFactoryX* dxgi, IDXGIAdapterX* card);
 
+	struct SwapChainSize
+	{
+		ff::PointInt _pixelSize;
+		double _dpiScale;
+		DXGI_MODE_ROTATION _nativeOrientation;
+		DXGI_MODE_ROTATION _currentOrientation;
+	};
+
 	DXGI_MODE_ROTATION ComputeDisplayRotation(DXGI_MODE_ROTATION nativeOrientation, DXGI_MODE_ROTATION currentOrientation);
 #if METRO_APP
 	DXGI_MODE_ROTATION GetDxgiRotation(Windows::Graphics::Display::DisplayOrientations orientation);
 #else
 	ff::PointInt GetMonitorResolution(HWND hwnd, IDXGIFactoryX* dxgi, IDXGIAdapterX* pCard, IDXGIOutputX** ppOutput);
-	bool GetSwapChainSize(HWND hwnd, ff::PointInt& pixelSize, double& dpiScale, DXGI_MODE_ROTATION& nativeOrientation, DXGI_MODE_ROTATION& currentOrientation);
+	bool GetSwapChainSize(HWND hwnd, SwapChainSize& size);
 #endif
 
 	template<typename T>
