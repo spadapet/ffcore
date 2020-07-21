@@ -167,6 +167,7 @@ private:
     void OnContextMenuClosed(BaseComponent* sender, const RoutedEventArgs& args);
 
     bool OpenToolTip(UIElement* element);
+    bool CloseToolTip();
     void TryOpenToolTip();
     bool TryCloseToolTip();
     void OnToolTipClosed(BaseComponent* sender, const RoutedEventArgs& args);
@@ -233,6 +234,7 @@ private:
             bool contextMenuOpened : 1;
             bool toolTipOwn : 1;
             bool toolTipDelay : 1;
+            bool toolTipOpened : 1;
             bool toolTipBetween : 1;
             bool toolTipTimerCreated : 1;
             bool updatingOver : 1;

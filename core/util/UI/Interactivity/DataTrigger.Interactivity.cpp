@@ -74,19 +74,30 @@ Noesis::Ptr<Noesis::Freezable> NoesisApp::DataTrigger::CreateInstanceCore() cons
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+void NoesisApp::DataTrigger::OnAttached()
+{
+    ParentClass::OnAttached();
+
+    EvaluateBindingChange();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void NoesisApp::DataTrigger::EvaluateBindingChange()
 {
-    EnsureBindingValues();
-
-    bool sourceChanged = UpdateSourceType();
-    bool valueChanged = UpdateTriggerValue();
-    bool comparisonChanged = UpdateComparison();
-
-    if (sourceChanged || valueChanged || comparisonChanged)
+    if (GetAssociatedObject() != 0)
     {
-        if (Compare())
+        EnsureBindingValues();
+
+        bool sourceChanged = UpdateSourceType();
+        bool valueChanged = UpdateTriggerValue();
+        bool comparisonChanged = UpdateComparison();
+
+        if (sourceChanged || valueChanged || comparisonChanged)
         {
-            InvokeActions(0);
+            if (Compare())
+            {
+                InvokeActions(0);
+            }
         }
     }
 }
@@ -200,7 +211,7 @@ void NoesisApp::DataTrigger::OnValueChanged(DependencyObject* d,
     const Noesis::DependencyPropertyChangedEventArgs&)
 {
     DataTrigger* trigger = (DataTrigger*)d;
-    trigger->EvaluateTriggerChange();
+    trigger->EvaluateBindingChange();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +219,7 @@ void NoesisApp::DataTrigger::OnComparisonChanged(DependencyObject* d,
     const Noesis::DependencyPropertyChangedEventArgs&)
 {
     DataTrigger* trigger = (DataTrigger*)d;
-    trigger->EvaluateTriggerChange();
+    trigger->EvaluateBindingChange();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

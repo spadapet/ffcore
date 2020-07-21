@@ -63,11 +63,6 @@ private:
     static void OnTriggersChanged(Noesis::DependencyObject* d,
         const Noesis::DependencyPropertyChangedEventArgs& e);
 
-    static bool CoerceBehaviors(const Noesis::DependencyObject* d, const void* value,
-        void* coercedValue);
-    static bool CoerceTriggers(const Noesis::DependencyObject* d, const void* value,
-        void* coercedValue);
-
 private:
     static const Noesis::DependencyProperty* BehaviorsProperty; // Attached
     static const Noesis::DependencyProperty* TriggersProperty; // Attached

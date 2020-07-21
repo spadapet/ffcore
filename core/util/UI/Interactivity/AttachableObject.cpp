@@ -64,6 +64,8 @@ void AttachableObject::Attach(DependencyObject* associatedObject)
 
         mView = FindView();
 
+        InitComponent(this, true);
+
         OnAttached();
     }
 }

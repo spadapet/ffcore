@@ -138,9 +138,7 @@ private:
     int32_t BrushIndex(Brush* brush);
 
     void UnregisterBrushes();
-
     void RegisterBrush(Brush* brush);
-    void UnregisterBrush(Brush* brush);
     void OnBrushChanged(Freezable* sender, FreezableEventReason reason);
 
     bool MeasureContainers(float width, float height);

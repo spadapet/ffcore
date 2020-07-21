@@ -87,12 +87,17 @@ public:
     static const Noesis::DependencyProperty* ComparisonProperty;
 
 protected:
-    /// From Freezable
+    // From Freezable
     //@{
     Noesis::Ptr<Noesis::Freezable> CreateInstanceCore() const override;
     //@}
 
-    /// From PropertyChangedTrigger
+    // From AttachableObject
+    //@{
+    void OnAttached() override;
+    //@}
+
+    // From PropertyChangedTrigger
     //@{
     void EvaluateBindingChange() override;
     //@}
