@@ -201,6 +201,13 @@ bool ff::DesktopGlobals::IsWindowFocused()
 	return _hwnd && ::GetFocus() == _hwnd;
 }
 
+bool ff::DesktopGlobals::CloseWindow()
+{
+	assertRetVal(_hwnd, false);
+	::PostMessage(_hwnd, WM_CLOSE, 0, 0);
+	return true;
+}
+
 ff::ComPtr<ff::IRenderTargetWindow> ff::DesktopGlobals::CreateRenderTargetWindow()
 {
 	return GetGraph()->CreateRenderTargetWindow(this, _hwnd);

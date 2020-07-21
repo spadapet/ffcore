@@ -426,9 +426,9 @@ void ff::AppGlobals::OnActiveChanged()
 	{
 		bool active = GetAppActive();
 		_gameLoopDispatch->Post([this, active]()
-		{
-			_activeChangedEvent.Notify(active);
-		});
+			{
+				_activeChangedEvent.Notify(active);
+			});
 	}
 }
 
@@ -517,9 +517,9 @@ bool ff::AppGlobals::InitializeTempDirectory()
 			ff::AppendPathTail(unusedTempPath, tempDir);
 
 			ff::GetThreadPool()->AddTask([unusedTempPath]()
-			{
-				ff::DeleteDirectory(unusedTempPath, false);
-			});
+				{
+					ff::DeleteDirectory(unusedTempPath, false);
+				});
 		}
 	}
 
@@ -674,19 +674,19 @@ void ff::AppGlobals::StartRenderLoop()
 	if (_gameLoopDispatch)
 	{
 		_gameLoopDispatch->Post([this]()
-		{
-			_gameLoopState = GameLoopState::Running;
-			FrameResetTimer();
-		});
+			{
+				_gameLoopState = GameLoopState::Running;
+				FrameResetTimer();
+			});
 	}
 	else if (HasFlag(AppGlobalsFlags::UseGameLoop))
 	{
 		_gameLoopState = GameLoopState::Running;
 
 		ff::GetThreadPool()->AddThread([this]()
-		{
-			GameThread();
-		});
+			{
+				GameThread();
+			});
 
 		ff::WaitForEventAndReset(_gameLoopEvent);
 	}
@@ -701,16 +701,16 @@ void ff::AppGlobals::PauseRenderLoop()
 	if (_gameLoopDispatch)
 	{
 		_gameLoopDispatch->Post([this]()
-		{
-			if (_gameLoopState == GameLoopState::Running)
 			{
-				_gameLoopState = GameLoopState::Pausing;
-			}
-			else
-			{
-				::SetEvent(_gameLoopEvent);
-			}
-		});
+				if (_gameLoopState == GameLoopState::Running)
+				{
+					_gameLoopState = GameLoopState::Pausing;
+				}
+				else
+				{
+					::SetEvent(_gameLoopEvent);
+				}
+			});
 
 		ff::WaitForEventAndReset(_gameLoopEvent);
 	}
@@ -727,9 +727,9 @@ void ff::AppGlobals::StopRenderLoop()
 	if (_gameLoopDispatch)
 	{
 		_gameLoopDispatch->Post([this]()
-		{
-			_gameLoopState = GameLoopState::Stopped;
-		});
+			{
+				_gameLoopState = GameLoopState::Stopped;
+			});
 
 		ff::WaitForEventAndReset(_gameLoopEvent);
 	}
@@ -874,6 +874,14 @@ bool ff::AppGlobals::UpdateDpiScale()
 void ff::AppGlobals::ValidateGraphDevice(bool force)
 {
 	_graphCommands.ValidateGraphDevice(force);
+}
+
+void ff::AppGlobals::Quit()
+{
+	ff::GetMainThreadDispatch()->Post([this]()
+		{
+			CloseWindow();
+		});
 }
 
 void ff::AppGlobals::KillPendingInput()

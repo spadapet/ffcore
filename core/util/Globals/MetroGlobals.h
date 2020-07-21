@@ -32,6 +32,7 @@ namespace ff
 		virtual bool IsWindowActive() override;
 		virtual bool IsWindowVisible() override;
 		virtual bool IsWindowFocused() override;
+		virtual bool CloseWindow() override;
 		virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow() override;
 		virtual ff::ComPtr<ff::IPointerDevice> CreatePointerDevice() override;
 		virtual ff::ComPtr<ff::IKeyboardDevice> CreateKeyboardDevice() override;

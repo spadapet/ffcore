@@ -292,6 +292,13 @@ bool ff::MetroGlobals::IsWindowFocused()
 	return IsWindowActive();
 }
 
+bool ff::MetroGlobals::CloseWindow()
+{
+	Windows::UI::ViewManagement::ApplicationView^ view = Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
+	view->TryConsolidateAsync();
+	return true;
+}
+
 ff::ComPtr<ff::IRenderTargetWindow> ff::MetroGlobals::CreateRenderTargetWindow()
 {
 	return GetGraph()->CreateRenderTargetWindow(this, _window);
