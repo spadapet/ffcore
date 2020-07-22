@@ -11,8 +11,6 @@ ff::XamlViewState::XamlViewState(std::shared_ptr<XamlView> view, ff::IRenderTarg
 	, _target(target)
 	, _depth(depth)
 {
-	ff::AppGlobals* appGlobals = _view->GetGlobals()->GetAppGlobals();
-
 	_view->SetSize(target);
 
 	ff::ComPtr<ff::IRenderTargetSwapChain> swapChainTarget;

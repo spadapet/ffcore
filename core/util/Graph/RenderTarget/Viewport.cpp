@@ -30,10 +30,7 @@ void ff::Viewport::SetAutoSize(PointFloat aspect, RectFloat padding)
 
 ff::RectFloat ff::Viewport::GetView(IRenderTarget* target)
 {
-	PointFloat targetSize = target
-		? target->GetRotatedSize().ToType<float>()
-		: _targetSize;
-
+	PointFloat targetSize = target ? target->GetRotatedSize().ToType<float>() : _targetSize;
 	if (targetSize != _targetSize)
 	{
 		RectFloat safeArea(targetSize);
