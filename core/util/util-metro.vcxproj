@@ -224,6 +224,7 @@
     <ClCompile Include="UI\Utility\Converters.cpp" />
     <ClCompile Include="UI\Utility\DelegateCommand.cpp" />
     <ClCompile Include="UI\Utility\NotifyPropertyChangedBase.cpp" />
+    <ClCompile Include="UI\Utility\SetPanelChildFocusAction.cpp" />
     <ClCompile Include="UI\XamlGlobalHelper.cpp" />
     <ClCompile Include="UI\XamlGlobalState.cpp" />
     <ClCompile Include="UI\XamlView.cpp" />
@@ -413,6 +414,7 @@
     <ClInclude Include="UI\Utility\Converters.h" />
     <ClInclude Include="UI\Utility\DelegateCommand.h" />
     <ClInclude Include="UI\Utility\NotifyPropertyChangedBase.h" />
+    <ClInclude Include="UI\Utility\SetPanelChildFocusAction.h" />
     <ClInclude Include="UI\XamlGlobalHelper.h" />
     <ClInclude Include="UI\XamlGlobalState.h" />
     <ClInclude Include="UI\XamlView.h" />

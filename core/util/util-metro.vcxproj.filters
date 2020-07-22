@@ -707,6 +707,9 @@
     <ClCompile Include="Graph\Texture\Texture11.cpp">
       <Filter>Graph\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="UI\Utility\SetPanelChildFocusAction.cpp">
+      <Filter>UI\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1277,6 +1280,9 @@
       <Filter>UI\Utility</Filter>
     </ClInclude>
     <ClInclude Include="UI\Utility\NotifyPropertyChangedBase.h">
+      <Filter>UI\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Utility\SetPanelChildFocusAction.h">
       <Filter>UI\Utility</Filter>
     </ClInclude>
   </ItemGroup>
