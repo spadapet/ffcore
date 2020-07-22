@@ -16,7 +16,7 @@
 #include "Thread/ThreadDispatch.h"
 #include "Types/Timer.h"
 #include "UI/Utility/Converters.h"
-#include "UI/Utility/SetFocusAction2.h"
+#include "UI/Utility/SetPanelChildFocusAction.h"
 #include "UI/XamlGlobalHelper.h"
 #include "UI/XamlGlobalState.h"
 #include "UI/XamlViewState.h"
@@ -552,7 +552,7 @@ void ff::XamlGlobalState::RegisterComponents()
 	Noesis::RegisterComponent<ff::BoolToCollapsedConverter>();
 	Noesis::RegisterComponent<ff::BoolToObjectConverter>();
 	Noesis::RegisterComponent<ff::BoolToVisibleConverter>();
-	Noesis::RegisterComponent<ff::SetFocusAction2>();
+	Noesis::RegisterComponent<ff::SetPanelChildFocusAction>();
 }
 
 void ff::XamlGlobalState::UpdateCursorCallback(Noesis::IView* view, Noesis::Cursor cursor)

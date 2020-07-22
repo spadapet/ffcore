@@ -1,26 +1,18 @@
 #include "pch.h"
-#include "UI/Utility/SetFocusAction2.h"
+#include "UI/Utility/SetPanelChildFocusAction.h"
 
-NS_IMPLEMENT_REFLECTION(ff::SetFocusAction2, "ff.SetFocusAction2")
+NS_IMPLEMENT_REFLECTION_(ff::SetPanelChildFocusAction, "ff.SetPanelChildFocusAction")
+
+Noesis::Ptr<Noesis::Freezable> ff::SetPanelChildFocusAction::CreateInstanceCore() const
 {
-    NsProp("UniqueInPanel", &ff::SetFocusAction2::_uniqueInPanel);
+    return *new SetPanelChildFocusAction();
 }
 
-ff::SetFocusAction2::SetFocusAction2()
-    : _uniqueInPanel(false)
-{
-}
-
-Noesis::Ptr<Noesis::Freezable> ff::SetFocusAction2::CreateInstanceCore() const
-{
-    return *new SetFocusAction2();
-}
-
-void ff::SetFocusAction2::Invoke(Noesis::BaseComponent*)
+void ff::SetPanelChildFocusAction::Invoke(Noesis::BaseComponent*)
 {
     Noesis::UIElement* element = GetTarget();
 
-    if (element && _uniqueInPanel)
+    if (element)
     {
         Noesis::Panel* panel = Noesis::DynamicCast<Noesis::Panel*>(element->GetUIParent());
         if (panel && panel->GetChildren())
