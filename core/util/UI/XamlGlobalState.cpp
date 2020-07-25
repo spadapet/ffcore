@@ -561,6 +561,15 @@ void ff::XamlGlobalState::UpdateCursorCallback(Noesis::IView* view, Noesis::Curs
 
 void ff::XamlGlobalState::OpenUrlCallback(ff::StringRef url)
 {
+#if METRO_APP
+	Platform::String^ purl = url.pstring();
+	ff::GetMainThreadDispatch()->Post([purl]()
+		{
+			Windows::System::Launcher::LaunchUriAsync(ref new Windows::Foundation::Uri(purl));
+		});
+#else
+	::ShellExecute(nullptr, L"open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#endif
 }
 
 void ff::XamlGlobalState::PlaySoundCallback(ff::StringRef filename, float volume)
