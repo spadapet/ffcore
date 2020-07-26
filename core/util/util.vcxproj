@@ -135,6 +135,7 @@
     <ClCompile Include="Graph\Texture\PaletteData.cpp" />
     <ClCompile Include="Graph\Texture\PngImage.cpp" />
     <ClCompile Include="Graph\Texture\Texture11.cpp" />
+    <ClCompile Include="Graph\Texture\TextureMetadata.cpp" />
     <ClCompile Include="Graph\Texture\TextureView11.cpp" />
     <ClCompile Include="Input\DeviceEvent.cpp" />
     <ClCompile Include="Input\InputMapping.cpp" />

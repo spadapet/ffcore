@@ -13,6 +13,7 @@ namespace Noesis
 namespace ff
 {
 	class AppGlobals;
+	class IPalette;
 	class IRenderTarget;
 	class IRenderTargetWindow;
 	class IResourceAccess;
@@ -33,6 +34,8 @@ namespace ff
 
 		UTIL_API bool Startup(ff::IXamlGlobalHelper* helper);
 		UTIL_API void Shutdown();
+		UTIL_API void SetPalette(ff::IPalette* palette);
+		UTIL_API ff::IPalette* GetPalette() const;
 		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API const ff::Vector<XamlView*>& GetInputViews() const;
@@ -65,6 +68,7 @@ namespace ff
 		void SoftwareKeyboardCallback(Noesis::UIElement* focused, bool open);
 
 		ff::AppGlobals* _appGlobals;
+		ff::ComPtr<ff::IPalette> _palette;
 		ff::IResourceAccess* _resources;
 		ff::Vector<XamlView*> _views;
 		ff::Vector<XamlView*> _inputViews;

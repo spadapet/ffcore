@@ -4,6 +4,7 @@
 #include "Globals/Log.h"
 #include "Globals/ProcessGlobals.h"
 #include "Graph/GraphDevice.h"
+#include "Graph/Texture/Palette.h"
 #include "Input/DeviceEvent.h"
 #include "UI/Internal/XamlFontProvider.h"
 #include "UI/Internal/XamlKeyMap.h"
@@ -241,6 +242,16 @@ void ff::XamlGlobalState::Shutdown()
 
 	Noesis::SetAssertHandler(s_assertHandler);
 	s_assertHandler = nullptr;
+}
+
+void ff::XamlGlobalState::SetPalette(ff::IPalette* palette)
+{
+	_palette = palette;
+}
+
+ff::IPalette* ff::XamlGlobalState::GetPalette() const
+{
+	return _palette;
 }
 
 std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias, bool subPixelRendering)

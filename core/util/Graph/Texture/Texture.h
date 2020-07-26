@@ -51,4 +51,14 @@ namespace ff
 	public:
 		virtual ID3D11Texture2D* GetTexture2d() = 0;
 	};
+
+	class __declspec(uuid("cfbf8204-6c39-4c20-87c1-2ef7d4eeaa39")) __declspec(novtable)
+		ITextureMetadata : public IUnknown
+	{
+	public:
+		virtual PointInt GetSize() const = 0;
+		virtual size_t GetMipCount() const = 0;
+		virtual size_t GetArraySize() const = 0;
+		virtual TextureFormat GetFormat() const = 0;
+	};
 }

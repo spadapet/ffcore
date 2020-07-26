@@ -38,10 +38,12 @@ class __declspec(uuid("67741046-5d2f-4bf6-a955-baa950401935"))
 	, public ff::ITexture
 	, public ff::ITextureDxgi
 	, public ff::ITexture11
+	, public ff::ITextureMetadata
 	, public ff::ITextureView
 	, public ff::ITextureView11
 	, public ff::IResourcePersist
 	, public ff::IResourceSaveFile
+	, public ff::IResourceSaveSiblings
 	, public ff::ISprite
 	, public ff::IAnimation
 	, public ff::IAnimationPlayer
@@ -94,6 +96,9 @@ public:
 	virtual ff::String GetFileExtension() const override;
 	virtual bool SaveToFile(ff::StringRef file) override;
 
+	// IResourceSaveSiblings
+	virtual ff::Dict GetSiblingResources(ff::SharedResourceValue parentValue) override;
+
 	// ISprite
 	virtual const ff::SpriteData& GetSpriteData() override;
 
@@ -124,9 +129,11 @@ private:
 
 BEGIN_INTERFACES(Texture11)
 	HAS_INTERFACE(ff::ITexture)
+	HAS_INTERFACE(ff::ITextureMetadata)
 	HAS_INTERFACE(ff::ITextureView)
 	HAS_INTERFACE(ff::IResourcePersist)
 	HAS_INTERFACE(ff::IResourceSaveFile)
+	HAS_INTERFACE(ff::IResourceSaveSiblings)
 	HAS_INTERFACE(ff::ISprite)
 	HAS_INTERFACE(ff::IAnimation)
 	HAS_INTERFACE(ff::IAnimationPlayer)
@@ -575,6 +582,19 @@ bool Texture11::SaveToFile(ff::StringRef file)
 	}
 
 	return true;
+}
+
+ff::ComPtr<ff::ITextureMetadata> CreateTextureMetadata(ff::ITexture* texture);
+
+ff::Dict Texture11::GetSiblingResources(ff::SharedResourceValue parentValue)
+{
+	ff::ComPtr<ff::ITextureMetadata> tm = ::CreateTextureMetadata(this);
+	ff::ValuePtr value = ff::Value::New<ff::ObjectValue>(tm);
+	ff::String name = ff::String::format_new(L"%s.metadata", parentValue->GetName().c_str());
+
+	ff::Dict dict;
+	dict.SetValue(name, value);
+	return dict;
 }
 
 const ff::SpriteData& Texture11::GetSpriteData()

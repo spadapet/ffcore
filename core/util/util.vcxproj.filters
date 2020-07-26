@@ -710,6 +710,9 @@
     <ClCompile Include="UI\Utility\SetPanelChildFocusAction.cpp">
       <Filter>UI\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Graph\Texture\TextureMetadata.cpp">
+      <Filter>Graph\Texture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
