@@ -855,24 +855,24 @@ bool Renderer11::Init()
 	ff::ComPtr<ID3D11InputLayout> spriteLayout;
 
 	// Vertex shaders
-	ID3D11VertexShader* lineVS = ::GetVertexShaderAndInputLayout<ff::LineGeometryInput>(L"LineVS", lineLayout, cache);
-	ID3D11VertexShader* circleVS = ::GetVertexShaderAndInputLayout<ff::CircleGeometryInput>(L"CircleVS", circleLayout, cache);
-	ID3D11VertexShader* triangleVS = ::GetVertexShaderAndInputLayout<ff::TriangleGeometryInput>(L"TriangleVS", triangleLayout, cache);
-	ID3D11VertexShader* spriteVS = ::GetVertexShaderAndInputLayout<ff::SpriteGeometryInput>(L"SpriteVS", spriteLayout, cache);
+	ID3D11VertexShader* lineVS = ::GetVertexShaderAndInputLayout<ff::LineGeometryInput>(L"Renderer.LineVS", lineLayout, cache);
+	ID3D11VertexShader* circleVS = ::GetVertexShaderAndInputLayout<ff::CircleGeometryInput>(L"Renderer.CircleVS", circleLayout, cache);
+	ID3D11VertexShader* triangleVS = ::GetVertexShaderAndInputLayout<ff::TriangleGeometryInput>(L"Renderer.TriangleVS", triangleLayout, cache);
+	ID3D11VertexShader* spriteVS = ::GetVertexShaderAndInputLayout<ff::SpriteGeometryInput>(L"Renderer.SpriteVS", spriteLayout, cache);
 
 	// Geometry shaders
-	ID3D11GeometryShader* lineGS = ::GetGeometryShader(L"LineGS", cache);
-	ID3D11GeometryShader* circleGS = ::GetGeometryShader(L"CircleGS", cache);
-	ID3D11GeometryShader* triangleGS = ::GetGeometryShader(L"TriangleGS", cache);
-	ID3D11GeometryShader* spriteGS = ::GetGeometryShader(L"SpriteGS", cache);
+	ID3D11GeometryShader* lineGS = ::GetGeometryShader(L"Renderer.LineGS", cache);
+	ID3D11GeometryShader* circleGS = ::GetGeometryShader(L"Renderer.CircleGS", cache);
+	ID3D11GeometryShader* triangleGS = ::GetGeometryShader(L"Renderer.TriangleGS", cache);
+	ID3D11GeometryShader* spriteGS = ::GetGeometryShader(L"Renderer.SpriteGS", cache);
 
 	// Pixel shaders
-	ID3D11PixelShader* colorPS = ::GetPixelShader(L"ColorPS", cache);
-	ID3D11PixelShader* paletteOutColorPS = ::GetPixelShader(L"PaletteOutColorPS", cache);
-	ID3D11PixelShader* spritePS = ::GetPixelShader(L"SpritePS", cache);
-	ID3D11PixelShader* spritePalettePS = ::GetPixelShader(L"SpritePalettePS", cache);
-	ID3D11PixelShader* paletteOutSpritePS = ::GetPixelShader(L"PaletteOutSpritePS", cache);
-	ID3D11PixelShader* paletteOutSpritePalettePS = ::GetPixelShader(L"PaletteOutSpritePalettePS", cache);
+	ID3D11PixelShader* colorPS = ::GetPixelShader(L"Renderer.ColorPS", cache);
+	ID3D11PixelShader* paletteOutColorPS = ::GetPixelShader(L"Renderer.PaletteOutColorPS", cache);
+	ID3D11PixelShader* spritePS = ::GetPixelShader(L"Renderer.SpritePS", cache);
+	ID3D11PixelShader* spritePalettePS = ::GetPixelShader(L"Renderer.SpritePalettePS", cache);
+	ID3D11PixelShader* paletteOutSpritePS = ::GetPixelShader(L"Renderer.PaletteOutSpritePS", cache);
+	ID3D11PixelShader* paletteOutSpritePalettePS = ::GetPixelShader(L"Renderer.PaletteOutSpritePalettePS", cache);
 
 	assertRetVal(
 		lineVS != nullptr &&

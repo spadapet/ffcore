@@ -6,6 +6,9 @@
     <ProjectGuid>{8877ef09-1cdd-4e67-95ba-58e3b251b7d8}</ProjectGuid>
   </PropertyGroup>
   <Import Project="..\..\msbuild\cpp.props" />
+  <PropertyGroup>
+      <AdditionalResJsonInputs>$(FFCoreRoot)core\util\UI\Shader\*.hlsl</AdditionalResJsonInputs>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\dxtex</AdditionalIncludeDirectories>
@@ -222,7 +225,6 @@
     <ClCompile Include="UI\Internal\XamlProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderDevice11.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderTarget.cpp" />
-    <ClCompile Include="UI\Internal\XamlShaders11.cpp" />
     <ClCompile Include="UI\Internal\XamlStream.cpp" />
     <ClCompile Include="UI\Internal\XamlTexture.cpp" />
     <ClCompile Include="UI\Internal\XamlTextureProvider.cpp" />
@@ -411,7 +413,6 @@
     <ClInclude Include="UI\Internal\XamlProvider.h" />
     <ClInclude Include="UI\Internal\XamlRenderDevice11.h" />
     <ClInclude Include="UI\Internal\XamlRenderTarget.h" />
-    <ClInclude Include="UI\Internal\XamlShaders11.h" />
     <ClInclude Include="UI\Internal\XamlStream.h" />
     <ClInclude Include="UI\Internal\XamlTexture.h" />
     <ClInclude Include="UI\Internal\XamlTextureProvider.h" />
@@ -473,6 +474,23 @@
   <ItemGroup>
     <ResJson Include="Assets\Assets.res.json" />
     <ResJson Include="Assets\Values.res.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UI\Shader\ClearPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\QuadVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\ResolvePS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\ShaderPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\ShaderVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="..\..\msbuild\cpp.targets" />
   <Target Name="AfterBuild">

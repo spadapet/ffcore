@@ -97,6 +97,9 @@
     <Filter Include="UI\Utility">
       <UniqueIdentifier>{a73ccb2c-e5b6-4077-bb2e-beec01af12cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI\Shader">
+      <UniqueIdentifier>{2cd4446b-442f-425e-9989-4a2559f0b528}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio\AudioBuffer.cpp">
@@ -536,9 +539,6 @@
     <ClCompile Include="Graph\Texture\PngImage.cpp">
       <Filter>Graph\Texture</Filter>
     </ClCompile>
-    <ClCompile Include="UI\Internal\XamlShaders11.cpp">
-      <Filter>UI\Internal</Filter>
-    </ClCompile>
     <ClCompile Include="Graph\Texture\Palette.cpp">
       <Filter>Graph\Texture</Filter>
     </ClCompile>
@@ -709,6 +709,9 @@
     </ClCompile>
     <ClCompile Include="UI\Utility\SetPanelChildFocusAction.cpp">
       <Filter>UI\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Graph\Texture\TextureMetadata.cpp">
+      <Filter>Graph\Texture</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1222,9 +1225,6 @@
     <ClInclude Include="UI\Internal\XamlKeyMap.h">
       <Filter>UI\Internal</Filter>
     </ClInclude>
-    <ClInclude Include="UI\Internal\XamlShaders11.h">
-      <Filter>UI\Internal</Filter>
-    </ClInclude>
     <ClInclude Include="UI\Internal\XamlView11.h">
       <Filter>UI\Internal</Filter>
     </ClInclude>
@@ -1332,5 +1332,22 @@
     <Natvis Include="util.natvis">
       <Filter>Assets</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="UI\Shader\ClearPS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\QuadVS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\ResolvePS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\ShaderPS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\ShaderVS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

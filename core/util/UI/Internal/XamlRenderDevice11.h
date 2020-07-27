@@ -38,7 +38,7 @@ namespace ff
 
 	private:
 		enum class MsaaSamples { x1, x2, x4, x8, x16, Count };
-		enum class TextureSlot { Pattern, Ramps, Image, Glyphs, Shadow, Count };
+		enum class TextureSlot { Pattern, PaletteImage, Palette, Ramps, Image, Glyphs, Shadow, Count };
 
 		struct VertexStage
 		{
@@ -53,7 +53,7 @@ namespace ff
 			int8_t pixelShaderIndex;
 		};
 
-		ff::ComPtr<ID3D11InputLayout> CreateLayout(uint32_t format, const void* code, uint32_t size);
+		ff::ComPtr<ID3D11InputLayout> CreateLayout(uint32_t format, ff::StringRef vertexResourceName);
 		void CreateBuffers();
 		void CreateStateObjects();
 		void CreateShaders();
@@ -72,6 +72,11 @@ namespace ff
 		ff::ComPtr<ff::IGraphDevice> _graph;
 		ff::GraphContext11& _context;
 		ff::GraphStateCache11& _states;
+		std::array<ID3D11ShaderResourceView*, (size_t)ff::XamlRenderDevice11::TextureSlot::Count> _nullTextures;
+#ifdef _DEBUG
+		ff::ComPtr<ff::ITexture> _emptyTextureRgb;
+		ff::ComPtr<ff::ITexture> _emptyTexturePalette;
+#endif
 
 		// Buffers
 		ff::ComPtr<ff::IGraphBuffer> _bufferVertices;
@@ -83,7 +88,7 @@ namespace ff
 		uint32_t _vertexCBHash;
 		uint32_t _pixelCBHash;
 		uint32_t _effectCBHash;
-		uint32_t _texDimensionsCBHash;
+		ff::hash_t _texDimensionsCBHash;
 
 		// Shaders
 		Program _programs[52];

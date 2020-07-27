@@ -97,6 +97,9 @@
     <Filter Include="UI\Utility">
       <UniqueIdentifier>{1e1b5c96-f4b7-45f7-a3c2-7424ff964fe2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI\Shader">
+      <UniqueIdentifier>{e41041e3-4f77-4e33-9d0a-a04902d2e7c7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio\AudioBuffer.cpp">
@@ -544,9 +547,6 @@
     </ClCompile>
     <ClCompile Include="Graph\Texture\PaletteData.cpp">
       <Filter>Graph\Texture</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Internal\XamlShaders11.cpp">
-      <Filter>UI\Internal</Filter>
     </ClCompile>
     <ClCompile Include="Graph\Render\PixelRenderer.cpp">
       <Filter>Graph\Render</Filter>
@@ -1216,9 +1216,6 @@
     <ClInclude Include="UI\Internal\XamlRenderTarget.h">
       <Filter>UI\Internal</Filter>
     </ClInclude>
-    <ClInclude Include="UI\Internal\XamlShaders11.h">
-      <Filter>UI\Internal</Filter>
-    </ClInclude>
     <ClInclude Include="UI\Internal\XamlStream.h">
       <Filter>UI\Internal</Filter>
     </ClInclude>
@@ -1312,5 +1309,22 @@
     <ResJson Include="Assets\Values.res.json">
       <Filter>Assets</Filter>
     </ResJson>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="UI\Shader\ClearPS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\QuadVS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\ResolvePS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\ShaderPS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="UI\Shader\ShaderVS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -130,6 +130,7 @@
     <ClCompile Include="Graph\Texture\PaletteData.cpp" />
     <ClCompile Include="Graph\Texture\PngImage.cpp" />
     <ClCompile Include="Graph\Texture\Texture11.cpp" />
+    <ClCompile Include="Graph\Texture\TextureMetadata.cpp" />
     <ClCompile Include="Graph\Texture\TextureView11.cpp" />
     <ClCompile Include="Input\DeviceEvent.cpp" />
     <ClCompile Include="Input\InputMapping.cpp" />
@@ -211,7 +212,6 @@
     <ClCompile Include="UI\Interactivity\TriggerActionCollection.cpp" />
     <ClCompile Include="UI\Interactivity\TriggerBase.Interactivity.cpp" />
     <ClCompile Include="UI\Interactivity\TriggerCollection.cpp" />
-    <ClCompile Include="UI\Internal\XamlShaders11.cpp" />
     <ClCompile Include="UI\Internal\XamlFontProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlKeyMap.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderDevice11.cpp" />
@@ -405,7 +405,6 @@
     <ClInclude Include="UI\Internal\XamlKeyMap.h" />
     <ClInclude Include="UI\Internal\XamlRenderDevice11.h" />
     <ClInclude Include="UI\Internal\XamlRenderTarget.h" />
-    <ClInclude Include="UI\Internal\XamlShaders11.h" />
     <ClInclude Include="UI\Internal\XamlStream.h" />
     <ClInclude Include="UI\Internal\XamlTexture.h" />
     <ClInclude Include="UI\Internal\XamlTextureProvider.h" />
@@ -469,6 +468,23 @@
     <Font Include="Assets\Inconsolata-Regular.ttf">
       <DeploymentContent>false</DeploymentContent>
     </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UI\Shader\ClearPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\QuadVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\ResolvePS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\ShaderPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="UI\Shader\ShaderVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="..\..\msbuild\cpp.targets" />
 </Project>

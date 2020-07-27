@@ -1,17 +1,20 @@
 #include "pch.h"
+#include "Graph/Texture/Palette.h"
 #include "Graph/Texture/Texture.h"
 #include "UI/Internal/XamlTexture.h"
 #include "Value/Values.h"
 
-ff::XamlTexture::XamlTexture(ff::AutoResourceValue resource, ff::StringRef name)
+ff::XamlTexture::XamlTexture(ff::AutoResourceValue resource, ff::IPalette* palette, ff::StringRef name)
 	: _resource(resource)
+	, _palette(palette)
 	, _name(name)
 {
 	assert(resource.DidInit());
 }
 
-ff::XamlTexture::XamlTexture(ff::ITexture* texture, ff::StringRef name)
+ff::XamlTexture::XamlTexture(ff::ITexture* texture, ff::IPalette* palette, ff::StringRef name)
 	: _texture(texture)
+	, _palette(palette)
 	, _name(name)
 {
 	assert(texture);
@@ -40,6 +43,11 @@ ff::ITexture* ff::XamlTexture::GetTexture() const
 
 	assert(_texture);
 	return _texture;
+}
+
+ff::IPalette* ff::XamlTexture::GetPalette() const
+{
+	return _palette;
 }
 
 uint32_t ff::XamlTexture::GetWidth() const

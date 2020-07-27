@@ -29,7 +29,7 @@ ff::XamlRenderTarget::XamlRenderTarget(ff::IGraphDevice* graph, size_t width, si
 		_resolvedTarget = _msaaTarget;
 	}
 
-	_resolvedTextureWrapper = Noesis::MakePtr<XamlTexture>(_resolvedTexture, name);
+	_resolvedTextureWrapper = Noesis::MakePtr<XamlTexture>(_resolvedTexture, nullptr, name);
 	_depth = graph->CreateRenderDepth(size, _msaaTexture->GetSampleCount());
 }
 
@@ -40,7 +40,7 @@ ff::XamlRenderTarget::XamlRenderTarget(const XamlRenderTarget& rhs, ff::StringRe
 {
 	_resolvedTexture = _graph->CreateTexture(rhs._resolvedTexture->GetSize(), rhs._resolvedTexture->GetFormat());
 	_resolvedTarget = _graph->CreateRenderTargetTexture(_resolvedTexture);
-	_resolvedTextureWrapper = Noesis::MakePtr<XamlTexture>(_resolvedTexture, name);
+	_resolvedTextureWrapper = Noesis::MakePtr<XamlTexture>(_resolvedTexture, nullptr, name);
 
 	if (rhs._msaaTexture->GetSampleCount() > 1)
 	{

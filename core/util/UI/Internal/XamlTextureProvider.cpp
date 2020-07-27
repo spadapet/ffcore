@@ -49,7 +49,7 @@ Noesis::Ptr<Noesis::Texture> ff::XamlTextureProvider::LoadTexture(const char* ur
 	ff::AutoResourceValue res = _globals->GetResourceAccess()->GetResource(uri);
 	if (res.DidInit())
 	{
-		return *new XamlTexture(res, uri);
+		return *new XamlTexture(res, _globals->GetPalette(), uri);
 	}
 
 	assertSz(false, ff::String::format_new(L"XamlTextureProvider can't provide: %s", uri.c_str()).c_str());

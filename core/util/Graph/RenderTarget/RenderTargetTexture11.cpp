@@ -144,7 +144,7 @@ bool RenderTargetTexture11::Init(ff::ITexture* texture, size_t arrayStart, size_
 {
 	assertRetVal(_device && texture, false);
 
-	assertRetVal(_texture.QueryFrom(texture), false);
+	_texture = texture;
 	_arrayStart = arrayStart;
 	_arrayCount = arrayCount;
 	_mipLevel = mipLevel;

@@ -8,19 +8,31 @@
 #include "Graph/RenderTarget/RenderTarget.h"
 #include "Graph/State/GraphContext11.h"
 #include "Graph/State/GraphStateCache11.h"
+#include "Graph/Texture/Palette.h"
+#include "Graph/Texture/PaletteData.h"
 #include "Graph/Texture/Texture.h"
 #include "Graph/Texture/TextureView.h"
+#include "Module/Module.h"
 #include "UI/Internal/XamlRenderDevice11.h"
-#include "UI/Internal/XamlShaders11.h"
 #include "UI/Internal/XamlTexture.h"
 #include "UI/Internal/XamlRenderTarget.h"
 #include "String/StringUtil.h"
+
+struct TexDimensions
+{
+	ff::PointFloat imageSize;
+	ff::PointFloat imageInverseSize;
+	ff::PointFloat patternSize;
+	ff::PointFloat patternInverseSize;
+	unsigned int paletteRow;
+	unsigned int padding[3];
+};
 
 static const size_t PREALLOCATED_DYNAMIC_PAGES = 1;
 static const size_t VS_CBUFFER_SIZE = 16 * sizeof(float); // projectionMtx
 static const size_t PS_CBUFFER_SIZE = 12 * sizeof(float); // rgba | radialGrad opacity | opacity
 static const size_t PS_EFFECTS_SIZE = 16 * sizeof(float);
-static const size_t TEX_DIMENSIONS_SIZE = 4 * sizeof(float);
+static const size_t TEX_DIMENSIONS_SIZE = sizeof(TexDimensions);
 static const uint32_t VFPos = 0;
 static const uint32_t VFColor = 1;
 static const uint32_t VFTex0 = 2;
@@ -106,8 +118,14 @@ ff::XamlRenderDevice11::XamlRenderDevice11(ff::IGraphDevice* graph, bool sRGB)
 	, _pixelCBHash(0)
 	, _effectCBHash(0)
 	, _texDimensionsCBHash(0)
+	, _nullTextures{nullptr}
 {
 	_graph->AddChild(this);
+
+#ifdef _DEBUG
+	_emptyTextureRgb = _graph->CreateTexture(ff::PointInt::Ones(), ff::TextureFormat::RGBA32);
+	_emptyTexturePalette = _graph->CreateTexture(ff::PointInt::Ones(), ff::TextureFormat::R8_UINT);
+#endif
 
 	_caps.centerPixelOffset = 0;
 	_caps.linearRendering = sRGB;
@@ -137,7 +155,7 @@ Noesis::Ptr<Noesis::RenderTarget> ff::XamlRenderDevice11::CreateRenderTarget(con
 Noesis::Ptr<Noesis::RenderTarget> ff::XamlRenderDevice11::CloneRenderTarget(const char* label, Noesis::RenderTarget* surface)
 {
 	ff::String name = label ? ff::StringFromUTF8(label) : ff::GetEmptyString();
-	return *XamlRenderTarget::Get(surface)->Clone(name).GetPtr();
+	return XamlRenderTarget::Get(surface)->Clone(name);
 }
 
 Noesis::Ptr<Noesis::Texture> ff::XamlRenderDevice11::CreateTexture(const char* label, uint32_t width, uint32_t height, uint32_t numLevels, Noesis::TextureFormat::Enum format, const void** data)
@@ -177,7 +195,7 @@ Noesis::Ptr<Noesis::Texture> ff::XamlRenderDevice11::CreateTexture(const char* l
 		texture = _graph->AsGraphDeviceInternal()->CreateTexture(std::move(scratch), nullptr);
 	}
 
-	return *new XamlTexture(texture, name);
+	return *new XamlTexture(texture, nullptr, name);
 }
 
 void ff::XamlRenderDevice11::UpdateTexture(Noesis::Texture* texture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* data)
@@ -334,6 +352,7 @@ void ff::XamlRenderDevice11::DrawBatch(const Noesis::Batch& batch)
 	SetTextures(batch);
 
 	_context.DrawIndexed(batch.numIndices, batch.startIndex, 0);
+	_context.SetResourcesPS(_nullTextures.data(), 0, _nullTextures.size());
 }
 
 ff::IGraphDevice* ff::XamlRenderDevice11::GetDevice() const
@@ -355,7 +374,7 @@ bool ff::XamlRenderDevice11::Reset()
 	return true;
 }
 
-ff::ComPtr<ID3D11InputLayout> ff::XamlRenderDevice11::CreateLayout(uint32_t format, const void* code, uint32_t size)
+ff::ComPtr<ID3D11InputLayout> ff::XamlRenderDevice11::CreateLayout(uint32_t format, ff::StringRef vertexResourceName)
 {
 	D3D11_INPUT_ELEMENT_DESC descs[5];
 	uint32_t element = 0;
@@ -429,9 +448,7 @@ ff::ComPtr<ID3D11InputLayout> ff::XamlRenderDevice11::CreateLayout(uint32_t form
 		element++;
 	}
 
-	ff::ComPtr<ff::IData> data;
-	ff::CreateDataInStaticMem((const BYTE*)code, size, &data);
-	return _states.GetInputLayout(data, descs, element);
+	return _states.GetInputLayout(ff::GetThisModule().GetResources(), vertexResourceName, descs, element);
 }
 
 void ff::XamlRenderDevice11::CreateBuffers()
@@ -587,85 +604,79 @@ void ff::XamlRenderDevice11::CreateStateObjects()
 
 void ff::XamlRenderDevice11::CreateShaders()
 {
-#define SHADER(n) n##_Start, n##_Size
-#define PSHADER(n) { #n, SHADER(n) }
-#define VSHADER(n, f) { #n, SHADER(n), f }
-
 	struct Shader
 	{
-		const char* label;
-		uint32_t start;
-		uint32_t size;
+		const wchar_t* resourceName;
 		uint32_t layout;
 	};
 
 	const Shader pShaders[] =
 	{
-		PSHADER(RGBA_FS),
-		PSHADER(Mask_FS),
+		{ L"Noesis.RGBA_FS" },
+		{ L"Noesis.Mask_FS" },
 
-		PSHADER(PathSolid_FS),
-		PSHADER(PathLinear_FS),
-		PSHADER(PathRadial_FS),
-		PSHADER(PathPattern_FS),
+		{ L"Noesis.PathSolid_FS" },
+		{ L"Noesis.PathLinear_FS" },
+		{ L"Noesis.PathRadial_FS" },
+		{ L"Noesis.PathPattern_FS" },
 
-		PSHADER(PathAASolid_FS),
-		PSHADER(PathAALinear_FS),
-		PSHADER(PathAARadial_FS),
-		PSHADER(PathAAPattern_FS),
+		{ L"Noesis.PathAASolid_FS" },
+		{ L"Noesis.PathAALinear_FS" },
+		{ L"Noesis.PathAARadial_FS" },
+		{ L"Noesis.PathAAPattern_FS" },
 
-		PSHADER(SDFSolid_FS),
-		PSHADER(SDFLinear_FS),
-		PSHADER(SDFRadial_FS),
-		PSHADER(SDFPattern_FS),
+		{ L"Noesis.SDFSolid_FS" },
+		{ L"Noesis.SDFLinear_FS" },
+		{ L"Noesis.SDFRadial_FS" },
+		{ L"Noesis.SDFPattern_FS" },
 
-		PSHADER(SDFLCDSolid_FS),
-		PSHADER(SDFLCDLinear_FS),
-		PSHADER(SDFLCDRadial_FS),
-		PSHADER(SDFLCDPattern_FS),
+		{ L"Noesis.SDFLCDSolid_FS" },
+		{ L"Noesis.SDFLCDLinear_FS" },
+		{ L"Noesis.SDFLCDRadial_FS" },
+		{ L"Noesis.SDFLCDPattern_FS" },
 
-		PSHADER(ImageOpacitySolid_FS),
-		PSHADER(ImageOpacityLinear_FS),
-		PSHADER(ImageOpacityRadial_FS),
-		PSHADER(ImageOpacityPattern_FS),
+		{ L"Noesis.ImageOpacitySolid_FS" },
+		{ L"Noesis.ImageOpacityLinear_FS" },
+		{ L"Noesis.ImageOpacityRadial_FS" },
+		{ L"Noesis.ImageOpacityPattern_FS" },
 
-		PSHADER(ImageShadow35V_FS),
-		PSHADER(ImageShadow63V_FS),
-		PSHADER(ImageShadow127V_FS),
+		{ L"Noesis.ImageShadow35V_FS" },
+		{ L"Noesis.ImageShadow63V_FS" },
+		{ L"Noesis.ImageShadow127V_FS" },
 
-		PSHADER(ImageShadow35HSolid_FS),
-		PSHADER(ImageShadow35HLinear_FS),
-		PSHADER(ImageShadow35HRadial_FS),
-		PSHADER(ImageShadow35HPattern_FS),
+		{ L"Noesis.ImageShadow35HSolid_FS" },
+		{ L"Noesis.ImageShadow35HLinear_FS" },
+		{ L"Noesis.ImageShadow35HRadial_FS" },
+		{ L"Noesis.ImageShadow35HPattern_FS" },
 
-		PSHADER(ImageShadow63HSolid_FS),
-		PSHADER(ImageShadow63HLinear_FS),
-		PSHADER(ImageShadow63HRadial_FS),
-		PSHADER(ImageShadow63HPattern_FS),
+		{ L"Noesis.ImageShadow63HSolid_FS" },
+		{ L"Noesis.ImageShadow63HLinear_FS" },
+		{ L"Noesis.ImageShadow63HRadial_FS" },
+		{ L"Noesis.ImageShadow63HPattern_FS" },
 
-		PSHADER(ImageShadow127HSolid_FS),
-		PSHADER(ImageShadow127HLinear_FS),
-		PSHADER(ImageShadow127HRadial_FS),
-		PSHADER(ImageShadow127HPattern_FS),
+		{ L"Noesis.ImageShadow127HSolid_FS" },
+		{ L"Noesis.ImageShadow127HLinear_FS" },
+		{ L"Noesis.ImageShadow127HRadial_FS" },
+		{ L"Noesis.ImageShadow127HPattern_FS" },
 
-		PSHADER(ImageBlur35V_FS),
-		PSHADER(ImageBlur63V_FS),
-		PSHADER(ImageBlur127V_FS),
+		{ L"Noesis.ImageBlur35V_FS" },
+		{ L"Noesis.ImageBlur63V_FS" },
+		{ L"Noesis.ImageBlur127V_FS" },
 
-		PSHADER(ImageBlur35HSolid_FS),
-		PSHADER(ImageBlur35HLinear_FS),
-		PSHADER(ImageBlur35HRadial_FS),
-		PSHADER(ImageBlur35HPattern_FS),
+		{ L"Noesis.ImageBlur35HSolid_FS" },
+		{ L"Noesis.ImageBlur35HLinear_FS" },
+		{ L"Noesis.ImageBlur35HRadial_FS" },
+		{ L"Noesis.ImageBlur35HPattern_FS" },
 
-		PSHADER(ImageBlur63HSolid_FS),
-		PSHADER(ImageBlur63HLinear_FS),
-		PSHADER(ImageBlur63HRadial_FS),
-		PSHADER(ImageBlur63HPattern_FS),
+		{ L"Noesis.ImageBlur63HSolid_FS" },
+		{ L"Noesis.ImageBlur63HLinear_FS" },
+		{ L"Noesis.ImageBlur63HRadial_FS" },
+		{ L"Noesis.ImageBlur63HPattern_FS" },
 
-		PSHADER(ImageBlur127HSolid_FS),
-		PSHADER(ImageBlur127HLinear_FS),
-		PSHADER(ImageBlur127HRadial_FS),
-		PSHADER(ImageBlur127HPattern_FS),
+		{ L"Noesis.ImageBlur127HSolid_FS" },
+		{ L"Noesis.ImageBlur127HLinear_FS" },
+		{ L"Noesis.ImageBlur127HRadial_FS" },
+		{ L"Noesis.ImageBlur127HPattern_FS" },
 	};
 
 	const Noesis::Pair<uint32_t, uint32_t> formats[] =
@@ -683,41 +694,36 @@ void ff::XamlRenderDevice11::CreateShaders()
 
 	const Shader vShaders[] =
 	{
-		VSHADER(Pos_VS, 0),
-		VSHADER(PosColor_VS, 1),
-		VSHADER(PosTex0_VS, 2),
-		VSHADER(PosColorCoverage_VS, 3),
-		VSHADER(PosTex0Coverage_VS, 4),
-		VSHADER(PosColorTex1_VS, 5),
-		VSHADER(PosTex0Tex1_VS, 6),
-		VSHADER(PosColorTex1_SDF_VS, 5),
-		VSHADER(PosTex0Tex1_SDF_VS, 6),
-		VSHADER(PosColorTex1Tex2_VS, 7),
-		VSHADER(PosTex0Tex1Tex2_VS, 8)
+		{ L"Noesis.Pos_VS", 0 },
+		{ L"Noesis.PosColor_VS", 1 },
+		{ L"Noesis.PosTex0_VS", 2 },
+		{ L"Noesis.PosColorCoverage_VS", 3 },
+		{ L"Noesis.PosTex0Coverage_VS", 4 },
+		{ L"Noesis.PosColorTex1_VS", 5 },
+		{ L"Noesis.PosTex0Tex1_VS", 6 },
+		{ L"Noesis.PosColorTex1_SDF_VS", 5 },
+		{ L"Noesis.PosTex0Tex1_SDF_VS", 6 },
+		{ L"Noesis.PosColorTex1Tex2_VS", 7 },
+		{ L"Noesis.PosTex0Tex1Tex2_VS", 8 },
 	};
-
-#undef SHADER
-#undef PSHADER
-#undef VSHADER
 
 	static_assert(_countof(formats) == _countof(_layouts));
 	static_assert(_countof(vShaders) == _countof(_vertexStages));
 	static_assert(_countof(pShaders) == _countof(_pixelShaders));
 	static_assert(_countof(pShaders) == _countof(_programs));
 
-	ff::ComPtr<ff::IDataVector> shaderData = ff::DecompressShaders();
-
 	for (uint32_t i = 0; i < _countof(_layouts); i++)
 	{
 		_layouts[i].Release();
 	}
 
+	ff::IResources* resources = ff::GetThisModule().GetResources();
+
 	for (uint32_t i = 0; i < _countof(vShaders); i++)
 	{
 		const Shader& shader = vShaders[i];
-		ff::ComPtr<ff::IData> data;
-		verify(ff::CreateDataInData(shaderData, shader.start, shader.size, &data));
-		_vertexStages[i].shader = _states.GetVertexShader(data);
+		ff::String vertexResourceName = ff::String::from_static(shader.resourceName);
+		_vertexStages[i].shader = _states.GetVertexShader(resources, vertexResourceName);
 
 		assert(shader.layout < NS_COUNTOF(formats));
 		assert(shader.layout < NS_COUNTOF(_layouts));
@@ -725,7 +731,7 @@ void ff::XamlRenderDevice11::CreateShaders()
 		ff::ComPtr<ID3D11InputLayout>& layout = _layouts[shader.layout];
 		if (layout == nullptr)
 		{
-			layout = CreateLayout(formats[shader.layout].first, data->GetMem(), (uint32_t)data->GetSize());
+			layout = CreateLayout(formats[shader.layout].first, vertexResourceName);
 		}
 
 		_vertexStages[i].layout = layout;
@@ -735,25 +741,16 @@ void ff::XamlRenderDevice11::CreateShaders()
 	for (uint32_t i = 0; i < _countof(pShaders); i++)
 	{
 		const Shader& shader = pShaders[i];
-		ff::ComPtr<ff::IData> data;
-		verify(ff::CreateDataInData(shaderData, shader.start, shader.size, &data));
-		_pixelShaders[i] = _states.GetPixelShader(data);
+		ff::String pixelResourceName = ff::String::from_static(shader.resourceName);
+		_pixelShaders[i] = _states.GetPixelShader(resources, pixelResourceName);
 	}
 
-	ff::ComPtr<ff::IData> quadVsData, resolve2Data, resolve4Data, resolve8Data, resolve16Data, clearData;
-	ff::CreateDataInData(shaderData, Quad_VS_Start, Quad_VS_Size, &quadVsData);
-	ff::CreateDataInData(shaderData, Resolve2_PS_Start, Resolve2_PS_Size, &resolve2Data);
-	ff::CreateDataInData(shaderData, Resolve4_PS_Start, Resolve4_PS_Size, &resolve4Data);
-	ff::CreateDataInData(shaderData, Resolve8_PS_Start, Resolve8_PS_Size, &resolve8Data);
-	ff::CreateDataInData(shaderData, Resolve16_PS_Start, Resolve16_PS_Size, &resolve16Data);
-	ff::CreateDataInData(shaderData, Clear_PS_Start, Clear_PS_Size, &clearData);
-
-	_resolvePS[0] = _states.GetPixelShader(resolve2Data);
-	_resolvePS[1] = _states.GetPixelShader(resolve4Data);
-	_resolvePS[2] = _states.GetPixelShader(resolve8Data);
-	_resolvePS[3] = _states.GetPixelShader(resolve16Data);
-	_clearPS = _states.GetPixelShader(clearData);
-	_quadVS = _states.GetVertexShader(quadVsData);
+	_resolvePS[0] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve2_PS"));
+	_resolvePS[1] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve4_PS"));
+	_resolvePS[2] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve8_PS"));
+	_resolvePS[3] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve16_PS"));
+	_clearPS = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Clear_PS"));
+	_quadVS = _states.GetVertexShader(resources, ff::String::from_static(L"Noesis.Quad_VS"));
 
 	std::memset(_programs, 255, sizeof(_programs));
 
@@ -827,6 +824,7 @@ void ff::XamlRenderDevice11::CreateShaders()
 void ff::XamlRenderDevice11::ClearRenderTarget()
 {
 	_context.SetLayoutIA(nullptr);
+	_context.SetGS(nullptr);
 	_context.SetVS(_quadVS);
 	_context.SetPS(_clearPS);
 	_context.SetRaster(_rasterizerStates[2]);
@@ -903,37 +901,35 @@ void ff::XamlRenderDevice11::SetBuffers(const Noesis::Batch& batch)
 	}
 
 	// Texture dimensions
-	if (batch.glyphs != 0 || batch.image != 0)
+	if (batch.glyphs != 0 || batch.image != 0 || batch.pattern != 0)
 	{
-		ff::ITexture* texture = XamlTexture::Get(batch.glyphs ? batch.glyphs : batch.image)->GetTexture();
-		ff::PointFloat size = texture->GetSize().ToType<float>();
-		uint32_t hash = ((uint32_t)size.x << 16) | (uint32_t)size.y;
+		XamlTexture* imageTexture = XamlTexture::Get(batch.glyphs ? batch.glyphs : batch.image);
+		XamlTexture* patternTexture = XamlTexture::Get(batch.pattern);
+
+		TexDimensions data{};
+		data.imageSize = imageTexture ? imageTexture->GetTexture()->GetSize().ToType<float>() : ff::PointFloat::Zeros();
+		data.imageInverseSize = imageTexture ? ff::PointFloat::Ones() / data.imageSize : ff::PointFloat::Zeros();
+		data.patternSize = patternTexture ? patternTexture->GetTexture()->GetSize().ToType<float>() : ff::PointFloat::Zeros();
+		data.patternInverseSize = patternTexture ? ff::PointFloat::Ones() / data.patternSize : ff::PointFloat::Zeros();
+		data.paletteRow = (unsigned int)((patternTexture && patternTexture->GetPalette()) ? patternTexture->GetPalette()->GetCurrentRow() : 0);
+		ff::hash_t hash = ff::HashFunc(data);
 
 		if (_texDimensionsCBHash != hash)
 		{
-			float* data = (float*)_texDimensionsCB->Map(4 * sizeof(float));
-			data[0] = size.x;
-			data[1] = size.y;
-			data[2] = 1.0f / size.x;
-			data[3] = 1.0f / size.y;
-
+			TexDimensions* mappedData = (TexDimensions*)_texDimensionsCB->Map(TEX_DIMENSIONS_SIZE);
+			std::memcpy(mappedData, &data, TEX_DIMENSIONS_SIZE);
 			_texDimensionsCB->Unmap();
 			_texDimensionsCBHash = hash;
-
 		}
 	}
 
 	// Effects
-	if (batch.effectParamsSize != 0)
+	if (batch.effectParamsSize != 0 && _effectCBHash != batch.effectParamsHash)
 	{
-		if (_effectCBHash != batch.effectParamsHash)
-		{
-			void* ptr = _effectCB->Map(16 * sizeof(float));
-			std::memcpy(ptr, batch.effectParams, batch.effectParamsSize * sizeof(float));
-			_effectCB->Unmap();
-			_effectCBHash = batch.effectParamsHash;
-
-		}
+		void* ptr = _effectCB->Map(16 * sizeof(float));
+		std::memcpy(ptr, batch.effectParams, batch.effectParamsSize * sizeof(float));
+		_effectCB->Unmap();
+		_effectCBHash = batch.effectParamsHash;
 	}
 }
 
@@ -959,9 +955,19 @@ void ff::XamlRenderDevice11::SetTextures(const Noesis::Batch& batch)
 	if (batch.pattern)
 	{
 		XamlTexture* t = XamlTexture::Get(batch.pattern);
+		bool palette = (t->GetTexture()->GetFormat() == ff::TextureFormat::R8_UINT);
 		ID3D11ShaderResourceView* view = t->GetTexture()->AsTextureView()->AsTextureView11()->GetView();
+		ID3D11ShaderResourceView* paletteView = (palette && t->GetPalette()) ? t->GetPalette()->GetData()->GetTexture()->AsTextureView()->AsTextureView11()->GetView() : nullptr;
+#ifdef _DEBUG
+		ID3D11ShaderResourceView* emptyView = _emptyTextureRgb->AsTextureView()->AsTextureView11()->GetView();
+		ID3D11ShaderResourceView* emptyPaletteView = _emptyTexturePalette->AsTextureView()->AsTextureView11()->GetView();
+#else
+		ID3D11ShaderResourceView* emptyView = nullptr;
+		ID3D11ShaderResourceView* emptyPaletteView = nullptr;
+#endif
+		ID3D11ShaderResourceView* views[3] = { !palette ? view : emptyView, palette ? view : emptyPaletteView, paletteView };
 		ID3D11SamplerState* sampler = _samplerStates[batch.patternSampler.v];
-		_context.SetResourcesPS(&view, (size_t)TextureSlot::Pattern, 1);
+		_context.SetResourcesPS(views, (size_t)TextureSlot::Pattern, 3);
 		_context.SetSamplersPS(&sampler, (size_t)TextureSlot::Pattern, 1);
 	}
 
