@@ -70,6 +70,7 @@ namespace ff
 	public:
 		TypedResource();
 		TypedResource(IResources* resources, StringRef name);
+		TypedResource(const AutoResourceValue& value);
 		TypedResource(StringRef name);
 		TypedResource(const wchar_t* name);
 		TypedResource(const TypedResource<T>& rhs);
@@ -77,6 +78,7 @@ namespace ff
 		TypedResource& operator=(const TypedResource<T>& rhs);
 
 		void Init(IResources* resources, StringRef name);
+		void Init(const AutoResourceValue& value);
 		void Init(StringRef name);
 		void Init(const wchar_t* name);
 		void Init(SharedResourceValue value);
@@ -106,6 +108,12 @@ template<typename T>
 ff::TypedResource<T>::TypedResource(IResources* resources, StringRef name)
 {
 	Init(resources, name);
+}
+
+template<typename T>
+ff::TypedResource<T>::TypedResource(const AutoResourceValue& value)
+{
+	Init(value);
 }
 
 template<typename T>
@@ -150,7 +158,15 @@ void ff::TypedResource<T>::Init(IResources* resources, StringRef name)
 {
 	_object.Release();
 	_objectValue.Release();
-	return _value.Init(resources, name);
+	_value.Init(resources, name);
+}
+
+template<typename T>
+void ff::TypedResource<T>::Init(const AutoResourceValue& value)
+{
+	_object.Release();
+	_objectValue.Release();
+	_value = value;
 }
 
 template<typename T>

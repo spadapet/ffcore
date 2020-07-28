@@ -19,6 +19,7 @@ namespace ff
 		virtual std::shared_ptr<ff::State> Advance(ff::AppGlobals* globals) override;
 		virtual void OnFrameRendering(ff::AppGlobals* globals, ff::AdvanceType type) override;
 		virtual void Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::IRenderDepth* depth) override;
+		virtual Cursor GetCursor() override;
 
 	private:
 		std::shared_ptr<XamlView> _view;

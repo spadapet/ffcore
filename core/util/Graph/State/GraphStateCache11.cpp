@@ -264,16 +264,16 @@ ID3D11PixelShader* ff::GraphStateCache11::GetPixelShader(ff::IData* shaderData)
 ID3D11InputLayout* ff::GraphStateCache11::GetInputLayout(ff::IData* shaderData, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count)
 {
 	ComPtr<ID3D11InputLayout> value;
-	ComPtr<IData> data = shaderData;
+	ff::hash_t layoutHash = ff::HashBytes(layout, sizeof(D3D11_INPUT_ELEMENT_DESC) * count);
+	auto iter = _layouts.GetKey(layoutHash);
 
-	auto iter = _layouts.GetKey(data);
 	if (iter)
 	{
 		value = iter->GetValue();
 	}
-	else if (data != nullptr && SUCCEEDED(_device->CreateInputLayout(layout, (UINT)count, data->GetMem(), data->GetSize(), &value)))
+	else if (shaderData != nullptr && SUCCEEDED(_device->CreateInputLayout(layout, (UINT)count, shaderData->GetMem(), shaderData->GetSize(), &value)))
 	{
-		_layouts.SetKey(std::move(data), ComPtr<ID3D11InputLayout>(value));
+		_layouts.SetKey(layoutHash, ComPtr<ID3D11InputLayout>(value));
 	}
 
 	return value;

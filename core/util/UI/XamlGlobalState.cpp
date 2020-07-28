@@ -568,6 +568,14 @@ void ff::XamlGlobalState::RegisterComponents()
 
 void ff::XamlGlobalState::UpdateCursorCallback(Noesis::IView* view, Noesis::Cursor cursor)
 {
+	for (XamlView* xamlView : _views)
+	{
+		if (xamlView->GetView() == view)
+		{
+			xamlView->SetCursor(cursor);
+			break;
+		}
+	}
 }
 
 void ff::XamlGlobalState::OpenUrlCallback(ff::StringRef url)

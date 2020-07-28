@@ -29,6 +29,9 @@ namespace ff
 		enum class Status { Loading, Alive, Dead, Ignore };
 		UTIL_API virtual Status GetStatus();
 
+		enum class Cursor { Default, Hand };
+		UTIL_API virtual Cursor GetCursor();
+
 		UTIL_API virtual size_t GetChildStateCount();
 		UTIL_API virtual State* GetChildState(size_t index);
 	};

@@ -51,7 +51,7 @@ namespace ff
 		Map<D3D11_RASTERIZER_DESC, ComPtr<ID3D11RasterizerState>> _rasterStates;
 		Map<D3D11_SAMPLER_DESC, ComPtr<ID3D11SamplerState>> _samplerStates;
 		Map<ComPtr<IData>, ComPtr<IUnknown>, HashShaderData> _shaders;
-		Map<ComPtr<IData>, ComPtr<ID3D11InputLayout>, HashShaderData> _layouts;
+		Map<ff::hash_t, ComPtr<ID3D11InputLayout>, ff::NonHasher<ff::hash_t>> _layouts;
 		List<TypedResource<IGraphShader>> _resources;
 	};
 }

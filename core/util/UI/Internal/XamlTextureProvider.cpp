@@ -1,4 +1,7 @@
 #include "pch.h"
+#include "Globals/AppGlobals.h"
+#include "Graph/GraphDevice.h"
+#include "Graph/RenderTarget/RenderTarget.h"
 #include "Graph/Texture/Texture.h"
 #include "Resource/Resources.h"
 #include "Resource/ResourceValue.h"
@@ -10,6 +13,9 @@
 ff::XamlTextureProvider::XamlTextureProvider(XamlGlobalState* globals)
 	: _globals(globals)
 {
+	ff::IGraphDevice* graph = globals->GetAppGlobals()->GetGraph();
+	_placeholderTexture = graph->CreateTexture(ff::PointInt::Ones(), ff::TextureFormat::RGBA32);
+	graph->CreateRenderTargetTexture(_placeholderTexture)->Clear(&ff::GetColorNone());
 }
 
 ff::XamlTextureProvider::~XamlTextureProvider()
@@ -49,7 +55,7 @@ Noesis::Ptr<Noesis::Texture> ff::XamlTextureProvider::LoadTexture(const char* ur
 	ff::AutoResourceValue res = _globals->GetResourceAccess()->GetResource(uri);
 	if (res.DidInit())
 	{
-		return *new XamlTexture(res, _globals->GetPalette(), uri);
+		return *new XamlTexture(res, _placeholderTexture, _globals->GetPalette(), uri);
 	}
 
 	assertSz(false, ff::String::format_new(L"XamlTextureProvider can't provide: %s", uri.c_str()).c_str());

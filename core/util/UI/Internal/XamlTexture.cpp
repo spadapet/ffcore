@@ -4,12 +4,13 @@
 #include "UI/Internal/XamlTexture.h"
 #include "Value/Values.h"
 
-ff::XamlTexture::XamlTexture(ff::AutoResourceValue resource, ff::IPalette* palette, ff::StringRef name)
+ff::XamlTexture::XamlTexture(ff::AutoResourceValue resource, ff::ITexture* placeholderTexture, ff::IPalette* palette, ff::StringRef name)
 	: _resource(resource)
+	, _placeholderTexture(placeholderTexture)
 	, _palette(palette)
 	, _name(name)
 {
-	assert(resource.DidInit());
+	assert(resource.DidInit() && placeholderTexture);
 }
 
 ff::XamlTexture::XamlTexture(ff::ITexture* texture, ff::IPalette* palette, ff::StringRef name)
@@ -31,18 +32,9 @@ ff::XamlTexture* ff::XamlTexture::Get(Noesis::Texture* texture)
 
 ff::ITexture* ff::XamlTexture::GetTexture() const
 {
-	if (!_texture && _resource.DidInit())
-	{
-		XamlTexture* self = const_cast<XamlTexture*>(this);
-		ff::ValuePtr value = self->_resource.Flush();
-		ff::ComPtr<IUnknown> comValue = value->GetValue<ff::ObjectValue>();
-
-		self->_texture.QueryFrom(comValue);
-		self->_resource = ff::AutoResourceValue();
-	}
-
-	assert(_texture);
-	return _texture;
+	XamlTexture* self = const_cast<XamlTexture*>(this);
+	ff::ITexture* texture = _resource.DidInit() ? self->_resource.GetObject() : _texture;
+	return texture ? texture : _placeholderTexture;
 }
 
 ff::IPalette* ff::XamlTexture::GetPalette() const

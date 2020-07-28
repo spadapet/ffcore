@@ -140,3 +140,17 @@ ff::State::Status ff::States::GetStatus()
 		? State::Status::Dead
 		: Status::Alive;
 }
+
+ff::State::Cursor ff::States::GetCursor()
+{
+	for (const std::shared_ptr<State>& state : _states)
+	{
+		State::Cursor cursor = state->GetCursor();
+		if (cursor != State::Cursor::Default)
+		{
+			return cursor;
+		}
+	}
+
+	return State::Cursor::Default;
+}

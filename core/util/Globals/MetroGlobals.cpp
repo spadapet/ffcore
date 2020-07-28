@@ -299,6 +299,10 @@ bool ff::MetroGlobals::CloseWindow()
 	return true;
 }
 
+void ff::MetroGlobals::UpdateWindowCursor()
+{
+}
+
 ff::ComPtr<ff::IRenderTargetWindow> ff::MetroGlobals::CreateRenderTargetWindow()
 {
 	return GetGraph()->CreateRenderTargetWindow(this, _window);

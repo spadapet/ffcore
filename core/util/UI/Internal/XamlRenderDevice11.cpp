@@ -40,6 +40,19 @@ static const uint32_t VFTex1 = 4;
 static const uint32_t VFTex2 = 8;
 static const uint32_t VFCoverage = 16;
 
+static const Noesis::Pair<uint32_t, uint32_t> LAYOUT_FORMATS_AND_STRIDE[] =
+{
+	{ VFPos, 8 },
+	{ VFPos | VFColor, 12 },
+	{ VFPos | VFTex0, 16 },
+	{ VFPos | VFColor | VFCoverage, 16 },
+	{ VFPos | VFTex0 | VFCoverage, 20 },
+	{ VFPos | VFColor | VFTex1, 20 },
+	{ VFPos | VFTex0 | VFTex1, 24 },
+	{ VFPos | VFColor | VFTex1 | VFTex2, 28 },
+	{ VFPos | VFTex0 | VFTex1 | VFTex2, 32 },
+};
+
 static D3D11_FILTER ToD3D(Noesis::MinMagFilter::Enum minmagFilter, Noesis::MipFilter::Enum mipFilter)
 {
 	switch (minmagFilter)
@@ -118,7 +131,7 @@ ff::XamlRenderDevice11::XamlRenderDevice11(ff::IGraphDevice* graph, bool sRGB)
 	, _pixelCBHash(0)
 	, _effectCBHash(0)
 	, _texDimensionsCBHash(0)
-	, _nullTextures{nullptr}
+	, _nullTextures{ nullptr }
 {
 	_graph->AddChild(this);
 
@@ -282,8 +295,8 @@ void ff::XamlRenderDevice11::ResolveRenderTarget(Noesis::RenderTarget* surface, 
 		}
 
 		_context.SetLayoutIA(nullptr);
-		_context.SetVS(_quadVS);
-		_context.SetPS(_resolvePS[indexPS]);
+		_context.SetVS(_quadVS.GetShader(_states));
+		_context.SetPS(_resolvePS[indexPS].GetShader(_states));
 
 		_context.SetRaster(_rasterizerStates[2]);
 		_context.SetBlend(_blendStates[0], ff::GetColorNone(), 0xffffffff);
@@ -341,10 +354,9 @@ void ff::XamlRenderDevice11::UnmapIndices()
 void ff::XamlRenderDevice11::DrawBatch(const Noesis::Batch& batch)
 {
 	assert(batch.shader.v < _countof(_programs));
-	assert(_programs[batch.shader.v].vertexShaderIndex != -1);
-	assert(_programs[batch.shader.v].pixelShaderIndex != -1);
-	assert(_programs[batch.shader.v].vertexShaderIndex < _countof(_vertexStages));
-	assert(_programs[batch.shader.v].pixelShaderIndex < _countof(_pixelShaders));
+	const Program& program = _programs[batch.shader.v];
+	assert(program._vertexShaderIndex != -1 && program._vertexShaderIndex < _countof(_vertexStages));
+	assert(program._pixelShaderIndex != -1 && program._pixelShaderIndex < _countof(_pixelStages));
 
 	SetShaders(batch);
 	SetBuffers(batch);
@@ -374,7 +386,7 @@ bool ff::XamlRenderDevice11::Reset()
 	return true;
 }
 
-ff::ComPtr<ID3D11InputLayout> ff::XamlRenderDevice11::CreateLayout(uint32_t format, ff::StringRef vertexResourceName)
+ff::ComPtr<ID3D11InputLayout> ff::XamlRenderDevice11::CreateLayout(ff::GraphStateCache11& states, uint32_t format, ff::StringRef vertexResourceName)
 {
 	D3D11_INPUT_ELEMENT_DESC descs[5];
 	uint32_t element = 0;
@@ -448,7 +460,7 @@ ff::ComPtr<ID3D11InputLayout> ff::XamlRenderDevice11::CreateLayout(uint32_t form
 		element++;
 	}
 
-	return _states.GetInputLayout(ff::GetThisModule().GetResources(), vertexResourceName, descs, element);
+	return states.GetInputLayout(ff::GetThisModule().GetResources(), vertexResourceName, descs, element);
 }
 
 void ff::XamlRenderDevice11::CreateBuffers()
@@ -575,28 +587,15 @@ void ff::XamlRenderDevice11::CreateStateObjects()
 	}
 
 	// Sampler states
+	for (uint8_t minmag = 0; minmag < Noesis::MinMagFilter::Count; minmag++)
 	{
-		D3D11_SAMPLER_DESC desc{};
-		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		desc.MaxAnisotropy = 1;
-		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		desc.MinLOD = -D3D11_FLOAT32_MAX;
-		desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-		for (uint8_t minmag = 0; minmag < Noesis::MinMagFilter::Count; minmag++)
+		for (uint8_t mip = 0; mip < Noesis::MipFilter::Count; mip++)
 		{
-			for (uint8_t mip = 0; mip < Noesis::MipFilter::Count; mip++)
+			for (uint8_t uv = 0; uv < Noesis::WrapMode::Count; uv++)
 			{
-				desc.Filter = ToD3D(Noesis::MinMagFilter::Enum(minmag), Noesis::MipFilter::Enum(mip));
-
-				for (uint8_t uv = 0; uv < Noesis::WrapMode::Count; uv++)
-				{
-					ToD3D(Noesis::WrapMode::Enum(uv), desc.AddressU, desc.AddressV);
-
-					Noesis::SamplerState s = { {uv, minmag, mip} };
-					assert(s.v < _countof(_samplerStates));
-					_samplerStates[s.v] = _states.GetSamplerState(desc);
-				}
+				Noesis::SamplerState s = { {uv, minmag, mip} };
+				_samplerStages[s.v]._params = s;
+				_samplerStages[s.v]._state = nullptr;
 			}
 		}
 	}
@@ -679,19 +678,6 @@ void ff::XamlRenderDevice11::CreateShaders()
 		{ L"Noesis.ImageBlur127HPattern_FS" },
 	};
 
-	const Noesis::Pair<uint32_t, uint32_t> formats[] =
-	{
-		{ VFPos, 8 },
-		{ VFPos | VFColor, 12 },
-		{ VFPos | VFTex0, 16 },
-		{ VFPos | VFColor | VFCoverage, 16 },
-		{ VFPos | VFTex0 | VFCoverage, 20 },
-		{ VFPos | VFColor | VFTex1, 20 },
-		{ VFPos | VFTex0 | VFTex1, 24 },
-		{ VFPos | VFColor | VFTex1 | VFTex2, 28 },
-		{ VFPos | VFTex0 | VFTex1 | VFTex2, 32 },
-	};
-
 	const Shader vShaders[] =
 	{
 		{ L"Noesis.Pos_VS", 0 },
@@ -707,50 +693,43 @@ void ff::XamlRenderDevice11::CreateShaders()
 		{ L"Noesis.PosTex0Tex1Tex2_VS", 8 },
 	};
 
-	static_assert(_countof(formats) == _countof(_layouts));
 	static_assert(_countof(vShaders) == _countof(_vertexStages));
-	static_assert(_countof(pShaders) == _countof(_pixelShaders));
+	static_assert(_countof(pShaders) == _countof(_pixelStages));
 	static_assert(_countof(pShaders) == _countof(_programs));
-
-	for (uint32_t i = 0; i < _countof(_layouts); i++)
-	{
-		_layouts[i].Release();
-	}
-
-	ff::IResources* resources = ff::GetThisModule().GetResources();
 
 	for (uint32_t i = 0; i < _countof(vShaders); i++)
 	{
 		const Shader& shader = vShaders[i];
-		ff::String vertexResourceName = ff::String::from_static(shader.resourceName);
-		_vertexStages[i].shader = _states.GetVertexShader(resources, vertexResourceName);
-
-		assert(shader.layout < NS_COUNTOF(formats));
-		assert(shader.layout < NS_COUNTOF(_layouts));
-
-		ff::ComPtr<ID3D11InputLayout>& layout = _layouts[shader.layout];
-		if (layout == nullptr)
-		{
-			layout = CreateLayout(formats[shader.layout].first, vertexResourceName);
-		}
-
-		_vertexStages[i].layout = layout;
-		_vertexStages[i].stride = formats[shader.layout].second;
+		_vertexStages[i]._resourceName = ff::String::from_static(shader.resourceName);
+		_vertexStages[i]._shader = nullptr;
+		_vertexStages[i]._layout = nullptr;
+		_vertexStages[i]._layoutIndex = shader.layout;
 	}
 
 	for (uint32_t i = 0; i < _countof(pShaders); i++)
 	{
 		const Shader& shader = pShaders[i];
-		ff::String pixelResourceName = ff::String::from_static(shader.resourceName);
-		_pixelShaders[i] = _states.GetPixelShader(resources, pixelResourceName);
+		_pixelStages[i]._resourceName = ff::String::from_static(shader.resourceName);
+		_pixelStages[i]._shader = nullptr;
 	}
 
-	_resolvePS[0] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve2_PS"));
-	_resolvePS[1] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve4_PS"));
-	_resolvePS[2] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve8_PS"));
-	_resolvePS[3] = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Resolve16_PS"));
-	_clearPS = _states.GetPixelShader(resources, ff::String::from_static(L"Noesis.Clear_PS"));
-	_quadVS = _states.GetVertexShader(resources, ff::String::from_static(L"Noesis.Quad_VS"));
+	_resolvePS[0]._resourceName = ff::String::from_static(L"Noesis.Resolve2_PS");
+	_resolvePS[0]._shader = nullptr;
+
+	_resolvePS[1]._resourceName = ff::String::from_static(L"Noesis.Resolve4_PS");
+	_resolvePS[1]._shader = nullptr;
+
+	_resolvePS[2]._resourceName = ff::String::from_static(L"Noesis.Resolve8_PS");
+	_resolvePS[2]._shader = nullptr;
+
+	_resolvePS[3]._resourceName = ff::String::from_static(L"Noesis.Resolve16_PS");
+	_resolvePS[3]._shader = nullptr;
+
+	_clearPS._resourceName = ff::String::from_static(L"Noesis.Clear_PS");
+	_clearPS._shader = nullptr;
+
+	_quadVS._resourceName = ff::String::from_static(L"Noesis.Quad_VS");
+	_quadVS._shader = nullptr;
 
 	std::memset(_programs, 255, sizeof(_programs));
 
@@ -825,8 +804,8 @@ void ff::XamlRenderDevice11::ClearRenderTarget()
 {
 	_context.SetLayoutIA(nullptr);
 	_context.SetGS(nullptr);
-	_context.SetVS(_quadVS);
-	_context.SetPS(_clearPS);
+	_context.SetVS(_quadVS.GetShader(_states));
+	_context.SetPS(_clearPS.GetShader(_states));
 	_context.SetRaster(_rasterizerStates[2]);
 	_context.SetBlend(_blendStates[0], ff::GetColorNone(), 0xffffffff);
 	_context.SetDepth(_depthStencilStates[4], 0);
@@ -842,10 +821,12 @@ void ff::XamlRenderDevice11::ClearTextures()
 void ff::XamlRenderDevice11::SetShaders(const Noesis::Batch& batch)
 {
 	const Program& program = _programs[batch.shader.v];
-	const VertexStage& vertex = _vertexStages[program.vertexShaderIndex];
-	_context.SetLayoutIA(_vertexStages[program.vertexShaderIndex].layout);
-	_context.SetVS(_vertexStages[program.vertexShaderIndex].shader);
-	_context.SetPS(_pixelShaders[program.pixelShaderIndex]);
+	VertexAndLayoutStage& vertex = _vertexStages[program._vertexShaderIndex];
+	PixelStage& pixel = _pixelStages[program._pixelShaderIndex];
+
+	_context.SetLayoutIA(vertex.GetLayout(_states));
+	_context.SetVS(vertex.GetShader(_states));
+	_context.SetPS(pixel.GetShader(_states));
 }
 
 void ff::XamlRenderDevice11::SetBuffers(const Noesis::Batch& batch)
@@ -855,7 +836,7 @@ void ff::XamlRenderDevice11::SetBuffers(const Noesis::Batch& batch)
 
 	// Vertices
 	const Program& program = _programs[batch.shader.v];
-	unsigned int stride = _vertexStages[program.vertexShaderIndex].stride;
+	unsigned int stride = ::LAYOUT_FORMATS_AND_STRIDE[_vertexStages[program._vertexShaderIndex]._layoutIndex].second;
 	_context.SetVertexIA(_bufferVertices->AsGraphBuffer11()->GetBuffer(), stride, batch.vertexOffset);
 
 	// Vertex Constants
@@ -966,7 +947,7 @@ void ff::XamlRenderDevice11::SetTextures(const Noesis::Batch& batch)
 		ID3D11ShaderResourceView* emptyPaletteView = nullptr;
 #endif
 		ID3D11ShaderResourceView* views[3] = { !palette ? view : emptyView, palette ? view : emptyPaletteView, paletteView };
-		ID3D11SamplerState* sampler = _samplerStates[batch.patternSampler.v];
+		ID3D11SamplerState* sampler = _samplerStages[batch.patternSampler.v].GetState(_states);
 		_context.SetResourcesPS(views, (size_t)TextureSlot::Pattern, 3);
 		_context.SetSamplersPS(&sampler, (size_t)TextureSlot::Pattern, 1);
 	}
@@ -975,7 +956,7 @@ void ff::XamlRenderDevice11::SetTextures(const Noesis::Batch& batch)
 	{
 		XamlTexture* t = XamlTexture::Get(batch.ramps);
 		ID3D11ShaderResourceView* view = t->GetTexture()->AsTextureView()->AsTextureView11()->GetView();
-		ID3D11SamplerState* sampler = _samplerStates[batch.rampsSampler.v];
+		ID3D11SamplerState* sampler = _samplerStages[batch.rampsSampler.v].GetState(_states);
 		_context.SetResourcesPS(&view, (size_t)TextureSlot::Ramps, 1);
 		_context.SetSamplersPS(&sampler, (size_t)TextureSlot::Ramps, 1);
 	}
@@ -984,7 +965,7 @@ void ff::XamlRenderDevice11::SetTextures(const Noesis::Batch& batch)
 	{
 		XamlTexture* t = XamlTexture::Get(batch.image);
 		ID3D11ShaderResourceView* view = t->GetTexture()->AsTextureView()->AsTextureView11()->GetView();
-		ID3D11SamplerState* sampler = _samplerStates[batch.imageSampler.v];
+		ID3D11SamplerState* sampler = _samplerStages[batch.imageSampler.v].GetState(_states);
 		_context.SetResourcesPS(&view, (size_t)TextureSlot::Image, 1);
 		_context.SetSamplersPS(&sampler, (size_t)TextureSlot::Image, 1);
 	}
@@ -993,7 +974,7 @@ void ff::XamlRenderDevice11::SetTextures(const Noesis::Batch& batch)
 	{
 		XamlTexture* t = XamlTexture::Get(batch.glyphs);
 		ID3D11ShaderResourceView* view = t->GetTexture()->AsTextureView()->AsTextureView11()->GetView();
-		ID3D11SamplerState* sampler = _samplerStates[batch.glyphsSampler.v];
+		ID3D11SamplerState* sampler = _samplerStages[batch.glyphsSampler.v].GetState(_states);
 		_context.SetResourcesPS(&view, (size_t)TextureSlot::Glyphs, 1);
 		_context.SetSamplersPS(&sampler, (size_t)TextureSlot::Glyphs, 1);
 	}
@@ -1002,8 +983,57 @@ void ff::XamlRenderDevice11::SetTextures(const Noesis::Batch& batch)
 	{
 		XamlTexture* t = XamlTexture::Get(batch.shadow);
 		ID3D11ShaderResourceView* view = t->GetTexture()->AsTextureView()->AsTextureView11()->GetView();
-		ID3D11SamplerState* sampler = _samplerStates[batch.shadowSampler.v];
+		ID3D11SamplerState* sampler = _samplerStages[batch.shadowSampler.v].GetState(_states);
 		_context.SetResourcesPS(&view, (size_t)TextureSlot::Shadow, 1);
 		_context.SetSamplersPS(&sampler, (size_t)TextureSlot::Shadow, 1);
 	}
+}
+
+ID3D11VertexShader* ff::XamlRenderDevice11::VertexStage::GetShader(ff::GraphStateCache11& states)
+{
+	if (!_shader)
+	{
+		_shader = states.GetVertexShader(ff::GetThisModule().GetResources(), _resourceName);
+	}
+
+	return _shader;
+}
+
+ID3D11InputLayout* ff::XamlRenderDevice11::VertexAndLayoutStage::GetLayout(ff::GraphStateCache11& states)
+{
+	if (!_layout)
+	{
+		_layout = ff::XamlRenderDevice11::CreateLayout(states, ::LAYOUT_FORMATS_AND_STRIDE[_layoutIndex].first, _resourceName);
+	}
+
+	return _layout;
+}
+
+ID3D11PixelShader* ff::XamlRenderDevice11::PixelStage::GetShader(ff::GraphStateCache11& states)
+{
+	if (!_shader)
+	{
+		_shader = states.GetPixelShader(ff::GetThisModule().GetResources(), _resourceName);
+	}
+
+	return _shader;
+}
+
+ID3D11SamplerState* ff::XamlRenderDevice11::SamplerStage::GetState(ff::GraphStateCache11& states)
+{
+	if (!_state)
+	{
+		D3D11_SAMPLER_DESC desc{};
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		desc.MaxAnisotropy = 1;
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		desc.MinLOD = -D3D11_FLOAT32_MAX;
+		desc.MaxLOD = D3D11_FLOAT32_MAX;
+		desc.Filter = ToD3D(Noesis::MinMagFilter::Enum(_params.f.minmagFilter), Noesis::MipFilter::Enum(_params.f.mipFilter));
+		::ToD3D(Noesis::WrapMode::Enum(_params.f.wrapMode), desc.AddressU, desc.AddressV);
+
+		_state = states.GetSamplerState(desc);
+	}
+
+	return _state;
 }

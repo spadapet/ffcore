@@ -10,7 +10,7 @@ namespace ff
 	class XamlTexture : public Noesis::Texture
 	{
 	public:
-		XamlTexture(ff::AutoResourceValue resource, ff::IPalette* palette, ff::StringRef name);
+		XamlTexture(ff::AutoResourceValue resource, ff::ITexture* placeholderTexture, ff::IPalette* palette, ff::StringRef name);
 		XamlTexture(ff::ITexture* texture, ff::IPalette* palette, ff::StringRef name);
 		virtual ~XamlTexture() override;
 
@@ -24,8 +24,9 @@ namespace ff
 		virtual bool IsInverted() const override;
 
 	private:
-		ff::AutoResourceValue _resource;
+		ff::TypedResource<ff::ITexture> _resource;
 		ff::ComPtr<ff::ITexture> _texture;
+		ff::ComPtr<ff::ITexture> _placeholderTexture;
 		ff::ComPtr<ff::IPalette> _palette;
 		ff::String _name;
 	};

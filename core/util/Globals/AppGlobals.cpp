@@ -940,6 +940,7 @@ void ff::AppGlobals::FrameAdvanceAndRender()
 	}
 
 	FrameRender(advanceType);
+	UpdateWindowCursor();
 }
 
 void ff::AppGlobals::FrameAdvanceResources()

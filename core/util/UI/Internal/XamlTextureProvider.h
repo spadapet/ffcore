@@ -2,6 +2,7 @@
 
 namespace ff
 {
+	class ITexture;
 	class XamlGlobalState;
 
 	class XamlTextureProvider : public Noesis::TextureProvider
@@ -15,5 +16,6 @@ namespace ff
 
 	private:
 		XamlGlobalState* _globals;
+		ff::ComPtr<ff::ITexture> _placeholderTexture;
 	};
 }

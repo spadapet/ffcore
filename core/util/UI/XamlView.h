@@ -28,6 +28,8 @@ namespace ff
 		UTIL_API Noesis::IView* GetView() const;
 		UTIL_API Noesis::FrameworkElement* GetContent() const;
 		UTIL_API Noesis::Visual* HitTest(ff::PointFloat screenPos) const;
+		UTIL_API Noesis::Cursor GetCursor() const;
+		UTIL_API void SetCursor(Noesis::Cursor cursor);
 		UTIL_API void SetSize(ff::IRenderTarget* target);
 		UTIL_API void SetSize(ff::PointInt pixelSize, double dpiScale, int rotate);
 		UTIL_API ff::PointFloat ScreenToContent(ff::PointFloat pos) const;
@@ -55,6 +57,7 @@ namespace ff
 		bool _focused;
 		bool _enabled;
 		bool _blockedBelow;
+		Noesis::Cursor _cursor;
 		Noesis::Ptr<Noesis::Grid> _viewGrid;
 		Noesis::Ptr<Noesis::Viewbox> _viewBox;
 		Noesis::Ptr<Noesis::IView> _view;

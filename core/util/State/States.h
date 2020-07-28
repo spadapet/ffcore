@@ -24,6 +24,7 @@ namespace ff
 		virtual void SaveState(AppGlobals* globals) override;
 		virtual void LoadState(AppGlobals* globals) override;
 		virtual Status GetStatus() override;
+		virtual Cursor GetCursor() override;
 
 	private:
 		ff::List<std::shared_ptr<State>> _states;

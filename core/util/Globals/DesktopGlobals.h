@@ -31,6 +31,7 @@ namespace ff
 		virtual bool IsWindowVisible() override;
 		virtual bool IsWindowFocused() override;
 		virtual bool CloseWindow() override;
+		virtual void UpdateWindowCursor() override;
 		virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow() override;
 		virtual ff::ComPtr<ff::IPointerDevice> CreatePointerDevice() override;
 		virtual ff::ComPtr<ff::IKeyboardDevice> CreateKeyboardDevice() override;
@@ -39,6 +40,7 @@ namespace ff
 	private:
 		HWND _hwnd;
 		HWND _hwndTop;
+		std::atomic<HCURSOR> _cursor;
 		bool _shutdown;
 	};
 }

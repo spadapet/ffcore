@@ -88,6 +88,20 @@ ff::State::Status ff::State::GetStatus()
 	return Status::Alive;
 }
 
+ff::State::Cursor ff::State::GetCursor()
+{
+	for (size_t i = 0; i < GetChildStateCount(); i++)
+	{
+		State::Cursor cursor = GetChildState(i)->GetCursor();
+		if (cursor != State::Cursor::Default)
+		{
+			return cursor;
+		}
+	}
+
+	return State::Cursor::Default;
+}
+
 size_t ff::State::GetChildStateCount()
 {
 	return 0;

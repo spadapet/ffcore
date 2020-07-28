@@ -42,18 +42,43 @@ namespace ff
 
 		struct VertexStage
 		{
-			ff::ComPtr<ID3D11VertexShader> shader;
-			ff::ComPtr<ID3D11InputLayout> layout;
-			uint32_t stride;
+			ID3D11VertexShader* GetShader(ff::GraphStateCache11& states);
+
+			ff::String _resourceName;
+			ff::ComPtr<ID3D11VertexShader> _shader;
+		};
+
+		struct VertexAndLayoutStage : public VertexStage
+		{
+			ID3D11InputLayout* GetLayout(ff::GraphStateCache11& states);
+
+			ff::ComPtr<ID3D11InputLayout> _layout;
+			uint32_t _layoutIndex;
+		};
+
+		struct PixelStage
+		{
+			ID3D11PixelShader* GetShader(ff::GraphStateCache11& states);
+
+			ff::String _resourceName;
+			ff::ComPtr<ID3D11PixelShader> _shader;
+		};
+
+		struct SamplerStage
+		{
+			ID3D11SamplerState* GetState(ff::GraphStateCache11& states);
+
+			Noesis::SamplerState _params;
+			ff::ComPtr<ID3D11SamplerState> _state;
 		};
 
 		struct Program
 		{
-			int8_t vertexShaderIndex;
-			int8_t pixelShaderIndex;
+			int8_t _vertexShaderIndex;
+			int8_t _pixelShaderIndex;
 		};
 
-		ff::ComPtr<ID3D11InputLayout> CreateLayout(uint32_t format, ff::StringRef vertexResourceName);
+		static ff::ComPtr<ID3D11InputLayout> CreateLayout(ff::GraphStateCache11& states, uint32_t format, ff::StringRef vertexResourceName);
 		void CreateBuffers();
 		void CreateStateObjects();
 		void CreateShaders();
@@ -92,17 +117,16 @@ namespace ff
 
 		// Shaders
 		Program _programs[52];
-		VertexStage _vertexStages[11];
-		ff::ComPtr<ID3D11InputLayout> _layouts[9];
-		ff::ComPtr<ID3D11PixelShader> _pixelShaders[52];
-		ff::ComPtr<ID3D11VertexShader> _quadVS;
-		ff::ComPtr<ID3D11PixelShader> _clearPS;
-		ff::ComPtr<ID3D11PixelShader> _resolvePS[(size_t)MsaaSamples::Count - 1];
+		VertexAndLayoutStage _vertexStages[11];
+		PixelStage _pixelStages[52];
+		VertexStage _quadVS;
+		PixelStage _clearPS;
+		PixelStage _resolvePS[(size_t)MsaaSamples::Count - 1];
 
 		// State
 		ff::ComPtr<ID3D11RasterizerState> _rasterizerStates[4];
 		ff::ComPtr<ID3D11BlendState> _blendStates[4];
 		ff::ComPtr<ID3D11DepthStencilState> _depthStencilStates[5];
-		ff::ComPtr<ID3D11SamplerState> _samplerStates[64];
+		SamplerStage _samplerStages[64];
 	};
 }

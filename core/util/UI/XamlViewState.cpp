@@ -55,3 +55,15 @@ void ff::XamlViewState::Render(ff::AppGlobals* globals, ff::IRenderTarget* targe
 {
 	_view->Render(_target, _depth);
 }
+
+ff::State::Cursor ff::XamlViewState::GetCursor()
+{
+	switch (_view->GetCursor())
+	{
+	default:
+		return ff::State::Cursor::Default;
+
+	case Noesis::Cursor_Hand:
+		return ff::State::Cursor::Hand;
+	}
+}

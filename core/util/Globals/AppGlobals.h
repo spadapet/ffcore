@@ -123,6 +123,7 @@ namespace ff
 		virtual bool IsWindowVisible() = 0;
 		virtual bool IsWindowFocused() = 0;
 		virtual bool CloseWindow() = 0;
+		virtual void UpdateWindowCursor() = 0;
 		virtual ff::ComPtr<ff::IRenderTargetWindow> CreateRenderTargetWindow() = 0;
 		virtual ff::ComPtr<ff::IPointerDevice> CreatePointerDevice() = 0;
 		virtual ff::ComPtr<ff::IKeyboardDevice> CreateKeyboardDevice() = 0;

@@ -12,6 +12,7 @@ ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* conte
 	, _focused(false)
 	, _enabled(true)
 	, _blockedBelow(false)
+	, _cursor(Noesis::Cursor_Arrow)
 	, _viewGrid(Noesis::MakePtr<Noesis::Grid>())
 	, _viewBox(Noesis::MakePtr<Noesis::Viewbox>())
 	, _view(Noesis::GUI::CreateView(_viewBox))
@@ -79,6 +80,16 @@ Noesis::Visual* ff::XamlView::HitTest(ff::PointFloat screenPos) const
 	ff::PointFloat pos = ScreenToContent(screenPos);
 	Noesis::HitTestResult ht = Noesis::VisualTreeHelper::HitTest(_content, Noesis::Point(pos.x, pos.y));
 	return ht.visualHit;
+}
+
+Noesis::Cursor ff::XamlView::GetCursor() const
+{
+	return _cursor;
+}
+
+void ff::XamlView::SetCursor(Noesis::Cursor cursor)
+{
+	_cursor = cursor;
 }
 
 void ff::XamlView::SetSize(ff::IRenderTarget* target)

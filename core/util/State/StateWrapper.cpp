@@ -90,6 +90,12 @@ ff::State::Status ff::StateWrapper::GetStatus()
 	return _state->GetStatus();
 }
 
+ff::State::Cursor ff::StateWrapper::GetCursor()
+{
+	noAssertRetVal(_state != nullptr, State::Cursor::Default);
+	return _state->GetCursor();
+}
+
 void ff::StateWrapper::SetState(AppGlobals* globals, const std::shared_ptr<State>& state)
 {
 	if (state != nullptr && state != _state)

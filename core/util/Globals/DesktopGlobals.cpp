@@ -7,6 +7,8 @@
 #include "Input/Joystick/JoystickInput.h"
 #include "Input/Keyboard/KeyboardDevice.h"
 #include "Input/Pointer/PointerDevice.h"
+#include "State/State.h"
+#include "Thread/ThreadDispatch.h"
 
 #if !METRO_APP
 
@@ -20,6 +22,7 @@ ff::DesktopGlobals* ff::DesktopGlobals::Get()
 ff::DesktopGlobals::DesktopGlobals()
 	: _hwnd(nullptr)
 	, _hwndTop(nullptr)
+	, _cursor(nullptr)
 	, _shutdown(false)
 {
 	assert(!s_desktopGlobals);
@@ -153,6 +156,18 @@ bool ff::DesktopGlobals::ListenWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LP
 			::PostQuitMessage(0);
 		}
 		break;
+
+	case WM_SETCURSOR:
+		{
+			HCURSOR cursor = _cursor.load();
+			if (hwnd == _hwnd && cursor)
+			{
+				::SetCursor(cursor);
+				nResult = 1;
+				return true;
+			}
+		}
+		break;
 	}
 
 	return false;
@@ -206,6 +221,36 @@ bool ff::DesktopGlobals::CloseWindow()
 	assertRetVal(_hwnd, false);
 	::PostMessage(_hwnd, WM_CLOSE, 0, 0);
 	return true;
+}
+
+void ff::DesktopGlobals::UpdateWindowCursor()
+{
+	HCURSOR cursor;
+	switch (GetGameState()->GetCursor())
+	{
+	default:
+		cursor = ::LoadCursor(nullptr, MAKEINTRESOURCE(IDC_ARROW));
+		break;
+
+	case ff::State::Cursor::Hand:
+		cursor = ::LoadCursor(nullptr, MAKEINTRESOURCE(IDC_HAND));
+		break;
+	}
+
+	if (cursor && cursor != _cursor.load())
+	{
+		_cursor = cursor;
+		HWND hwnd = _hwnd;
+
+		ff::GetMainThreadDispatch()->Post([cursor, hwnd]()
+			{
+				POINT pos;
+				if (::GetPhysicalCursorPos(&pos) && ::WindowFromPhysicalPoint(pos) == hwnd)
+				{
+					::SetCursor(cursor);
+				}
+			});
+	}
 }
 
 ff::ComPtr<ff::IRenderTargetWindow> ff::DesktopGlobals::CreateRenderTargetWindow()
