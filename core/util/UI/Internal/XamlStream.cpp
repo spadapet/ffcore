@@ -40,8 +40,6 @@ ff::IDataReader* ff::XamlStream::GetReader() const
 		{
 			self->_reader = reader;
 		}
-
-		self->_resource = ff::AutoResourceValue();
 	}
 
 	assert(_reader);

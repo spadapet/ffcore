@@ -160,6 +160,7 @@ ff::SharedResourceValue Resources::FlushResource(ff::SharedResourceValue value)
 	noAssertRetVal(owner, value);
 	assertRetVal(owner == this, value);
 
+	ff::Timer timer;
 	ff::WinHandle loadEvent;
 	{
 		ff::LockMutex lock(_mutex);
@@ -178,6 +179,9 @@ ff::SharedResourceValue Resources::FlushResource(ff::SharedResourceValue value)
 	if (loadEvent)
 	{
 		ff::WaitForHandle(loadEvent);
+
+		double seconds = timer.Tick();
+		ff::Log::DebugTraceF(L"[ff/res] Blocked on resource: %s (%.2fms)\r\n", value->GetName().c_str(), seconds * 1000.0);
 	}
 
 	return value->IsValid() ? value : value->GetNewValue();

@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Globals/Log.h"
 #include "Globals/ProcessGlobals.h"
 #include "Resource/Resources.h"
 #include "Resource/ResourceValue.h"
@@ -17,6 +18,8 @@ ff::ResourceValue::ResourceValue(IUnknown* obj, ff::StringRef name)
 	_value = obj
 		? ff::Value::New<ff::ObjectValue>(obj)
 		: ff::Value::New<ff::NullValue>();
+
+	ff::Log::DebugTraceF(L"[ff/res] Create %s resource: %s\r\n", _value->IsType<ff::NullValue>() ? L"async" : L"loaded", _name.c_str());
 }
 
 ff::ResourceValue::ResourceValue(const ff::Value* value, StringRef name)
@@ -28,6 +31,8 @@ ff::ResourceValue::ResourceValue(const ff::Value* value, StringRef name)
 	{
 		_value = ff::Value::New<ff::NullValue>();
 	}
+
+	ff::Log::DebugTraceF(L"[ff/res] Create %s resource: %s\r\n", _value->IsType<ff::NullValue>() ? L"async" : L"loaded", _name.c_str());
 }
 
 ff::ResourceValue::ResourceValue(ResourceValue&& rhs)
@@ -37,6 +42,14 @@ ff::ResourceValue::ResourceValue(ResourceValue&& rhs)
 	, _owner(rhs._owner)
 {
 	rhs._owner = nullptr;
+}
+
+ff::ResourceValue::~ResourceValue()
+{
+	if (!_newValue)
+	{
+		ff::Log::DebugTraceF(L"[ff/res] Destroy resource: %s\r\n", _name.c_str());
+	}
 }
 
 const ff::Value* ff::ResourceValue::GetValue() const
@@ -70,6 +83,8 @@ void ff::ResourceValue::SetLoadingOwner(IResources* owner)
 void ff::ResourceValue::Invalidate(SharedResourceValue newValue)
 {
 	assertRet(newValue != nullptr);
+
+	ff::Log::DebugTraceF(L"[ff/res] Update resource: %s\r\n", _name.c_str());
 
 	ff::LockMutex lock(::GetStaticMutex());
 	_newValue = newValue;

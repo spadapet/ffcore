@@ -15,6 +15,7 @@ namespace ff
 		UTIL_API ResourceValue(IUnknown* obj, ff::StringRef name);
 		UTIL_API ResourceValue(const ff::Value* value, ff::StringRef name);
 		UTIL_API ResourceValue(ResourceValue&& rhs);
+		UTIL_API ~ResourceValue();
 
 		UTIL_API ff::StringRef GetName() const;
 		UTIL_API const ff::Value* GetValue() const;

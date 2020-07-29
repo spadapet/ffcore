@@ -2,6 +2,7 @@
 
 namespace ff
 {
+	class IPalette;
 	class IResourceAccess;
 
 	class IXamlGlobalHelper
@@ -10,6 +11,7 @@ namespace ff
 		UTIL_API virtual ~IXamlGlobalHelper();
 
 		UTIL_API virtual ff::IResourceAccess* GetXamlResources();
+		UTIL_API virtual ff::IPalette* GetPalette();
 		UTIL_API virtual ff::String GetNoesisLicenseName();
 		UTIL_API virtual ff::String GetNoesisLicenseKey();
 		UTIL_API virtual ff::String GetApplicationResourcesName();

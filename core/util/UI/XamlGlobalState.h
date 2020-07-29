@@ -34,7 +34,6 @@ namespace ff
 
 		UTIL_API bool Startup(ff::IXamlGlobalHelper* helper);
 		UTIL_API void Shutdown();
-		UTIL_API void SetPalette(ff::IPalette* palette);
 		UTIL_API ff::IPalette* GetPalette() const;
 		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, bool perPixelAntiAlias = false, bool subPixelRendering = false);
@@ -51,6 +50,7 @@ namespace ff
 		void OnFocusView(XamlView* view, bool focused);
 
 		// State
+		virtual std::shared_ptr<State> Advance(AppGlobals* globals) override;
 		virtual void AdvanceDebugInput(ff::AppGlobals* globals) override;
 		virtual void OnFrameRendering(ff::AppGlobals* globals, ff::AdvanceType type) override;
 		virtual void OnFrameRendered(ff::AppGlobals* globals, ff::AdvanceType type, ff::IRenderTarget* target, ff::IRenderDepth* depth) override;

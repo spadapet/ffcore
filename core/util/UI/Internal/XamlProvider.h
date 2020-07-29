@@ -1,5 +1,7 @@
 #pragma once
 
+#include "UI/Internal/XamlResourceCache.h"
+
 namespace ff
 {
 	class XamlGlobalState;
@@ -8,11 +10,11 @@ namespace ff
 	{
 	public:
 		XamlProvider(XamlGlobalState* globals);
-		virtual ~XamlProvider() override;
 
+		void Advance();
 		virtual Noesis::Ptr<Noesis::Stream> LoadXaml(const char* uri) override;
 
 	private:
-		XamlGlobalState* _globals;
+		XamlResourceCache _cache;
 	};
 }

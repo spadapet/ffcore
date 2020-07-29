@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Data/Data.h"
+#include "Module/Module.h"
 #include "Graph/Anim/Transform.h"
 #include "Graph/GraphDevice.h"
 #include "Graph/GraphDeviceChild.h"
@@ -51,7 +52,7 @@ enum class GeometryBucketType
 class GeometryBucket
 {
 private:
-	GeometryBucket(GeometryBucketType bucketType, const std::type_info& itemType, size_t itemSize, size_t itemAlign)
+	GeometryBucket(GeometryBucketType bucketType, const std::type_info& itemType, size_t itemSize, size_t itemAlign, const D3D11_INPUT_ELEMENT_DESC* elementDesc, size_t elementCount)
 		: _bucketType(bucketType)
 		, _itemType(&itemType)
 		, _itemSize(itemSize)
@@ -61,6 +62,8 @@ private:
 		, _dataStart(nullptr)
 		, _dataCur(nullptr)
 		, _dataEnd(nullptr)
+		, _elementDesc(elementDesc)
+		, _elementCount(elementCount)
 	{
 	}
 
@@ -68,7 +71,7 @@ public:
 	template<typename T, GeometryBucketType BucketType>
 	static GeometryBucket New()
 	{
-		return GeometryBucket(BucketType, typeid(T), sizeof(T), alignof(T));
+		return GeometryBucket(BucketType, typeid(T), sizeof(T), alignof(T), T::GetLayout11().data(), T::GetLayout11().size());
 	}
 
 	GeometryBucket(GeometryBucket&& rhs)
@@ -77,6 +80,8 @@ public:
 		, _gs(std::move(rhs._gs))
 		, _ps(std::move(rhs._ps))
 		, _psPaletteOut(std::move(rhs._psPaletteOut))
+		, _elementDesc(rhs._elementDesc)
+		, _elementCount(rhs._elementCount)
 		, _bucketType(rhs._bucketType)
 		, _itemType(rhs._itemType)
 		, _itemSize(rhs._itemSize)
@@ -97,18 +102,25 @@ public:
 		_aligned_free(_dataStart);
 	}
 
-	void Reset(
-		ID3D11InputLayout* layout = nullptr,
-		ID3D11VertexShader* vs = nullptr,
-		ID3D11GeometryShader* gs = nullptr,
-		ID3D11PixelShader* ps = nullptr,
-		ID3D11PixelShader* psPaletteOut = nullptr)
+	// Input strings must be static
+	void Reset(const wchar_t* vsRes, const wchar_t* gsRes, const wchar_t* psRes, const wchar_t* psPaletteOutRes)
 	{
-		_layout = layout;
-		_vs = vs;
-		_gs = gs;
-		_ps = ps;
-		_psPaletteOut = psPaletteOut;
+		Reset();
+
+		ff::IResources* resources = ff::GetThisModule().GetResources();
+		_vsRes.Init(resources, ff::String::from_static(vsRes));
+		_gsRes.Init(resources, ff::String::from_static(gsRes));
+		_psRes.Init(resources, ff::String::from_static(psRes));
+		_psPaletteOutRes.Init(resources, ff::String::from_static(psPaletteOutRes));
+	}
+
+	void Reset()
+	{
+		_layout = nullptr;
+		_vs = nullptr;
+		_gs = nullptr;
+		_ps = nullptr;
+		_psPaletteOut = nullptr;
 
 		_aligned_free(_dataStart);
 		_dataStart = nullptr;
@@ -116,8 +128,10 @@ public:
 		_dataEnd = nullptr;
 	}
 
-	void Apply(ff::GraphContext11& context, ID3D11Buffer* geometryBuffer, bool paletteOut) const
+	void Apply(ff::GraphContext11& context, ff::GraphStateCache11& cache, ID3D11Buffer* geometryBuffer, bool paletteOut) const
 	{
+		const_cast<GeometryBucket*>(this)->CreateShaders(cache, paletteOut);
+
 		context.SetVertexIA(geometryBuffer, GetItemByteSize(), 0);
 		context.SetLayoutIA(_layout);
 		context.SetVS(_vs);
@@ -198,11 +212,38 @@ public:
 	}
 
 private:
+	void CreateShaders(ff::GraphStateCache11& cache, bool paletteOut)
+	{
+		if (!_vs)
+		{
+			_vs = cache.GetVertexShaderAndInputLayout(ff::GetThisModule().GetResources(), _vsRes.GetName(), _layout, _elementDesc, _elementCount);
+		}
+
+		if (!_gs)
+		{
+			_gs = cache.GetGeometryShader(ff::GetThisModule().GetResources(), _gsRes.GetName());
+		}
+
+		ff::ComPtr<ID3D11PixelShader>& ps = paletteOut ? _psPaletteOut : _ps;
+		if (!ps)
+		{
+			ps = cache.GetPixelShader(ff::GetThisModule().GetResources(), paletteOut ? _psPaletteOutRes.GetName() : _psRes.GetName());
+		}
+	}
+
+	ff::AutoResourceValue _vsRes;
+	ff::AutoResourceValue _gsRes;
+	ff::AutoResourceValue _psRes;
+	ff::AutoResourceValue _psPaletteOutRes;
+
 	ff::ComPtr<ID3D11InputLayout> _layout;
 	ff::ComPtr<ID3D11VertexShader> _vs;
 	ff::ComPtr<ID3D11GeometryShader> _gs;
 	ff::ComPtr<ID3D11PixelShader> _ps;
 	ff::ComPtr<ID3D11PixelShader> _psPaletteOut;
+
+	const D3D11_INPUT_ELEMENT_DESC* _elementDesc;
+	size_t _elementCount;
 
 	GeometryBucketType _bucketType;
 	const std::type_info* _itemType;
@@ -848,81 +889,24 @@ bool Renderer11::Init()
 {
 	Destroy();
 
-	ff::GraphStateCache11& cache = _device->AsGraphDevice11()->GetStateCache();
-	ff::ComPtr<ID3D11InputLayout> lineLayout;
-	ff::ComPtr<ID3D11InputLayout> circleLayout;
-	ff::ComPtr<ID3D11InputLayout> triangleLayout;
-	ff::ComPtr<ID3D11InputLayout> spriteLayout;
-
-	// Vertex shaders
-	ID3D11VertexShader* lineVS = ::GetVertexShaderAndInputLayout<ff::LineGeometryInput>(L"Renderer.LineVS", lineLayout, cache);
-	ID3D11VertexShader* circleVS = ::GetVertexShaderAndInputLayout<ff::CircleGeometryInput>(L"Renderer.CircleVS", circleLayout, cache);
-	ID3D11VertexShader* triangleVS = ::GetVertexShaderAndInputLayout<ff::TriangleGeometryInput>(L"Renderer.TriangleVS", triangleLayout, cache);
-	ID3D11VertexShader* spriteVS = ::GetVertexShaderAndInputLayout<ff::SpriteGeometryInput>(L"Renderer.SpriteVS", spriteLayout, cache);
-
-	// Geometry shaders
-	ID3D11GeometryShader* lineGS = ::GetGeometryShader(L"Renderer.LineGS", cache);
-	ID3D11GeometryShader* circleGS = ::GetGeometryShader(L"Renderer.CircleGS", cache);
-	ID3D11GeometryShader* triangleGS = ::GetGeometryShader(L"Renderer.TriangleGS", cache);
-	ID3D11GeometryShader* spriteGS = ::GetGeometryShader(L"Renderer.SpriteGS", cache);
-
-	// Pixel shaders
-	ID3D11PixelShader* colorPS = ::GetPixelShader(L"Renderer.ColorPS", cache);
-	ID3D11PixelShader* paletteOutColorPS = ::GetPixelShader(L"Renderer.PaletteOutColorPS", cache);
-	ID3D11PixelShader* spritePS = ::GetPixelShader(L"Renderer.SpritePS", cache);
-	ID3D11PixelShader* spritePalettePS = ::GetPixelShader(L"Renderer.SpritePalettePS", cache);
-	ID3D11PixelShader* paletteOutSpritePS = ::GetPixelShader(L"Renderer.PaletteOutSpritePS", cache);
-	ID3D11PixelShader* paletteOutSpritePalettePS = ::GetPixelShader(L"Renderer.PaletteOutSpritePalettePS", cache);
-
-	assertRetVal(
-		lineVS != nullptr &&
-		circleVS != nullptr &&
-		triangleVS != nullptr &&
-		spriteVS != nullptr &&
-		lineGS != nullptr &&
-		circleGS != nullptr &&
-		triangleGS != nullptr &&
-		spriteGS != nullptr &&
-		colorPS != nullptr &&
-		paletteOutColorPS != nullptr &&
-		spritePS != nullptr &&
-		spritePalettePS != nullptr &&
-		paletteOutSpritePS != nullptr &&
-		paletteOutSpritePalettePS != nullptr &&
-		lineLayout != nullptr &&
-		circleLayout != nullptr &&
-		triangleLayout != nullptr &&
-		spriteLayout != nullptr,
-		false);
-
 	// Geometry buckets
-	GetGeometryBucket(GeometryBucketType::Lines).Reset(lineLayout, lineVS, lineGS, colorPS, paletteOutColorPS);
-	GetGeometryBucket(GeometryBucketType::Circle).Reset(circleLayout, circleVS, circleGS, colorPS, paletteOutColorPS);
-	GetGeometryBucket(GeometryBucketType::Triangles).Reset(triangleLayout, triangleVS, triangleGS, colorPS, paletteOutColorPS);
-	GetGeometryBucket(GeometryBucketType::Sprites).Reset(spriteLayout, spriteVS, spriteGS, spritePS, paletteOutSpritePS);
-	GetGeometryBucket(GeometryBucketType::PaletteSprites).Reset(spriteLayout, spriteVS, spriteGS, spritePalettePS, paletteOutSpritePalettePS);
+	GetGeometryBucket(GeometryBucketType::Lines).Reset(L"Renderer.LineVS", L"Renderer.LineGS", L"Renderer.ColorPS", L"Renderer.PaletteOutColorPS");
+	GetGeometryBucket(GeometryBucketType::Circle).Reset(L"Renderer.CircleVS", L"Renderer.CircleGS", L"Renderer.ColorPS", L"Renderer.PaletteOutColorPS");
+	GetGeometryBucket(GeometryBucketType::Triangles).Reset(L"Renderer.TriangleVS", L"Renderer.TriangleGS", L"Renderer.ColorPS", L"Renderer.PaletteOutColorPS");
+	GetGeometryBucket(GeometryBucketType::Sprites).Reset(L"Renderer.SpriteVS", L"Renderer.SpriteGS", L"Renderer.SpritePS", L"Renderer.PaletteOutSpritePS");
+	GetGeometryBucket(GeometryBucketType::PaletteSprites).Reset(L"Renderer.SpriteVS", L"Renderer.SpriteGS", L"Renderer.SpritePalettePS", L"Renderer.PaletteOutSpritePalettePS");
 
-	GetGeometryBucket(GeometryBucketType::LinesAlpha).Reset(lineLayout, lineVS, lineGS, colorPS, paletteOutColorPS);
-	GetGeometryBucket(GeometryBucketType::CircleAlpha).Reset(circleLayout, circleVS, circleGS, colorPS, paletteOutColorPS);
-	GetGeometryBucket(GeometryBucketType::TrianglesAlpha).Reset(triangleLayout, triangleVS, triangleGS, colorPS, paletteOutColorPS);
-	GetGeometryBucket(GeometryBucketType::SpritesAlpha).Reset(spriteLayout, spriteVS, spriteGS, spritePS, paletteOutSpritePS);
+	GetGeometryBucket(GeometryBucketType::LinesAlpha).Reset(L"Renderer.LineVS", L"Renderer.LineGS", L"Renderer.ColorPS", L"Renderer.PaletteOutColorPS");
+	GetGeometryBucket(GeometryBucketType::CircleAlpha).Reset(L"Renderer.CircleVS", L"Renderer.CircleGS", L"Renderer.ColorPS", L"Renderer.PaletteOutColorPS");
+	GetGeometryBucket(GeometryBucketType::TrianglesAlpha).Reset(L"Renderer.TriangleVS", L"Renderer.TriangleGS", L"Renderer.ColorPS", L"Renderer.PaletteOutColorPS");
+	GetGeometryBucket(GeometryBucketType::SpritesAlpha).Reset(L"Renderer.SpriteVS", L"Renderer.SpriteGS", L"Renderer.SpritePS", L"Renderer.PaletteOutSpritePS");
 
-	// Default palette
-	{
-		DirectX::ScratchImage scratchPalette;
-		assertHrRetVal(scratchPalette.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, ff::PALETTE_SIZE, 1, 1, 1), false);
-		std::memset(scratchPalette.GetImages()->pixels, 0, ff::PALETTE_ROW_BYTES);
-
-		ff::ComPtr<ff::IPaletteData> defaultPaletteData;
-		assertRetVal(ff::CreatePaletteData(_device, std::move(scratchPalette), &defaultPaletteData), false);
-		_paletteStack.Push(defaultPaletteData->CreatePalette());
-	}
-
+	// Palette
+	_paletteStack.Push(nullptr);
 	_paletteTexture = _device->CreateTexture(ff::PointInt(256, (int)::MAX_PALETTES), ff::TextureFormat::RGBA32);
-	assertRetVal(_paletteTexture, false);
 
 	// States
-	_samplerStack.Push(::GetTextureSamplerState(cache, D3D11_FILTER_MIN_MAG_MIP_POINT));
+	_samplerStack.Push(::GetTextureSamplerState(_device->AsGraphDevice11()->GetStateCache(), D3D11_FILTER_MIN_MAG_MIP_POINT));
 	_opaqueState = CreateOpaqueDrawState();
 	_alphaState = CreateAlphaDrawState();
 
@@ -1071,18 +1055,21 @@ void Renderer11::UpdatePaletteTexture()
 	for (const auto& iter : _paletteToIndex)
 	{
 		ff::IPalette* palette = iter.GetValue().first;
-		unsigned int index = iter.GetValue().second;
-		size_t paletteRow = palette->GetCurrentRow();
-		ff::IPaletteData* paletteData = palette->GetData();
-		ff::hash_t rowHash = paletteData->GetRowHash(paletteRow);
-
-		if (_paletteTextureHashes[index] != rowHash)
+		if (palette)
 		{
-			_paletteTextureHashes[index] = rowHash;
-			ID3D11Resource* srcResource = paletteData->GetTexture()->AsTexture11()->GetTexture2d();
-			srcBox.top = (UINT)paletteRow;
-			srcBox.bottom = srcBox.top + 1;
-			deviceContext.CopySubresourceRegion(destResource, 0, 0, index, 0, srcResource, 0, &srcBox);
+			unsigned int index = iter.GetValue().second;
+			size_t paletteRow = palette->GetCurrentRow();
+			ff::IPaletteData* paletteData = palette->GetData();
+			ff::hash_t rowHash = paletteData->GetRowHash(paletteRow);
+
+			if (_paletteTextureHashes[index] != rowHash)
+			{
+				_paletteTextureHashes[index] = rowHash;
+				ID3D11Resource* srcResource = paletteData->GetTexture()->AsTexture11()->GetTexture2d();
+				srcBox.top = (UINT)paletteRow;
+				srcBox.bottom = srcBox.top + 1;
+				deviceContext.CopySubresourceRegion(destResource, 0, 0, index, 0, srcResource, 0, &srcBox);
+			}
 		}
 	}
 }
@@ -1175,12 +1162,13 @@ bool Renderer11::CreateGeometryBuffer()
 void Renderer11::DrawOpaqueGeometry()
 {
 	const ff::CustomRenderContextFunc11* customFunc = _customContextStack.Size() ? &_customContextStack.GetLast() : nullptr;
+	ff::GraphStateCache11& cache = _device->AsGraphDevice11()->GetStateCache();
 	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
 	context.SetTopologyIA(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	_opaqueState.Apply(context);
 
-	for (const GeometryBucket& bucket : _geometryBuckets)
+	for (GeometryBucket& bucket : _geometryBuckets)
 	{
 		if (bucket.GetBucketType() >= GeometryBucketType::FirstAlpha)
 		{
@@ -1189,7 +1177,7 @@ void Renderer11::DrawOpaqueGeometry()
 
 		if (bucket.GetRenderCount())
 		{
-			bucket.Apply(context, _geometryBuffer, _targetRequiresPalette);
+			bucket.Apply(context, cache, _geometryBuffer, _targetRequiresPalette);
 
 			if (!customFunc || (*customFunc)(context, bucket.GetItemType(), true))
 			{
@@ -1205,6 +1193,7 @@ void Renderer11::DrawAlphaGeometry()
 	noAssertRet(alphaGeometrySize);
 
 	const ff::CustomRenderContextFunc11* customFunc = _customContextStack.Size() ? &_customContextStack.GetLast() : nullptr;
+	ff::GraphStateCache11& cache = _device->AsGraphDevice11()->GetStateCache();
 	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
 	context.SetTopologyIA(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
@@ -1226,7 +1215,7 @@ void Renderer11::DrawAlphaGeometry()
 			}
 		}
 
-		entry._bucket->Apply(context, _geometryBuffer, _targetRequiresPalette);
+		entry._bucket->Apply(context, cache, _geometryBuffer, _targetRequiresPalette);
 
 		if (!customFunc || (*customFunc)(context, entry._bucket->GetItemType(), false))
 		{
@@ -1400,7 +1389,7 @@ unsigned int Renderer11::GetPaletteIndexNoFlush()
 		else
 		{
 			ff::IPalette* palette = _paletteStack.GetLast();
-			ff::hash_t paletteHash = palette->GetData()->GetRowHash(palette->GetCurrentRow());
+			ff::hash_t paletteHash = palette ? palette->GetData()->GetRowHash(palette->GetCurrentRow()) : 0;
 			auto iter = _paletteToIndex.GetKey(paletteHash);
 
 			if (!iter && _paletteToIndex.Size() != ::MAX_PALETTES)

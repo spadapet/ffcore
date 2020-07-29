@@ -713,6 +713,9 @@
     <ClCompile Include="Graph\Texture\TextureMetadata.cpp">
       <Filter>Graph\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="UI\Internal\XamlResourceCache.cpp">
+      <Filter>UI\Internal</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1282,6 +1285,9 @@
     <ClInclude Include="UI\Utility\SetPanelChildFocusAction.h">
       <Filter>UI\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="UI\Internal\XamlResourceCache.h">
+      <Filter>UI\Internal</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\util.def">
@@ -1292,6 +1298,21 @@
     </None>
     <None Include="Assets\Renderer.hlsl">
       <Filter>Assets</Filter>
+    </None>
+    <None Include="UI\Shader\QuadVS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </None>
+    <None Include="UI\Shader\ResolvePS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </None>
+    <None Include="UI\Shader\ShaderPS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </None>
+    <None Include="UI\Shader\ShaderVS.hlsl">
+      <Filter>UI\Shader</Filter>
+    </None>
+    <None Include="UI\Shader\ClearPS.hlsl">
+      <Filter>UI\Shader</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1309,22 +1330,5 @@
     <ResJson Include="Assets\Values.res.json">
       <Filter>Assets</Filter>
     </ResJson>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="UI\Shader\ClearPS.hlsl">
-      <Filter>UI\Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="UI\Shader\QuadVS.hlsl">
-      <Filter>UI\Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="UI\Shader\ResolvePS.hlsl">
-      <Filter>UI\Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="UI\Shader\ShaderPS.hlsl">
-      <Filter>UI\Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="UI\Shader\ShaderVS.hlsl">
-      <Filter>UI\Shader</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

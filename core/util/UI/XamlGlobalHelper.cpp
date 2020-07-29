@@ -12,22 +12,27 @@ ff::IResourceAccess* ff::IXamlGlobalHelper::GetXamlResources()
 	return ff::GetThisModule().GetResources();
 }
 
-UTIL_API ff::String ff::IXamlGlobalHelper::GetNoesisLicenseName()
+ff::IPalette* ff::IXamlGlobalHelper::GetPalette()
+{
+	return nullptr;
+}
+
+ff::String ff::IXamlGlobalHelper::GetNoesisLicenseName()
 {
 	return ff::GetEmptyString();
 }
 
-UTIL_API ff::String ff::IXamlGlobalHelper::GetNoesisLicenseKey()
+ff::String ff::IXamlGlobalHelper::GetNoesisLicenseKey()
 {
 	return ff::GetEmptyString();
 }
 
-UTIL_API ff::String ff::IXamlGlobalHelper::GetApplicationResourcesName()
+ff::String ff::IXamlGlobalHelper::GetApplicationResourcesName()
 {
 	return ff::GetEmptyString();
 }
 
-UTIL_API ff::String ff::IXamlGlobalHelper::GetDefaultFont()
+ff::String ff::IXamlGlobalHelper::GetDefaultFont()
 {
 	return ff::String::from_static(L"Segoe UI");
 }

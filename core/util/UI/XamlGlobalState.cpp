@@ -171,6 +171,7 @@ bool ff::XamlGlobalState::Startup(ff::IXamlGlobalHelper* helper)
 
 	// Resource providers
 
+	_palette = helper->GetPalette();
 	_resources = helper->GetXamlResources();
 	_renderDevice = Noesis::MakePtr<XamlRenderDevice11>(_appGlobals->GetGraph(), helper->IsSRGB());
 	_xamlProvider = Noesis::MakePtr<XamlProvider>(this);
@@ -244,11 +245,6 @@ void ff::XamlGlobalState::Shutdown()
 	s_assertHandler = nullptr;
 }
 
-void ff::XamlGlobalState::SetPalette(ff::IPalette* palette)
-{
-	_palette = palette;
-}
-
 ff::IPalette* ff::XamlGlobalState::GetPalette() const
 {
 	return _palette;
@@ -301,6 +297,26 @@ void ff::XamlGlobalState::UnregisterView(XamlView* view)
 	{
 		_focusedView = nullptr;
 	}
+}
+
+std::shared_ptr<ff::State> ff::XamlGlobalState::Advance(ff::AppGlobals* globals)
+{
+	if (_xamlProvider)
+	{
+		_xamlProvider->Advance();
+	}
+
+	if (_textureProvider)
+	{
+		_textureProvider->Advance();
+	}
+
+	if (_fontProvider)
+	{
+		_fontProvider->Advance();
+	}
+
+	return ff::State::Advance(globals);
 }
 
 void ff::XamlGlobalState::AdvanceDebugInput(ff::AppGlobals* globals)

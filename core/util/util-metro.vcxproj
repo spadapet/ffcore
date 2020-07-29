@@ -216,6 +216,7 @@
     <ClCompile Include="UI\Internal\XamlKeyMap.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderDevice11.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderTarget.cpp" />
+    <ClCompile Include="UI\Internal\XamlResourceCache.cpp" />
     <ClCompile Include="UI\Internal\XamlStream.cpp" />
     <ClCompile Include="UI\Internal\XamlTexture.cpp" />
     <ClCompile Include="UI\Internal\XamlTextureProvider.cpp" />
@@ -405,6 +406,7 @@
     <ClInclude Include="UI\Internal\XamlKeyMap.h" />
     <ClInclude Include="UI\Internal\XamlRenderDevice11.h" />
     <ClInclude Include="UI\Internal\XamlRenderTarget.h" />
+    <ClInclude Include="UI\Internal\XamlResourceCache.h" />
     <ClInclude Include="UI\Internal\XamlStream.h" />
     <ClInclude Include="UI\Internal\XamlTexture.h" />
     <ClInclude Include="UI\Internal\XamlTextureProvider.h" />

@@ -4,8 +4,10 @@
 #include "UI/Internal/XamlTexture.h"
 #include "Value/Values.h"
 
-ff::XamlTexture::XamlTexture(ff::AutoResourceValue resource, ff::ITexture* placeholderTexture, ff::IPalette* palette, ff::StringRef name)
-	: _resource(resource)
+NS_IMPLEMENT_REFLECTION_(ff::XamlTexture);
+
+ff::XamlTexture::XamlTexture(ff::AutoResourceValue&& resource, ff::ITexture* placeholderTexture, ff::IPalette* palette, ff::StringRef name)
+	: _resource(std::move(resource))
 	, _placeholderTexture(placeholderTexture)
 	, _palette(palette)
 	, _name(name)
@@ -14,7 +16,7 @@ ff::XamlTexture::XamlTexture(ff::AutoResourceValue resource, ff::ITexture* place
 }
 
 ff::XamlTexture::XamlTexture(ff::ITexture* texture, ff::IPalette* palette, ff::StringRef name)
-	: _texture(texture)
+	: _staticTexture(texture)
 	, _palette(palette)
 	, _name(name)
 {
@@ -30,10 +32,14 @@ ff::XamlTexture* ff::XamlTexture::Get(Noesis::Texture* texture)
 	return static_cast<ff::XamlTexture*>(texture);
 }
 
+ff::StringRef ff::XamlTexture::GetName() const
+{
+	return _name;
+}
+
 ff::ITexture* ff::XamlTexture::GetTexture() const
 {
-	XamlTexture* self = const_cast<XamlTexture*>(this);
-	ff::ITexture* texture = _resource.DidInit() ? self->_resource.GetObject() : _texture;
+	ff::ITexture* texture = _resource.DidInit() ? _resource.GetObject() : _staticTexture;
 	return texture ? texture : _placeholderTexture;
 }
 
