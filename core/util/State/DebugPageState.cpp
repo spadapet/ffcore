@@ -80,7 +80,7 @@ void ff::DebugPageState::Render(AppGlobals* globals, IRenderTarget* target, IRen
 
 void ff::DebugPageState::AdvanceDebugInput(AppGlobals* globals)
 {
-	noAssertRet(_input.HasObject() && _input->Advance(_inputDevices, _globals->GetGlobalTime()._secondsPerAdvance));
+	noAssertRet(_input.HasObject() && _input->Advance(_inputDevices, ff::SECONDS_PER_ADVANCE_D));
 
 	if (_input->HasStartEvent(EVENT_CUSTOM) && !_input->HasStartEvent(EVENT_PREV_PAGE))
 	{

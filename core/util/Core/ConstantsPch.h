@@ -17,4 +17,6 @@ namespace ff
 	const int ADVANCES_PER_SECOND_I = 60;
 	const double ADVANCES_PER_SECOND_D = 60.0;
 	const float ADVANCES_PER_SECOND_F = 60.0f;
+	const double SECONDS_PER_ADVANCE_D = 1.0 / 60.0;
+	const float SECONDS_PER_ADVANCE_F = 1.0f / 60.0f;
 }

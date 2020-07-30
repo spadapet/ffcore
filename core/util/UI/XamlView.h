@@ -57,6 +57,7 @@ namespace ff
 		bool _focused;
 		bool _enabled;
 		bool _blockedBelow;
+		double _counter;
 		Noesis::Cursor _cursor;
 		Noesis::Ptr<Noesis::Grid> _viewGrid;
 		Noesis::Ptr<Noesis::Viewbox> _viewBox;

@@ -19,6 +19,7 @@ ff::XamlView::XamlView(XamlGlobalState* globals, Noesis::FrameworkElement* conte
 	, _rotate(Noesis::MakePtr<Noesis::RotateTransform>())
 	, _content(content)
 	, _matrix(new DirectX::XMMATRIX[2])
+	, _counter(0)
 {
 	_matrix[0] = DirectX::XMMatrixIdentity();
 	_matrix[1] = DirectX::XMMatrixIdentity();
@@ -204,15 +205,17 @@ bool ff::XamlView::IsInputBelowBlocked() const
 
 void ff::XamlView::Advance()
 {
-	_view->Update(_globals->GetAppGlobals()->GetGlobalTime()._appSeconds);
+	double time = _counter++ * ff::SECONDS_PER_ADVANCE_D;
+
+	if (_view->Update(time))
+	{
+		_view->GetRenderer()->UpdateRenderTree();
+	}
 }
 
 void ff::XamlView::PreRender()
 {
-	if (_view->GetRenderer()->UpdateRenderTree())
-	{
-		_view->GetRenderer()->RenderOffscreen();
-	}
+	_view->GetRenderer()->RenderOffscreen();
 }
 
 void ff::XamlView::Render(ff::IRenderTarget* target, ff::IRenderDepth* depth, const ff::RectFloat* viewRect)
