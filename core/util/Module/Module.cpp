@@ -404,12 +404,12 @@ void ff::Module::RegisterClass(StringRef name, REFGUID classId, ClassFactoryFunc
 	_classesById.InsertKey(classId, info);
 }
 
-ff::IResources* ff::Module::GetResources() const
+ff::IResourceAccess* ff::Module::GetResources() const
 {
 	return _resources;
 }
 
-ff::IValueTable* ff::Module::GetValueTable() const
+ff::IValueAccess* ff::Module::GetValueTable() const
 {
 	return _valueTable;
 }

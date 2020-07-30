@@ -22,6 +22,5 @@ namespace ff
 		XamlResourceCache _cache;
 		ff::ComPtr<ff::IPalette> _palette;
 		ff::ComPtr<ff::ITexture> _placeholderTexture;
-		ff::Vector<Noesis::Ptr<XamlTexture>> _pendingTextures;
 	};
 }

@@ -23,12 +23,12 @@ namespace ff
 		UTIL_API ID3D11RasterizerState* GetRasterizerState(const D3D11_RASTERIZER_DESC& desc);
 		UTIL_API ID3D11SamplerState* GetSamplerState(const D3D11_SAMPLER_DESC& desc);
 
-		UTIL_API ID3D11VertexShader* GetVertexShader(ff::IResources* resources, StringRef resourceName);
-		UTIL_API ID3D11VertexShader* GetVertexShaderAndInputLayout(ff::IResources* resources, StringRef resourceName, ComPtr<ID3D11InputLayout>& inputLayout, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count);
-		UTIL_API ID3D11GeometryShader* GetGeometryShader(ff::IResources* resources, StringRef resourceName);
-		UTIL_API ID3D11GeometryShader* GetGeometryShaderStreamOutput(ff::IResources* resources, StringRef resourceName, const D3D11_SO_DECLARATION_ENTRY* layout, size_t count, size_t vertexStride);
-		UTIL_API ID3D11PixelShader* GetPixelShader(ff::IResources* resources, StringRef resourceName);
-		UTIL_API ID3D11InputLayout* GetInputLayout(ff::IResources* resources, StringRef vertexShaderResourceName, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count);
+		UTIL_API ID3D11VertexShader* GetVertexShader(ff::IResourceAccess* resources, StringRef resourceName);
+		UTIL_API ID3D11VertexShader* GetVertexShaderAndInputLayout(ff::IResourceAccess* resources, StringRef resourceName, ComPtr<ID3D11InputLayout>& inputLayout, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count);
+		UTIL_API ID3D11GeometryShader* GetGeometryShader(ff::IResourceAccess* resources, StringRef resourceName);
+		UTIL_API ID3D11GeometryShader* GetGeometryShaderStreamOutput(ff::IResourceAccess* resources, StringRef resourceName, const D3D11_SO_DECLARATION_ENTRY* layout, size_t count, size_t vertexStride);
+		UTIL_API ID3D11PixelShader* GetPixelShader(ff::IResourceAccess* resources, StringRef resourceName);
+		UTIL_API ID3D11InputLayout* GetInputLayout(ff::IResourceAccess* resources, StringRef vertexShaderResourceName, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count);
 
 		UTIL_API ID3D11VertexShader* GetVertexShader(ff::IData* shaderData);
 		UTIL_API ID3D11VertexShader* GetVertexShaderAndInputLayout(ff::IData* shaderData, ComPtr<ID3D11InputLayout>& inputLayout, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count);

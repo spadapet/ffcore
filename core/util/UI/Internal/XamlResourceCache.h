@@ -7,7 +7,7 @@ namespace ff
 {
 	class XamlGlobalState;
 
-	class XamlResourceCache : ff::IResourceAccess
+	class XamlResourceCache : public ff::IResourceAccess
 	{
 	public:
 		XamlResourceCache(XamlGlobalState* globals);

@@ -7,7 +7,9 @@ namespace ff
 {
 	class Module;
 	class IResources;
+	class IResourceAccess;
 	class ISavedData;
+	class IValueAccess;
 	class IValueTable;
 
 	struct ModuleClassInfo
@@ -42,8 +44,8 @@ namespace ff
 		UTIL_API String GetBuildArch() const;
 
 		UTIL_API ITypeLib* GetTypeLib(size_t index) const;
-		UTIL_API IResources* GetResources() const;
-		UTIL_API IValueTable* GetValueTable() const;
+		UTIL_API IResourceAccess* GetResources() const;
+		UTIL_API IValueAccess* GetValueTable() const;
 		UTIL_API ff::ValuePtr GetValue(StringRef name) const;
 		UTIL_API String GetString(StringRef name) const;
 		UTIL_API String GetFormattedString(String name, ...) const;

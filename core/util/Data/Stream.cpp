@@ -649,7 +649,6 @@ HRESULT DataReaderStream::Clone(IStream** ppstm)
 static ff::StaticString PROP_COMPRESS(L"compress");
 static ff::StaticString PROP_DATA(L"data");
 static ff::StaticString PROP_FILE(L"file");
-static ff::StaticString RES_COMPRESS(L"res:compress");
 
 class __declspec(uuid("96d0d0d7-1ed7-456b-89cf-6d6641466a68"))
 	FileStream
@@ -723,7 +722,7 @@ bool FileStream::SaveToCache(ff::Dict& dict)
 {
 	dict.Set<ff::SavedDataValue>(PROP_DATA, _data);
 	dict.Set<ff::BoolValue>(PROP_COMPRESS, _compress);
-	dict.Set<ff::BoolValue>(RES_COMPRESS, _compress);
+	dict.Set<ff::BoolValue>(ff::RES_COMPRESS, _compress);
 
 	return true;
 }

@@ -106,7 +106,7 @@ ID3D11SamplerState* ff::GraphStateCache11::GetSamplerState(const D3D11_SAMPLER_D
 	return i->GetValue();
 }
 
-ID3D11VertexShader* ff::GraphStateCache11::GetVertexShader(IResources* resources, StringRef resourceName)
+ID3D11VertexShader* ff::GraphStateCache11::GetVertexShader(IResourceAccess* resources, StringRef resourceName)
 {
 	TypedResource<IGraphShader> resource(resources, resourceName);
 	ComPtr<IData> data = resource.Flush() ? resource.GetObject()->GetData() : nullptr;
@@ -120,13 +120,13 @@ ID3D11VertexShader* ff::GraphStateCache11::GetVertexShader(IResources* resources
 	return value;
 }
 
-ID3D11VertexShader* ff::GraphStateCache11::GetVertexShaderAndInputLayout(IResources* resources, StringRef resourceName, ComPtr<ID3D11InputLayout>& inputLayout, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count)
+ID3D11VertexShader* ff::GraphStateCache11::GetVertexShaderAndInputLayout(IResourceAccess* resources, StringRef resourceName, ComPtr<ID3D11InputLayout>& inputLayout, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count)
 {
 	inputLayout = GetInputLayout(resources, resourceName, layout, count);
 	return GetVertexShader(resources, resourceName);
 }
 
-ID3D11GeometryShader* ff::GraphStateCache11::GetGeometryShader(IResources* resources, StringRef resourceName)
+ID3D11GeometryShader* ff::GraphStateCache11::GetGeometryShader(IResourceAccess* resources, StringRef resourceName)
 {
 	TypedResource<IGraphShader> resource(resources, resourceName);
 	ComPtr<IData> data = resource.Flush() ? resource.GetObject()->GetData() : nullptr;
@@ -140,7 +140,7 @@ ID3D11GeometryShader* ff::GraphStateCache11::GetGeometryShader(IResources* resou
 	return value;
 }
 
-ID3D11GeometryShader* ff::GraphStateCache11::GetGeometryShaderStreamOutput(IResources* resources, StringRef resourceName, const D3D11_SO_DECLARATION_ENTRY* layout, size_t count, size_t vertexStride)
+ID3D11GeometryShader* ff::GraphStateCache11::GetGeometryShaderStreamOutput(IResourceAccess* resources, StringRef resourceName, const D3D11_SO_DECLARATION_ENTRY* layout, size_t count, size_t vertexStride)
 {
 	TypedResource<IGraphShader> resource(resources, resourceName);
 	ComPtr<IData> data = resource.Flush() ? resource.GetObject()->GetData() : nullptr;
@@ -154,7 +154,7 @@ ID3D11GeometryShader* ff::GraphStateCache11::GetGeometryShaderStreamOutput(IReso
 	return value;
 }
 
-ID3D11PixelShader* ff::GraphStateCache11::GetPixelShader(IResources* resources, StringRef resourceName)
+ID3D11PixelShader* ff::GraphStateCache11::GetPixelShader(IResourceAccess* resources, StringRef resourceName)
 {
 	TypedResource<IGraphShader> resource(resources, resourceName);
 	ComPtr<IData> data = resource.Flush() ? resource.GetObject()->GetData() : nullptr;
@@ -168,7 +168,7 @@ ID3D11PixelShader* ff::GraphStateCache11::GetPixelShader(IResources* resources, 
 	return value;
 }
 
-ID3D11InputLayout* ff::GraphStateCache11::GetInputLayout(IResources* resources, StringRef vertexShaderResourceName, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count)
+ID3D11InputLayout* ff::GraphStateCache11::GetInputLayout(IResourceAccess* resources, StringRef vertexShaderResourceName, const D3D11_INPUT_ELEMENT_DESC* layout, size_t count)
 {
 	TypedResource<IGraphShader> resource(resources, vertexShaderResourceName);
 	ComPtr<IData> data = resource.Flush() ? resource.GetObject()->GetData() : nullptr;

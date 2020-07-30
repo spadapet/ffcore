@@ -123,6 +123,7 @@ bool TextureMetadata::SaveToCache(ff::Dict& dict)
 	dict.Set<ff::SizeValue>(::PROP_MIPS, _mips);
 	dict.Set<ff::SizeValue>(::PROP_ARRAY_SIZE, _arraySize);
 	dict.Set<ff::IntValue>(::PROP_FORMAT, (int)_format);
+	dict.Set<ff::BoolValue>(ff::RES_COMPRESS, false);
 
 	return true;
 }

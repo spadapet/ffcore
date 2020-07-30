@@ -107,7 +107,7 @@ public:
 	{
 		Reset();
 
-		ff::IResources* resources = ff::GetThisModule().GetResources();
+		ff::IResourceAccess* resources = ff::GetThisModule().GetResources();
 		_vsRes.Init(resources, ff::String::from_static(vsRes));
 		_gsRes.Init(resources, ff::String::from_static(gsRes));
 		_psRes.Init(resources, ff::String::from_static(psRes));

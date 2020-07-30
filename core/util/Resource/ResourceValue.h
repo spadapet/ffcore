@@ -7,6 +7,7 @@
 
 namespace ff
 {
+	class IResourceAccess;
 	class IResources;
 
 	class ResourceValue
@@ -42,14 +43,14 @@ namespace ff
 	{
 	public:
 		UTIL_API AutoResourceValue();
-		UTIL_API AutoResourceValue(IResources* resources, StringRef name);
+		UTIL_API AutoResourceValue(IResourceAccess* resources, StringRef name);
 		UTIL_API AutoResourceValue(const AutoResourceValue& rhs);
 		UTIL_API AutoResourceValue(AutoResourceValue&& rhs);
 		UTIL_API AutoResourceValue(SharedResourceValue value);
 		UTIL_API AutoResourceValue& operator=(const AutoResourceValue& rhs);
 		UTIL_API AutoResourceValue& operator=(AutoResourceValue&& rhs);
 
-		UTIL_API void Init(IResources* resources, StringRef name);
+		UTIL_API void Init(IResourceAccess* resources, StringRef name);
 		UTIL_API void Init(SharedResourceValue value);
 		UTIL_API bool DidInit() const;
 		UTIL_API const ff::Value* Flush();
@@ -70,7 +71,7 @@ namespace ff
 	{
 	public:
 		TypedResource();
-		TypedResource(IResources* resources, StringRef name);
+		TypedResource(IResourceAccess* resources, StringRef name);
 		TypedResource(const AutoResourceValue& value);
 		TypedResource(StringRef name);
 		TypedResource(const wchar_t* name);
@@ -78,7 +79,7 @@ namespace ff
 		TypedResource(TypedResource<T>&& rhs);
 		TypedResource& operator=(const TypedResource<T>& rhs);
 
-		void Init(IResources* resources, StringRef name);
+		void Init(IResourceAccess* resources, StringRef name);
 		void Init(const AutoResourceValue& value);
 		void Init(StringRef name);
 		void Init(const wchar_t* name);
@@ -106,7 +107,7 @@ ff::TypedResource<T>::TypedResource()
 }
 
 template<typename T>
-ff::TypedResource<T>::TypedResource(IResources* resources, StringRef name)
+ff::TypedResource<T>::TypedResource(IResourceAccess* resources, StringRef name)
 {
 	Init(resources, name);
 }
@@ -155,7 +156,7 @@ ff::TypedResource<T>& ff::TypedResource<T>::operator=(const TypedResource<T>& rh
 }
 
 template<typename T>
-void ff::TypedResource<T>::Init(IResources* resources, StringRef name)
+void ff::TypedResource<T>::Init(IResourceAccess* resources, StringRef name)
 {
 	_object.Release();
 	_objectValue.Release();
