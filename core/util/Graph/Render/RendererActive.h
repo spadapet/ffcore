@@ -50,6 +50,8 @@ namespace ff
 		virtual void PopNoOverlap() = 0;
 		virtual void PushOpaque() = 0;
 		virtual void PopOpaque() = 0;
+		virtual void PushPreMultipliedAlpha() = 0;
+		virtual void PopPreMultipliedAlpha() = 0;
 		virtual void NudgeDepth() = 0;
 	};
 

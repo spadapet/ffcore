@@ -143,6 +143,26 @@ bool ff::IsColorFormat(TextureFormat format)
 	}
 }
 
+bool ff::IsPaletteFormat(TextureFormat format)
+{
+	return format == ff::TextureFormat::R8_UINT;
+}
+
+bool ff::FormatSupportsPreMultipliedAlpha(TextureFormat format)
+{
+	switch (format)
+	{
+	default:
+		return false;
+
+	case ff::TextureFormat::RGBA32:
+	case ff::TextureFormat::BGRA32:
+	case ff::TextureFormat::RGBA32_SRGB:
+	case ff::TextureFormat::BGRA32_SRGB:
+		return true;
+	}
+}
+
 DXGI_FORMAT ff::ConvertTextureFormat(ff::TextureFormat format)
 {
 	switch (format)
@@ -215,7 +235,7 @@ DXGI_FORMAT ff::ParseDxgiTextureFormat(ff::StringRef szFormat)
 	{
 		format = DXGI_FORMAT_BC3_UNORM;
 	}
-	else if (szFormat == L"pal")
+	else if (szFormat == L"pal" || szFormat == L"palette")
 	{
 		format = DXGI_FORMAT_R8_UINT;
 	}

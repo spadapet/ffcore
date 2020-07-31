@@ -936,7 +936,7 @@ void ff::XamlRenderDevice11::SetTextures(const Noesis::Batch& batch)
 	if (batch.pattern)
 	{
 		XamlTexture* t = XamlTexture::Get(batch.pattern);
-		bool palette = (t->GetTexture()->GetFormat() == ff::TextureFormat::R8_UINT);
+		bool palette = ff::IsPaletteFormat(t->GetTexture()->GetFormat());
 		ID3D11ShaderResourceView* view = t->GetTexture()->AsTextureView()->AsTextureView11()->GetView();
 		ID3D11ShaderResourceView* paletteView = (palette && t->GetPalette()) ? t->GetPalette()->GetData()->GetTexture()->AsTextureView()->AsTextureView11()->GetView() : nullptr;
 #ifdef _DEBUG

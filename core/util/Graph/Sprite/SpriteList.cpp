@@ -254,7 +254,7 @@ bool SpriteList::LoadFromSource(const ff::Dict& dict)
 		assertRetVal(false, false);
 	}
 
-	if (optimize && !ff::IsColorFormat(format) && format != ff::TextureFormat::R8_UINT)
+	if (optimize && !ff::IsColorFormat(format) && !ff::IsPaletteFormat(format))
 	{
 		if (loadListener)
 		{

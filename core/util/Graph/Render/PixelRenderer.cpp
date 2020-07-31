@@ -21,9 +21,9 @@ ff::PixelRendererActive::PixelRendererActive(ff::RendererActive& render)
 	assert(render);
 }
 
-ff::IRendererActive* ff::PixelRendererActive::BeginRender(ff::IRenderer* render, ff::IRenderTarget* target, ff::IRenderDepth* depth, ff::RectFixedInt viewRect, ff::RectFixedInt worldRect)
+ff::IRendererActive* ff::PixelRendererActive::BeginRender(ff::IRenderer* render, ff::IRenderTarget* target, ff::IRenderDepth* depth, ff::RectFixedInt viewRect, ff::RectFixedInt worldRect, ff::RendererOptions options)
 {
-	return render->BeginRender(target, depth, ::Floor(viewRect), ::Floor(worldRect));
+	return render->BeginRender(target, depth, ::Floor(viewRect), ::Floor(worldRect), options);
 }
 
 ff::IRendererActive* ff::PixelRendererActive::GetRenderer() const

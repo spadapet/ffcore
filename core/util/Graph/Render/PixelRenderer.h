@@ -9,6 +9,7 @@ namespace ff
 	class IRendererActive11;
 	class ISprite;
 	class RendererActive;
+	enum class RendererOptions;
 	struct PixelTransform;
 
 	class PixelRendererActive
@@ -16,7 +17,7 @@ namespace ff
 	public:
 		UTIL_API PixelRendererActive(RendererActive& render);
 
-		UTIL_API static IRendererActive* BeginRender(IRenderer* render, IRenderTarget* target, IRenderDepth* depth, RectFixedInt viewRect, RectFixedInt worldRect);
+		UTIL_API static IRendererActive* BeginRender(IRenderer* render, IRenderTarget* target, IRenderDepth* depth, RectFixedInt viewRect, RectFixedInt worldRect, RendererOptions options = (RendererOptions)0);
 		UTIL_API IRendererActive* GetRenderer() const;
 		UTIL_API IRendererActive11* GetRenderer11() const;
 

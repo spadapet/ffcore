@@ -30,6 +30,7 @@ static ff::StaticString PROP_FILE(L"file");
 static ff::StaticString PROP_FORMAT(L"format");
 static ff::StaticString PROP_MIPS(L"mips");
 static ff::StaticString PROP_PALETTE(L"palette");
+static ff::StaticString PROP_PMA(L"pma");
 static ff::StaticString PROP_SPRITE_TYPE(L"spriteType");
 
 class __declspec(uuid("67741046-5d2f-4bf6-a955-baa950401935"))
@@ -503,6 +504,18 @@ bool Texture11::LoadFromSource(const ff::Dict& dict)
 
 	DirectX::ScratchImage paletteScratch;
 	DirectX::ScratchImage data = ff::LoadTextureData(fullFile, format, mipsProp, &paletteScratch);
+
+	bool pma = dict.Get<ff::BoolValue>(PROP_PMA);
+	for (size_t i = 0; pma && i < data.GetImageCount(); i++)
+	{
+		const DirectX::Image& image = data.GetImages()[i];
+		DirectX::ScratchImage scratch;
+		if (SUCCEEDED(DirectX::PremultiplyAlpha(image, DirectX::TEX_PMALPHA_DEFAULT, scratch)))
+		{
+			const DirectX::Image& pmaImage = *scratch.GetImages();
+			verifyHr(DirectX::CopyRectangle(pmaImage, DirectX::Rect(0, 0, image.width, image.height), image, DirectX::TEX_FILTER_DEFAULT, 0, 0));
+		}
+	}
 
 	ff::ComPtr<ff::IPaletteData> paletteData;
 	if (paletteScratch.GetImageCount())

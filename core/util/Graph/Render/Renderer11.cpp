@@ -305,7 +305,7 @@ public:
 
 	// IRenderer
 	virtual bool IsValid() const override;
-	virtual IRendererActive* BeginRender(ff::IRenderTarget* target, ff::IRenderDepth* depth, ff::RectFloat viewRect, ff::RectFloat worldRect) override;
+	virtual IRendererActive* BeginRender(ff::IRenderTarget* target, ff::IRenderDepth* depth, ff::RectFloat viewRect, ff::RectFloat worldRect, ff::RendererOptions options) override;
 
 	// IRendererActive
 	virtual void EndRender() override;
@@ -348,6 +348,8 @@ public:
 	virtual void PopNoOverlap() override;
 	virtual void PushOpaque() override;
 	virtual void PopOpaque() override;
+	virtual void PushPreMultipliedAlpha() override;
+	virtual void PopPreMultipliedAlpha() override;
 	virtual void NudgeDepth() override;
 
 	// IGraphDeviceChild
@@ -408,6 +410,7 @@ private:
 
 	ff::GraphFixedState11 CreateOpaqueDrawState();
 	ff::GraphFixedState11 CreateAlphaDrawState();
+	ff::GraphFixedState11 CreatePreMultipliedAlphaDrawState();
 	GeometryBucket& GetGeometryBucket(GeometryBucketType type);
 
 	enum class State
@@ -435,6 +438,7 @@ private:
 	ff::Vector<ff::ComPtr<ID3D11SamplerState>> _samplerStack;
 	ff::GraphFixedState11 _opaqueState;
 	ff::GraphFixedState11 _alphaState;
+	ff::GraphFixedState11 _premultipliedAlphaState;
 	ff::Vector<ff::CustomRenderContextFunc11> _customContextStack;
 
 	// Matrixes
@@ -464,6 +468,7 @@ private:
 	float _drawDepth;
 	int _forceNoOverlap;
 	int _forceOpaque;
+	int _forcePMA;
 };
 
 std::unique_ptr<ff::IRenderer> CreateRenderer11(ff::IGraphDevice* device)
@@ -559,8 +564,22 @@ static void GetAlphaBlend(D3D11_RENDER_TARGET_BLEND_DESC& desc)
 	desc.SrcBlend = D3D11_BLEND_SRC_ALPHA;
 	desc.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	desc.BlendOp = D3D11_BLEND_OP_ADD;
-	desc.SrcBlendAlpha = D3D11_BLEND_ZERO;
-	desc.DestBlendAlpha = D3D11_BLEND_ONE;
+	desc.SrcBlendAlpha = D3D11_BLEND_ONE;
+	desc.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	desc.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+}
+
+static void GetPreMultipliedAlphaBlend(D3D11_RENDER_TARGET_BLEND_DESC& desc)
+{
+	// newColor = (srcColor * SrcBlend) BlendOp (destColor * DestBlend)
+	// newAlpha = (srcAlpha * SrcBlendAlpha) BlendOpAlpha (destAlpha * DestBlendAlpha)
+
+	desc.BlendEnable = TRUE;
+	desc.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	desc.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	desc.BlendOp = D3D11_BLEND_OP_ADD;
+	desc.SrcBlendAlpha = D3D11_BLEND_ONE;
+	desc.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
 	desc.BlendOpAlpha = D3D11_BLEND_OP_ADD;
 }
 
@@ -581,6 +600,13 @@ static ID3D11BlendState* GetAlphaBlendState(ff::IGraphDevice* device)
 {
 	CD3D11_BLEND_DESC blend(D3D11_DEFAULT);
 	::GetAlphaBlend(blend.RenderTarget[0]);
+	return device->AsGraphDevice11()->GetStateCache().GetBlendState(blend);
+}
+
+static ID3D11BlendState* GetPreMultipliedAlphaBlendState(ff::IGraphDevice* device)
+{
+	CD3D11_BLEND_DESC blend(D3D11_DEFAULT);
+	::GetPreMultipliedAlphaBlend(blend.RenderTarget[0]);
 	return device->AsGraphDevice11()->GetStateCache().GetBlendState(blend);
 }
 
@@ -855,6 +881,7 @@ void Renderer11::Destroy()
 	_samplerStack.Clear();
 	_opaqueState = ff::GraphFixedState11();
 	_alphaState = ff::GraphFixedState11();
+	_premultipliedAlphaState = ff::GraphFixedState11();
 	_customContextStack.Clear();
 
 	_viewMatrix = ff::GetIdentityMatrix();
@@ -878,6 +905,7 @@ void Renderer11::Destroy()
 	_drawDepth = 0;
 	_forceNoOverlap = 0;
 	_forceOpaque = 0;
+	_forcePMA = 0;
 
 	for (auto& bucket : _geometryBuckets)
 	{
@@ -909,6 +937,7 @@ bool Renderer11::Init()
 	_samplerStack.Push(::GetTextureSamplerState(_device->AsGraphDevice11()->GetStateCache(), D3D11_FILTER_MIN_MAG_MIP_POINT));
 	_opaqueState = CreateOpaqueDrawState();
 	_alphaState = CreateAlphaDrawState();
+	_premultipliedAlphaState = CreatePreMultipliedAlphaDrawState();
 
 	_state = State::Valid;
 	return true;
@@ -938,6 +967,18 @@ ff::GraphFixedState11 Renderer11::CreateAlphaDrawState()
 	return state;
 }
 
+ff::GraphFixedState11 Renderer11::CreatePreMultipliedAlphaDrawState()
+{
+	ff::GraphFixedState11 state;
+
+	state._blend = ::GetPreMultipliedAlphaBlendState(_device);
+	state._depth = ::GetEnabledDepthState(_device);
+	state._disabledDepth = ::GetDisabledDepthState(_device);
+	state._raster = ::GetNoCullRasterState(_device);
+
+	return state;
+}
+
 GeometryBucket& Renderer11::GetGeometryBucket(GeometryBucketType type)
 {
 	return _geometryBuckets[(size_t)type];
@@ -948,14 +989,15 @@ bool Renderer11::IsValid() const
 	return _state != State::Invalid;
 }
 
-ff::IRendererActive* Renderer11::BeginRender(ff::IRenderTarget* target, ff::IRenderDepth* depth, ff::RectFloat viewRect, ff::RectFloat worldRect)
+ff::IRendererActive* Renderer11::BeginRender(ff::IRenderTarget* target, ff::IRenderDepth* depth, ff::RectFloat viewRect, ff::RectFloat worldRect, ff::RendererOptions options)
 {
 	EndRender();
 
 	noAssertRetVal(::SetupViewMatrix(target, viewRect, worldRect, _viewMatrix), nullptr);
 	assertRetVal(::SetupRenderTarget(_device, target, depth, viewRect), nullptr);
 	InitGeometryConstantBuffers0(target, viewRect, worldRect);
-	_targetRequiresPalette = (target->GetFormat() == ff::TextureFormat::R8_UINT);
+	_targetRequiresPalette = ff::IsPaletteFormat(target->GetFormat());
+	_forcePMA = ff::HasAllFlags(options, ff::RendererOptions::PreMultipliedAlpha) && ff::FormatSupportsPreMultipliedAlpha(target->GetFormat()) ? 1 : 0;
 	_state = State::Rendering;
 
 	return this;
@@ -1197,7 +1239,8 @@ void Renderer11::DrawAlphaGeometry()
 	ff::GraphContext11& context = _device->AsGraphDevice11()->GetStateContext();
 	context.SetTopologyIA(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-	_alphaState.Apply(context);
+	ff::GraphFixedState11& alphaState = _forcePMA ? _premultipliedAlphaState : _alphaState;
+	alphaState.Apply(context);
 
 	for (size_t i = 0; i < alphaGeometrySize; )
 	{
@@ -1256,6 +1299,7 @@ void Renderer11::EndRender()
 	_drawDepth = 0;
 	_forceNoOverlap = 0;
 	_forceOpaque = 0;
+	_forcePMA = 0;
 }
 
 bool Renderer11::IsRendering() const
@@ -1551,6 +1595,28 @@ void Renderer11::PopOpaque()
 {
 	assertRet(_forceOpaque > 0);
 	_forceOpaque--;
+}
+
+void Renderer11::PushPreMultipliedAlpha()
+{
+	if (!_forcePMA)
+	{
+		Flush();
+	}
+
+	_forcePMA++;
+}
+
+void Renderer11::PopPreMultipliedAlpha()
+{
+	assertRet(_forcePMA > 0);
+
+	if (_forcePMA == 1)
+	{
+		Flush();
+	}
+
+	_forcePMA--;
 }
 
 void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::Transform& transform)

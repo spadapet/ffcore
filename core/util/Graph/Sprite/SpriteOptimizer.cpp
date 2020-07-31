@@ -583,7 +583,7 @@ static bool CreateOutlineSprites(
 	ff::IPaletteData* paletteData)
 {
 	assertRetVal(outlineSpriteList, false);
-	bool usePalette = (format == ff::TextureFormat::R8_UINT);
+	bool usePalette = ff::IsPaletteFormat(format);
 	const int pixelSize = usePalette ? 1 : 4;
 	const int alphaOffset = usePalette ? 0 : 3;
 
@@ -671,7 +671,7 @@ static bool CreateOutlineSprites(
 
 bool ff::CreateOutlineSprites(ISpriteList* originalSprites, TextureFormat format, size_t mipMapLevels, ISpriteList** outSprites)
 {
-	assertRetVal(originalSprites && outSprites && (ff::IsColorFormat(format) || format == ff::TextureFormat::R8_UINT), false);
+	assertRetVal(originalSprites && outSprites && (ff::IsColorFormat(format) || ff::IsPaletteFormat(format)), false);
 	ComPtr<ISpriteList> newSprites = ::CreateOutputSprites(originalSprites->GetDevice(), nullptr);
 	Vector<OptimizedSpriteInfo> spriteInfos = ::CreateSpriteInfos(originalSprites);
 

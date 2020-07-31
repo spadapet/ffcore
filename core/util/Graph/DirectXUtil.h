@@ -37,6 +37,8 @@ namespace ff
 
 	bool IsCompressedFormat(TextureFormat format);
 	bool IsColorFormat(TextureFormat format);
+	bool IsPaletteFormat(TextureFormat format);
+	bool FormatSupportsPreMultipliedAlpha(TextureFormat format);
 	DXGI_FORMAT ConvertTextureFormat(TextureFormat format);
 	TextureFormat ConvertTextureFormat(DXGI_FORMAT format);
 	UTIL_API DXGI_FORMAT ParseDxgiTextureFormat(StringRef szFormat);
