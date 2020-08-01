@@ -11,6 +11,7 @@
 #include "Input/Keyboard/KeyboardDevice.h"
 #include "Input/Pointer/PointerDevice.h"
 #include "Resource/ResourcePersist.h"
+#include "State/State.h"
 #include "String/StringUtil.h"
 #include "Thread/ThreadPool.h"
 #include "Thread/ThreadDispatch.h"
@@ -191,6 +192,7 @@ void MetroGlobalsEvents::OnSwapChainSizeChanged(Platform::Object^ sender, Window
 }
 
 ff::MetroGlobals::MetroGlobals()
+	: _cursorType(Windows::UI::Core::CoreCursorType::Arrow)
 {
 	assert(!s_metroGlobals);
 	s_metroGlobals = this;
@@ -301,6 +303,20 @@ bool ff::MetroGlobals::CloseWindow()
 
 void ff::MetroGlobals::UpdateWindowCursor()
 {
+	Windows::UI::Core::CoreCursorType cursorType = (GetGameState()->GetCursor() == ff::State::Cursor::Hand)
+		? Windows::UI::Core::CoreCursorType::Hand
+		: Windows::UI::Core::CoreCursorType::Arrow;
+
+	if (cursorType != _cursorType)
+	{
+		_cursorType = cursorType;
+
+		Windows::UI::Xaml::Window^ window = _window;
+		ff::GetMainThreadDispatch()->Post([window, cursorType]()
+			{
+				window->CoreWindow->PointerCursor = ref new Windows::UI::Core::CoreCursor(cursorType, 0);
+			});
+	}
 }
 
 ff::ComPtr<ff::IRenderTargetWindow> ff::MetroGlobals::CreateRenderTargetWindow()

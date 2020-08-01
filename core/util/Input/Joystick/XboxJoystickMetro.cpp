@@ -4,6 +4,7 @@
 #include "Input/InputMapping.h"
 #include "Input/Joystick/JoystickDevice.h"
 #include "Module/Module.h"
+#include "Resource/Resources.h"
 
 #if METRO_APP
 
@@ -274,9 +275,9 @@ ff::String XboxJoystick::GetStickName(size_t nStick) const
 {
 	switch (nStick)
 	{
-	case 0: return ff::GetThisModule().GetString(ff::String(L"XBOX_PAD_LEFT"));
-	case 1: return ff::GetThisModule().GetString(ff::String(L"XBOX_PAD_RIGHT"));
-	default: assertRetVal(false, ff::GetThisModule().GetString(ff::String(L"INPUT_STICK_UNKNOWN")));
+	case 0: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_PAD_LEFT"));
+	case 1: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_PAD_RIGHT"));
+	default: assertRetVal(false, ff::GetThisModule().GetResources()->GetString(ff::String(L"INPUT_STICK_UNKNOWN")));
 	}
 }
 
@@ -320,8 +321,8 @@ ff::String XboxJoystick::GetDPadName(size_t nDPad) const
 {
 	switch (nDPad)
 	{
-	case 0: return ff::GetThisModule().GetString(ff::String(L"XBOX_PAD_DIGITAL"));
-	default: assertRetVal(false, ff::GetThisModule().GetString(ff::String(L"INPUT_STICK_UNKNOWN")));
+	case 0: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_PAD_DIGITAL"));
+	default: assertRetVal(false, ff::GetThisModule().GetResources()->GetString(ff::String(L"INPUT_STICK_UNKNOWN")));
 	}
 }
 
@@ -370,16 +371,16 @@ ff::String XboxJoystick::GetButtonName(size_t nButton) const
 {
 	switch (nButton)
 	{
-	case 0: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_A"));
-	case 1: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_B"));
-	case 2: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_X"));
-	case 3: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_Y"));
-	case 4: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_BACK"));
-	case 5: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_START"));
-	case 6: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_LSHOULDER"));
-	case 7: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_RSHOULDER"));
-	case 8: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_LTHUMB"));
-	case 9: return ff::GetThisModule().GetString(ff::String(L"XBOX_BUTTON_RTHUMB"));
+	case 0: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_A"));
+	case 1: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_B"));
+	case 2: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_X"));
+	case 3: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_Y"));
+	case 4: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_BACK"));
+	case 5: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_START"));
+	case 6: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_LSHOULDER"));
+	case 7: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_RSHOULDER"));
+	case 8: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_LTHUMB"));
+	case 9: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_BUTTON_RTHUMB"));
 	default: assertRetVal(false, ff::String());
 	}
 }
@@ -425,8 +426,8 @@ ff::String XboxJoystick::GetTriggerName(size_t nTrigger) const
 {
 	switch (nTrigger)
 	{
-	case 0: return ff::GetThisModule().GetString(ff::String(L"XBOX_LTRIGGER"));
-	case 1: return ff::GetThisModule().GetString(ff::String(L"XBOX_RTRIGGER"));
+	case 0: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_LTRIGGER"));
+	case 1: return ff::GetThisModule().GetResources()->GetString(ff::String(L"XBOX_RTRIGGER"));
 	default: assertRetVal(false, ff::String());
 	}
 }

@@ -48,3 +48,13 @@ ff::Vector<ff::String> ff::XamlResourceCache::GetResourceNames() const
 {
 	return _globals->GetResourceAccess()->GetResourceNames();
 }
+
+ff::ValuePtr ff::XamlResourceCache::GetValue(StringRef name) const
+{
+	return _globals->GetResourceAccess()->GetValue(name);
+}
+
+ff::String ff::XamlResourceCache::GetString(StringRef name) const
+{
+	return _globals->GetResourceAccess()->GetString(name);
+}

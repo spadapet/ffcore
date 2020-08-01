@@ -28,6 +28,7 @@ private:
 
 	ff::Vector<ff::String> _userLangs;
 	ff::Map<ff::String, ff::Dict> _langToDict;
+	ff::Dict _dict;
 };
 
 BEGIN_INTERFACES(ValueTable)
@@ -98,6 +99,8 @@ bool ValueTable::LoadFromSource(const ff::Dict& dict)
 
 bool ValueTable::LoadFromCache(const ff::Dict& dict)
 {
+	_dict = dict;
+
 	ff::Vector<ff::String> langNames = dict.GetAllNames();
 	for (ff::StringRef langName : langNames)
 	{
@@ -122,7 +125,8 @@ bool ValueTable::LoadFromCache(const ff::Dict& dict)
 
 bool ValueTable::SaveToCache(ff::Dict& dict)
 {
-	return false;
+	dict.Add(_dict);
+	return true;
 }
 
 void ValueTable::UpdateUserLanguages()

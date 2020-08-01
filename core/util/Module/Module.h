@@ -10,7 +10,6 @@ namespace ff
 	class IResourceAccess;
 	class ISavedData;
 	class IValueAccess;
-	class IValueTable;
 
 	struct ModuleClassInfo
 	{
@@ -45,11 +44,6 @@ namespace ff
 
 		UTIL_API ITypeLib* GetTypeLib(size_t index) const;
 		UTIL_API IResourceAccess* GetResources() const;
-		UTIL_API IValueAccess* GetValueTable() const;
-		UTIL_API ff::ValuePtr GetValue(StringRef name) const;
-		UTIL_API String GetString(StringRef name) const;
-		UTIL_API String GetFormattedString(String name, ...) const;
-
 		UTIL_API Vector<GUID> GetClasses() const;
 		UTIL_API const ModuleClassInfo* GetClassInfo(StringRef name) const;
 		UTIL_API const ModuleClassInfo* GetClassInfo(REFGUID classId) const;
@@ -75,9 +69,7 @@ namespace ff
 	private:
 		void LoadTypeLibs();
 		void LoadResources();
-		void LoadValueTable();
 		Vector<ComPtr<ISavedData>> GetResourceSavedDicts() const;
-		Vector<ComPtr<ISavedData>> GetValueTableSavedDicts() const;
 
 		// Identity
 		mutable std::atomic_long _refs;
@@ -87,7 +79,6 @@ namespace ff
 
 		// Resources
 		ComPtr<IResources> _resources;
-		ComPtr<IValueTable> _valueTable;
 		Vector<ComPtr<ITypeLib>> _typeLibs;
 
 		// COM registration

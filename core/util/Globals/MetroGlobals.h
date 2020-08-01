@@ -47,6 +47,7 @@ namespace ff
 		Windows::UI::Xaml::Window^ _window;
 		Windows::UI::Xaml::Controls::SwapChainPanel^ _swapPanel;
 		Windows::Graphics::Display::DisplayInformation^ _displayInfo;
+		Windows::UI::Core::CoreCursorType _cursorType;
 		Platform::Object^ _pointerEvents;
 	};
 }

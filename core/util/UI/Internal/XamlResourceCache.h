@@ -17,6 +17,8 @@ namespace ff
 		// IResourceAccess
 		virtual SharedResourceValue GetResource(StringRef name) override;
 		virtual Vector<String> GetResourceNames() const override;
+		virtual ValuePtr GetValue(StringRef name) const override;
+		virtual String GetString(StringRef name) const override;
 
 	private:
 		struct Entry

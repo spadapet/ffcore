@@ -11,6 +11,7 @@
 #include "Input/Pointer/PointerDevice.h"
 #include "Module/ModuleFactory.h"
 #include "Resource/ResourcePersist.h"
+#include "Resource/Resources.h"
 #include "String/StringUtil.h"
 #include "Value/Values.h"
 
@@ -1129,7 +1130,7 @@ ff::String ff::VirtualKeyToDisplayName(int vk)
 	ff::ReplaceAll(id, '-', '_');
 	id.insert(0, L"VK_");
 
-	ff::String displayName = ff::GetThisModule().GetString(id);
+	ff::String displayName = ff::GetThisModule().GetResources()->GetString(id);
 	assert(displayName.size());
 
 	return displayName.empty() ? name : displayName;

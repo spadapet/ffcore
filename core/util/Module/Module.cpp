@@ -5,7 +5,6 @@
 #include "Data/DataWriterReader.h"
 #include "Data/SavedData.h"
 #include "Dict/Dict.h"
-#include "Dict/ValueTable.h"
 #include "Module/Module.h"
 #include "Resource/ResourcePersist.h"
 #include "Resource/Resources.h"
@@ -42,14 +41,12 @@ ff::Module::~Module()
 void ff::Module::AfterInit()
 {
 	LoadTypeLibs();
-	LoadValueTable();
 	LoadResources();
 }
 
 void ff::Module::BeforeDestruct()
 {
 	_typeLibs.ClearAndReduce();
-	_valueTable.Release();
 	_resources.Release();
 }
 
@@ -193,26 +190,7 @@ void ff::Module::LoadResources()
 		}
 	}
 
-	verify(CreateResources(nullptr, _valueTable, finalDict, &_resources));
-}
-
-void ff::Module::LoadValueTable()
-{
-	Dict finalDict;
-	Vector<ComPtr<ISavedData>> datas = GetValueTableSavedDicts();
-
-	for (size_t i = 0; i < datas.Size(); i++)
-	{
-		static StaticString valueName(L"Values");
-		ValuePtr savedData = ff::Value::New<ff::SavedDictValue>(datas[i]);
-		ValuePtr savedDict = savedData->Convert<ff::DictValue>();
-		ValuePtr valuesData = savedDict->GetValue<ff::DictValue>().GetValue(valueName);
-		ValuePtr valuesDict = valuesData->Convert<ff::DictValue>();
-
-		finalDict.Merge(valuesDict->GetValue<ff::DictValue>());
-	}
-
-	verify(CreateValueTable(finalDict, &_valueTable));
+	verify(CreateResources(nullptr, finalDict, &_resources));
 }
 
 #if !METRO_APP
@@ -231,22 +209,16 @@ static BOOL CALLBACK HandleResourceName(HMODULE module, LPCTSTR type, LPTSTR nam
 }
 #endif
 
-static ff::Vector<ff::ComPtr<ff::ISavedData>> GetDictsInDirectory(ff::StringRef assetDir, bool valueDicts, bool memMapped)
+static ff::Vector<ff::ComPtr<ff::ISavedData>> GetDictsInDirectory(ff::StringRef assetDir)
 {
 	ff::Vector<ff::ComPtr<ff::ISavedData>> datas;
 
 	ff::Vector<ff::String> dirs, files;
 	if (ff::GetDirectoryContents(assetDir, dirs, files))
 	{
-		ff::String prefix = valueDicts
-			? ff::String(L"Values.")
-			: ff::String(L"Assets.");
-
 		for (ff::StringRef file : files)
 		{
-			if (!_wcsnicmp(file.c_str(), prefix.c_str(), prefix.size()) &&
-				file.size() >= 9 &&
-				file.rfind(L".res.pack") == file.size() - 9)
+			if (file.size() >= 9 && file.rfind(L".res.pack") == file.size() - 9)
 			{
 				ff::String asset = assetDir;
 				ff::AppendPathTail(asset, file);
@@ -254,10 +226,7 @@ static ff::Vector<ff::ComPtr<ff::ISavedData>> GetDictsInDirectory(ff::StringRef 
 				ff::ComPtr<ff::IDataFile> dataFile;
 				if (ff::CreateDataFile(asset, false, &dataFile))
 				{
-					if (memMapped)
-					{
-						memMapped = dataFile->OpenReadMemMapped();
-					}
+					bool memMapped = dataFile->OpenReadMemMapped();
 
 					ff::ComPtr<ff::ISavedData> savedData;
 					if (ff::CreateSavedDataFromFile(dataFile, 0, dataFile->GetSize(), dataFile->GetSize(), false, &savedData))
@@ -282,24 +251,10 @@ ff::Vector<ff::ComPtr<ff::ISavedData>> ff::Module::GetResourceSavedDicts() const
 #if METRO_APP
 	String assetSubDir = (ff::GetMainModuleInstance() == GetInstance()) ? ff::GetEmptyString() : GetName();
 	String assetDir = ff::GetExecutableDirectory(assetSubDir);
-	Vector<ComPtr<ISavedData>> datas = GetDictsInDirectory(assetDir, false, true);
+	Vector<ComPtr<ISavedData>> datas = GetDictsInDirectory(assetDir);
 #else
 	Vector<ComPtr<ISavedData>> datas;
 	::EnumResourceNames(_instance, L"RESDICT", HandleResourceName, (LONG_PTR)&datas);
-#endif
-
-	return datas;
-}
-
-ff::Vector<ff::ComPtr<ff::ISavedData>> ff::Module::GetValueTableSavedDicts() const
-{
-#if METRO_APP
-	String assetSubDir = (ff::GetMainModuleInstance() == GetInstance()) ? ff::GetEmptyString() : GetName();
-	String assetDir = ff::GetExecutableDirectory(assetSubDir);
-	Vector<ComPtr<ISavedData>> datas = GetDictsInDirectory(assetDir, true, false);
-#else
-	Vector<ComPtr<ISavedData>> datas;
-	::EnumResourceNames(_instance, L"VALUEDICT", HandleResourceName, (LONG_PTR)&datas);
 #endif
 
 	return datas;
@@ -407,29 +362,4 @@ void ff::Module::RegisterClass(StringRef name, REFGUID classId, ClassFactoryFunc
 ff::IResourceAccess* ff::Module::GetResources() const
 {
 	return _resources;
-}
-
-ff::IValueAccess* ff::Module::GetValueTable() const
-{
-	return _valueTable;
-}
-
-ff::ValuePtr ff::Module::GetValue(StringRef name) const
-{
-	return _valueTable->GetValue(name);
-}
-
-ff::String ff::Module::GetString(StringRef name) const
-{
-	return _valueTable->GetString(name);
-}
-
-ff::String ff::Module::GetFormattedString(String name, ...) const
-{
-	va_list args;
-	va_start(args, name);
-	String str = String::format_new_v(GetString(name).c_str(), args);
-	va_end(args);
-
-	return str;
 }

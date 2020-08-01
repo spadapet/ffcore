@@ -49,4 +49,4 @@ END
 //
 
 ID_RES_ASSETS RESDICT "Assets.res.pack"
-ID_RES_VALUES VALUEDICT "Values.res.pack"
+ID_RES_VALUES RESDICT "Values.res.pack"

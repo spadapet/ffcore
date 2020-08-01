@@ -16,6 +16,7 @@
 #include "Input/DeviceEvent.h"
 #include "Input/Joystick/JoystickInput.h"
 #include "Resource/ResourcePersist.h"
+#include "Resource/Resources.h"
 #include "State/DebugPageState.h"
 #include "State/States.h"
 #include "State/StateWrapper.h"
@@ -34,7 +35,7 @@ static void WriteLog(const wchar_t* id, ...)
 	ff::String formatString = ff::String::format_new(L"%s %s: %s\r\n",
 		ff::GetDateAsString().c_str(),
 		ff::GetTimeAsString().c_str(),
-		ff::GetThisModule().GetString(ff::String(id)).c_str());
+		ff::GetThisModule().GetResources()->GetString(ff::String(id)).c_str());
 	ff::Log::GlobalTraceV(formatString.c_str(), args);
 
 	va_end(args);
@@ -314,10 +315,7 @@ ff::String ff::AppGlobals::GetStateFile() const
 
 	String appName = ff::GetMainModule()->GetName();
 	String appArch = GetThisModule().GetBuildArch();
-	String name = GetThisModule().GetFormattedString(
-		String(L"APP_STATE_FILE"),
-		appName.c_str(),
-		appArch.c_str());
+	String name = ff::String::format_new(GetThisModule().GetResources()->GetString(String(L"APP_STATE_FILE")).c_str(), appName.c_str(), appArch.c_str());
 	ff::AppendPathTail(path, name);
 
 	return path;

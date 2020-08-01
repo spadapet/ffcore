@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Dict/ValueTable.h"
 #include "Globals/AppGlobals.h"
 #include "Globals/ProcessGlobals.h"
 #include "Module/ModuleFactory.h"
@@ -19,11 +18,13 @@ class __declspec(uuid("676f438b-b858-4fa7-82f8-50dae9505bce"))
 public:
 	DECLARE_HEADER(Resources);
 
-	bool Init(ff::AppGlobals* globals, ff::IValueTable* values, const ff::Dict& dict);
+	bool Init(ff::AppGlobals* globals, const ff::Dict& dict);
 
 	// IResourceAccess
 	virtual ff::Vector<ff::String> GetResourceNames() const override;
 	virtual ff::SharedResourceValue GetResource(ff::StringRef name) override;
+	virtual ff::ValuePtr GetValue(ff::StringRef name) const override;
+	virtual ff::String GetString(ff::StringRef name) const override;
 
 	// IResources
 	virtual ff::SharedResourceValue FlushResource(ff::SharedResourceValue value) override;
@@ -75,13 +76,13 @@ static ff::ModuleStartup Register([](ff::Module& module)
 		module.RegisterClassT<Resources>(RESOURCES_CLASS_NAME);
 	});
 
-bool ff::CreateResources(AppGlobals* globals, ff::IValueTable* values, const Dict& dict, ff::IResources** obj)
+bool ff::CreateResources(AppGlobals* globals, const Dict& dict, ff::IResources** obj)
 {
 	assertRetVal(obj, false);
 
 	ComPtr<Resources, IResources> myObj;
 	assertHrRetVal(ff::ComAllocator<Resources>::CreateInstance(&myObj), false);
-	assertRetVal(myObj->Init(globals, values, dict), false);
+	assertRetVal(myObj->Init(globals, dict), false);
 
 	*obj = myObj.Detach();
 	return true;
@@ -101,10 +102,9 @@ Resources::~Resources()
 {
 }
 
-bool Resources::Init(ff::AppGlobals* globals, ff::IValueTable* values, const ff::Dict& dict)
+bool Resources::Init(ff::AppGlobals* globals, const ff::Dict& dict)
 {
 	_globals = globals;
-	_valueTable = values;
 	return LoadFromCache(dict);
 }
 
@@ -152,6 +152,16 @@ ff::SharedResourceValue Resources::GetResource(ff::StringRef name)
 	}
 
 	return value;
+}
+
+ff::ValuePtr Resources::GetValue(ff::StringRef name) const
+{
+	return _valueTable ? _valueTable->GetValue(name) : nullptr;
+}
+
+ff::String Resources::GetString(ff::StringRef name) const
+{
+	return _valueTable ? _valueTable->GetString(name) : ff::GetEmptyString();
 }
 
 ff::SharedResourceValue Resources::FlushResource(ff::SharedResourceValue value)
@@ -214,9 +224,17 @@ bool Resources::LoadFromCache(const ff::Dict& dict)
 {
 	for (ff::String name : dict.GetAllNames())
 	{
-		ValueInfo info;
-		info._dictValue = dict.GetValue(name);
-		_values.SetKey(name, info);
+		if (name == L"Values")
+		{
+			ff::Dict valuesDict = dict.Get<ff::DictValue>(name);
+			ff::CreateValueTable(valuesDict, &_valueTable);
+		}
+		else
+		{
+			ValueInfo info;
+			info._dictValue = dict.GetValue(name);
+			_values.SetKey(name, info);
+		}
 	}
 
 	return true;
@@ -317,7 +335,7 @@ ff::ValuePtr Resources::CreateObjects(ValueInfo& info, ff::ValuePtr value)
 		else if (!std::wcsncmp(str.c_str(), locPrefix.c_str(), locPrefix.size()))
 		{
 			ff::String locName = str.substr(locPrefix.size());
-			value = _valueTable ? _valueTable->GetValue(locName) : nullptr;
+			value = GetValue(locName);
 			assertSz(value, ff::String::format_new(L"Missing localized resource value: %s", locName.c_str()).c_str());
 		}
 	}
