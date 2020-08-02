@@ -1,6 +1,7 @@
 #pragma once
 
 #include "COM/ComAlloc.h"
+#include "Types/Event.h"
 #include "Value/ValueType.h"
 
 namespace ff
@@ -44,6 +45,9 @@ namespace ff
 
 		UTIL_API ITypeLib* GetTypeLib(size_t index) const;
 		UTIL_API IResourceAccess* GetResources() const;
+		UTIL_API void RebuildResourcesFromSourceAsync();
+		UTIL_API Event<Module*>& GetResourceRebuiltEvent();
+
 		UTIL_API Vector<GUID> GetClasses() const;
 		UTIL_API const ModuleClassInfo* GetClassInfo(StringRef name) const;
 		UTIL_API const ModuleClassInfo* GetClassInfo(REFGUID classId) const;
@@ -79,6 +83,8 @@ namespace ff
 
 		// Resources
 		ComPtr<IResources> _resources;
+		Vector<String> _resourceSourceFiles;
+		Event<Module*> _resourcesRebuiltEvent;
 		Vector<ComPtr<ITypeLib>> _typeLibs;
 
 		// COM registration

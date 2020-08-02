@@ -222,6 +222,8 @@ bool Resources::LoadFromSource(const ff::Dict& dict)
 
 bool Resources::LoadFromCache(const ff::Dict& dict)
 {
+	ff::String resPrefix = ff::RES_PREFIX.GetString();
+
 	for (ff::String name : dict.GetAllNames())
 	{
 		if (name == L"Values")
@@ -229,7 +231,7 @@ bool Resources::LoadFromCache(const ff::Dict& dict)
 			ff::Dict valuesDict = dict.Get<ff::DictValue>(name);
 			ff::CreateValueTable(valuesDict, &_valueTable);
 		}
-		else
+		else if (std::wcsncmp(name.c_str(), resPrefix.c_str(), resPrefix.size()))
 		{
 			ValueInfo info;
 			info._dictValue = dict.GetValue(name);

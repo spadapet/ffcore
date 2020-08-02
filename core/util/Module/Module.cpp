@@ -5,10 +5,12 @@
 #include "Data/DataWriterReader.h"
 #include "Data/SavedData.h"
 #include "Dict/Dict.h"
+#include "Globals/Log.h"
 #include "Module/Module.h"
 #include "Resource/ResourcePersist.h"
 #include "Resource/Resources.h"
 #include "String/StringUtil.h"
+#include "Thread/ThreadPool.h"
 #include "Value/Values.h"
 #include "Windows/FileUtil.h"
 
@@ -168,24 +170,19 @@ void ff::Module::LoadTypeLibs()
 void ff::Module::LoadResources()
 {
 	Dict finalDict;
-	Vector<ComPtr<ISavedData>> datas = GetResourceSavedDicts();
-
-	for (size_t i = 0; i < datas.Size(); i++)
+	for (const ComPtr<ISavedData>& savedData : GetResourceSavedDicts())
 	{
-		ValuePtr savedData = ff::Value::New<ff::SavedDictValue>(datas[i]);
-		ValuePtr savedDictValue = savedData->Convert<ff::DictValue>();
+		Dict savedDict = ff::Value::New<ff::SavedDictValue>(savedData)->Convert<ff::DictValue>()->GetValue<ff::DictValue>();
+		finalDict.Add(savedDict);
 
-		if (savedDictValue)
+		const Vector<String>& resFiles = savedDict.Get<ff::StringVectorValue>(ff::RES_FILES);
+		for (auto i = resFiles.crbegin(); i != resFiles.crend(); i++)
 		{
-			const Dict& savedDict = savedDictValue->GetValue<ff::DictValue>();
-
-			for (ff::StringRef name : savedDict.GetAllNames())
+			ff::StringRef file = *i;
+			if (file.size() >= 9 && file.rfind(L".res.json") == file.size() - 9)
 			{
-				if (std::wcsncmp(name.c_str(), ff::RES_PREFIX.GetString().c_str(), ff::RES_PREFIX.GetString().size()))
-				{
-					assert(finalDict.GetValue(name) == nullptr);
-					finalDict.SetValue(name, savedDict.GetValue(name));
-				}
+				_resourceSourceFiles.Push(file);
+				break;
 			}
 		}
 	}
@@ -362,4 +359,43 @@ void ff::Module::RegisterClass(StringRef name, REFGUID classId, ClassFactoryFunc
 ff::IResourceAccess* ff::Module::GetResources() const
 {
 	return _resources;
+}
+
+void ff::Module::RebuildResourcesFromSourceAsync()
+{
+	std::shared_ptr<ff::ComPtr<ff::IResources>> newResources = std::make_shared<ff::ComPtr<ff::IResources>>();
+	ff::Vector<ff::String> files = _resourceSourceFiles;
+	bool debugBuild = IsDebugBuild();
+
+	ff::GetThreadPool()->AddTask([files, debugBuild, newResources]()
+		{
+			ff::Dict finalDict;
+
+			for (ff::StringRef file : files)
+			{
+				ff::Vector<ff::String> errors;
+				ff::Dict dict = ff::LoadResourcesFromFileCached(file, debugBuild, errors);
+
+				for (ff::String error : errors)
+				{
+					ff::Log::DebugTraceF(L"%s\r\n", error.c_str());
+				}
+
+				finalDict.Add(dict);
+
+				ff::CreateResources(nullptr, finalDict, newResources->Address());
+			}
+		},
+		[this, newResources]()
+		{
+			if (newResources->IsValid())
+			{
+				_resources = *newResources;
+			}
+		});
+}
+
+ff::Event<ff::Module*>& ff::Module::GetResourceRebuiltEvent()
+{
+	return _resourcesRebuiltEvent;
 }
