@@ -64,13 +64,13 @@ void ff::ComBaseEx::_NoLeak()
 }
 
 // static
-void ff::ComBaseEx::_AddRefModule(const Module& module)
+void ff::ComBaseEx::_AddRefModule(Module& module)
 {
 	module.AddRef();
 }
 
 // static
-void ff::ComBaseEx::_ReleaseModule(const Module& module)
+void ff::ComBaseEx::_ReleaseModule(Module& module)
 {
 	module.Release();
 }

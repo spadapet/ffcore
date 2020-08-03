@@ -254,6 +254,11 @@ ff::IPalette* ff::XamlGlobalState::GetPalette() const
 	return _palette;
 }
 
+void ff::XamlGlobalState::SetPalette(ff::IPalette* palette)
+{
+	_palette = palette;
+}
+
 std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias, bool subPixelRendering)
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());

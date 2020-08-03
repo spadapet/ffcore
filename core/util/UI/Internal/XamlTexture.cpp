@@ -1,23 +1,23 @@
 #include "pch.h"
-#include "Graph/Texture/Palette.h"
 #include "Graph/Texture/Texture.h"
 #include "UI/Internal/XamlTexture.h"
+#include "UI/XamlGlobalState.h"
 #include "Value/Values.h"
 
 NS_IMPLEMENT_REFLECTION_(ff::XamlTexture);
 
-ff::XamlTexture::XamlTexture(ff::AutoResourceValue&& resource, ff::ITexture* placeholderTexture, ff::IPalette* palette, ff::StringRef name)
+ff::XamlTexture::XamlTexture(ff::AutoResourceValue&& resource, ff::XamlGlobalState* globals, ff::ITexture* placeholderTexture, ff::StringRef name)
 	: _resource(std::move(resource))
+	, _globals(globals)
 	, _placeholderTexture(placeholderTexture)
-	, _palette(palette)
 	, _name(name)
 {
 	assert(resource.DidInit() && placeholderTexture);
 }
 
-ff::XamlTexture::XamlTexture(ff::ITexture* texture, ff::IPalette* palette, ff::StringRef name)
+ff::XamlTexture::XamlTexture(ff::ITexture* texture, ff::StringRef name)
 	: _staticTexture(texture)
-	, _palette(palette)
+	, _globals(nullptr)
 	, _name(name)
 {
 	assert(texture);
@@ -45,7 +45,7 @@ ff::ITexture* ff::XamlTexture::GetTexture() const
 
 ff::IPalette* ff::XamlTexture::GetPalette() const
 {
-	return _palette;
+	return _globals->GetPalette();
 }
 
 uint32_t ff::XamlTexture::GetWidth() const

@@ -12,7 +12,8 @@
 #include "Value/Values.h"
 
 ff::XamlTextureProvider::XamlTextureProvider(XamlGlobalState* globals)
-	: _cache(globals)
+	: _globals(globals)
+	, _cache(globals)
 	, _palette(globals->GetPalette())
 {
 	ff::IGraphDevice* graph = globals->GetAppGlobals()->GetGraph();
@@ -43,6 +44,6 @@ Noesis::Ptr<Noesis::Texture> ff::XamlTextureProvider::LoadTexture(const char* ur
 {
 	ff::String uri = ff::String::from_utf8(uri8);
 	ff::SharedResourceValue res = _cache.GetResource(uri);
-	Noesis::Ptr<XamlTexture> texture = *new XamlTexture(ff::AutoResourceValue(res), _placeholderTexture, _palette, uri);
+	Noesis::Ptr<XamlTexture> texture = *new XamlTexture(ff::AutoResourceValue(res), _globals, _placeholderTexture, uri);
 	return texture;
 }

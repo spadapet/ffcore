@@ -20,6 +20,11 @@ ff::StateWrapper& ff::StateWrapper::operator=(const std::shared_ptr<State>& stat
 	return *this;
 }
 
+const std::shared_ptr<ff::State>& ff::StateWrapper::GetWrappedState() const
+{
+	return _state;
+}
+
 std::shared_ptr<ff::State> ff::StateWrapper::Advance(AppGlobals* globals)
 {
 	noAssertRetVal(_state != nullptr, nullptr);

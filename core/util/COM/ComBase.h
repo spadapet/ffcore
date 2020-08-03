@@ -56,8 +56,8 @@ namespace ff
 		void _TrackLeak();
 		void _NoLeak();
 
-		static void _AddRefModule(const Module& module);
-		static void _ReleaseModule(const Module& module);
+		static void _AddRefModule(Module& module);
+		static void _ReleaseModule(Module& module);
 	};
 
 	// The ref-count is thread safe

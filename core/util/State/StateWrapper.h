@@ -13,6 +13,7 @@ namespace ff
 		virtual ~StateWrapper();
 
 		UTIL_API StateWrapper& operator=(const std::shared_ptr<State>& state);
+		UTIL_API const std::shared_ptr<ff::State>& GetWrappedState() const;
 
 		virtual std::shared_ptr<State> Advance(AppGlobals* globals) override;
 		virtual void Render(AppGlobals* globals, IRenderTarget* target, IRenderDepth* depth) override;

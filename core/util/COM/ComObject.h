@@ -5,7 +5,7 @@
 namespace ff
 {
 	class Module;
-	const Module& GetThisModule();
+	Module& GetThisModule();
 
 	// This is an interface that all of my COM objects will support
 	class __declspec(uuid("802c66b2-fd91-4d34-b63a-d86be245ba3d")) __declspec(novtable)

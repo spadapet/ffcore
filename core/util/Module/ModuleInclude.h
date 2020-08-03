@@ -42,14 +42,14 @@ namespace ff
 	}
 }
 
-const ff::Module& ff::GetThisModule()
+ff::Module& ff::GetThisModule()
 {
-	const Module* module = ProcessGlobals::Get()->GetModules().Get(ModuleUtil::s_moduleId);
+	Module* module = ProcessGlobals::Get()->GetModules().Get(ModuleUtil::s_moduleId);
 	assert(module);
 	return *module;
 }
 
-const ff::Module* ff::GetMainModule()
+ff::Module* ff::GetMainModule()
 {
 	return ff::ProcessGlobals::Get()->GetModules().GetMain();
 }

@@ -208,7 +208,7 @@ Noesis::Ptr<Noesis::Texture> ff::XamlRenderDevice11::CreateTexture(const char* l
 		texture = _graph->AsGraphDeviceInternal()->CreateTexture(std::move(scratch), nullptr);
 	}
 
-	return *new XamlTexture(texture, nullptr, name);
+	return *new XamlTexture(texture, name);
 }
 
 void ff::XamlRenderDevice11::UpdateTexture(Noesis::Texture* texture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* data)

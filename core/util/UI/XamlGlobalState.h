@@ -35,6 +35,7 @@ namespace ff
 		UTIL_API bool Startup(ff::IXamlGlobalHelper* helper);
 		UTIL_API void Shutdown();
 		UTIL_API ff::IPalette* GetPalette() const;
+		UTIL_API void SetPalette(ff::IPalette* palette);
 		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API const ff::Vector<XamlView*>& GetInputViews() const;

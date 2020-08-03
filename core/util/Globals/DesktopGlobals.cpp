@@ -158,9 +158,10 @@ bool ff::DesktopGlobals::ListenWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LP
 		break;
 
 	case WM_SETCURSOR:
+		if (hwnd == _hwnd && LOWORD(lParam) == HTCLIENT)
 		{
 			HCURSOR cursor = _cursor.load();
-			if (hwnd == _hwnd && cursor)
+			if (cursor)
 			{
 				::SetCursor(cursor);
 				nResult = 1;
@@ -245,7 +246,7 @@ void ff::DesktopGlobals::UpdateWindowCursor()
 		ff::GetMainThreadDispatch()->Post([cursor, hwnd]()
 			{
 				POINT pos;
-				if (::GetPhysicalCursorPos(&pos) && ::WindowFromPhysicalPoint(pos) == hwnd)
+				if (::GetCursorPos(&pos) && ::WindowFromPoint(pos) == hwnd && ::SendMessage(hwnd, WM_NCHITTEST, 0, MAKELPARAM(pos.x, pos.y)) == HTCLIENT)
 				{
 					::SetCursor(cursor);
 				}

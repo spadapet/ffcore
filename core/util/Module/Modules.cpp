@@ -52,7 +52,7 @@ static ff::Module* FindModule(const ff::Vector<std::unique_ptr<ff::Module>>& mod
 	return nullptr;
 }
 
-const ff::Module* ff::Modules::Get(StringRef name)
+ff::Module* ff::Modules::Get(StringRef name)
 {
 	// Try and create it
 	ff::LockMutex lock(_mutex);
@@ -72,7 +72,7 @@ const ff::Module* ff::Modules::Get(StringRef name)
 	return module;
 }
 
-const ff::Module* ff::Modules::Get(REFGUID id)
+ff::Module* ff::Modules::Get(REFGUID id)
 {
 	// Try and create it
 	ff::LockMutex lock(_mutex);
@@ -92,7 +92,7 @@ const ff::Module* ff::Modules::Get(REFGUID id)
 	return module;
 }
 
-const ff::Module* ff::Modules::Get(HINSTANCE instance)
+ff::Module* ff::Modules::Get(HINSTANCE instance)
 {
 	// Try and create it
 	ff::LockMutex lock(_mutex);
@@ -112,7 +112,7 @@ const ff::Module* ff::Modules::Get(HINSTANCE instance)
 	return module;
 }
 
-const ff::Module* ff::Modules::GetMain()
+ff::Module* ff::Modules::GetMain()
 {
 	HINSTANCE instance = ff::GetMainModuleInstance();
 #if !METRO_APP

@@ -9,14 +9,14 @@ class __declspec(uuid("d79aaf15-483c-4040-9836-fc9cc2ff14ac"))
 public:
 	DECLARE_HEADER(ClassFactory);
 
-	void SetAllocator(REFGUID clsid, const ff::Module* module, ff::ClassFactoryFunc func);
+	void SetAllocator(REFGUID clsid, ff::Module* module, ff::ClassFactoryFunc func);
 
 	// IClassFactory
 	COM_FUNC CreateInstance(IUnknown* unkOuter, REFIID iid, void** ppv) override;
 	COM_FUNC LockServer(BOOL bLock) override;
 
 private:
-	const ff::Module* _module;
+	ff::Module* _module;
 	ff::ClassFactoryFunc _func;
 	GUID _clsid;
 };
@@ -25,7 +25,7 @@ BEGIN_INTERFACES(ClassFactory)
 	HAS_INTERFACE(IClassFactory)
 END_INTERFACES()
 
-bool ff::CreateClassFactory(REFGUID clsid, const ff::Module* module, ff::ClassFactoryFunc func, IClassFactory** factory)
+bool ff::CreateClassFactory(REFGUID clsid, ff::Module* module, ff::ClassFactoryFunc func, IClassFactory** factory)
 {
 	assertRetVal(factory && module && func, false);
 	*factory = nullptr;
@@ -48,7 +48,7 @@ ClassFactory::~ClassFactory()
 {
 }
 
-void ClassFactory::SetAllocator(REFGUID clsid, const ff::Module* module, ff::ClassFactoryFunc func)
+void ClassFactory::SetAllocator(REFGUID clsid, ff::Module* module, ff::ClassFactoryFunc func)
 {
 	_module = module;
 	_func = func;

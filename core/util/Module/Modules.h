@@ -10,10 +10,10 @@ namespace ff
 	public:
 		Modules();
 
-		UTIL_API const Module* Get(StringRef name);
-		UTIL_API const Module* Get(REFGUID id);
-		UTIL_API const Module* Get(HINSTANCE instance);
-		UTIL_API const Module* GetMain();
+		UTIL_API Module* Get(StringRef name);
+		UTIL_API Module* Get(REFGUID id);
+		UTIL_API Module* Get(HINSTANCE instance);
+		UTIL_API Module* GetMain();
 
 		UTIL_API const ModuleClassInfo* FindClassInfo(ff::StringRef name);
 		UTIL_API const ModuleClassInfo* FindClassInfo(REFGUID classId);

@@ -52,12 +52,12 @@ void ff::Module::BeforeDestruct()
 	_resources.Release();
 }
 
-void ff::Module::AddRef() const
+void ff::Module::AddRef()
 {
 	_refs.fetch_add(1);
 }
 
-void ff::Module::Release() const
+void ff::Module::Release()
 {
 	_refs.fetch_sub(1);
 }
@@ -318,7 +318,7 @@ bool ff::Module::GetClassFactory(REFGUID classId, IClassFactory** factory) const
 	const ModuleClassInfo* info = GetClassInfo(classId);
 	if (info != nullptr && info->_factory != nullptr)
 	{
-		assertRetVal(CreateClassFactory(classId, this, info->_factory, factory), false);
+		assertRetVal(CreateClassFactory(classId, const_cast<Module*>(this), info->_factory, factory), false);
 		return true;
 	}
 
@@ -363,7 +363,6 @@ ff::IResourceAccess* ff::Module::GetResources() const
 
 void ff::Module::RebuildResourcesFromSourceAsync()
 {
-#ifdef _DEBUG
 	std::shared_ptr<ff::ComPtr<ff::IResources>> newResources = std::make_shared<ff::ComPtr<ff::IResources>>();
 	ff::Vector<ff::String> files = _resourceSourceFiles;
 	bool debugBuild = IsDebugBuild();
@@ -383,18 +382,18 @@ void ff::Module::RebuildResourcesFromSourceAsync()
 				}
 
 				finalDict.Add(dict);
-
-				ff::CreateResources(nullptr, finalDict, newResources->Address());
 			}
+
+			ff::CreateResources(nullptr, finalDict, newResources->Address());
 		},
 		[this, newResources]()
 		{
 			if (newResources->IsValid())
 			{
 				_resources = *newResources;
+				_resourcesRebuiltEvent.Notify(this);
 			}
 		});
-#endif
 }
 
 ff::Event<ff::Module*>& ff::Module::GetResourceRebuiltEvent()

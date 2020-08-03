@@ -29,8 +29,8 @@ namespace ff
 		void AfterInit();
 		void BeforeDestruct();
 
-		UTIL_API void AddRef() const;
-		UTIL_API void Release() const;
+		UTIL_API void AddRef();
+		UTIL_API void Release();
 		UTIL_API bool IsLocked() const;
 
 		UTIL_API String GetName() const;
@@ -76,7 +76,7 @@ namespace ff
 		Vector<ComPtr<ISavedData>> GetResourceSavedDicts() const;
 
 		// Identity
-		mutable std::atomic_long _refs;
+		std::atomic_long _refs;
 		String _name;
 		GUID _id;
 		HINSTANCE _instance;
@@ -92,8 +92,8 @@ namespace ff
 		Map<GUID, ModuleClassInfo> _classesById;
 	};
 
-	const Module& GetThisModule();
-	const Module* GetMainModule();
+	Module& GetThisModule();
+	Module* GetMainModule();
 
 	UTIL_API HINSTANCE GetMainModuleInstance();
 	UTIL_API void SetMainModuleInstance(HINSTANCE instance);

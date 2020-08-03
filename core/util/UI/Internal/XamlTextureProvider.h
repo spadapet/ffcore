@@ -19,6 +19,7 @@ namespace ff
 		virtual Noesis::Ptr<Noesis::Texture> LoadTexture(const char* uri, Noesis::RenderDevice* device) override;
 
 	private:
+		XamlGlobalState* _globals;
 		XamlResourceCache _cache;
 		ff::ComPtr<ff::IPalette> _palette;
 		ff::ComPtr<ff::ITexture> _placeholderTexture;
