@@ -145,6 +145,8 @@ ff::XamlGlobalState::XamlGlobalState(ff::AppGlobals* appGlobals)
 
 ff::XamlGlobalState::~XamlGlobalState()
 {
+	Shutdown();
+
 	assert(s_globals == this);
 	s_globals = nullptr;
 }
@@ -215,6 +217,8 @@ bool ff::XamlGlobalState::Startup(ff::IXamlGlobalHelper* helper)
 void ff::XamlGlobalState::Shutdown()
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
+
+	noAssertRet(_renderDevice); // already shut down
 
 	::NeosisDumpMemUsage();
 

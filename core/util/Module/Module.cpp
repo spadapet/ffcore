@@ -363,6 +363,7 @@ ff::IResourceAccess* ff::Module::GetResources() const
 
 void ff::Module::RebuildResourcesFromSourceAsync()
 {
+#ifdef _DEBUG
 	std::shared_ptr<ff::ComPtr<ff::IResources>> newResources = std::make_shared<ff::ComPtr<ff::IResources>>();
 	ff::Vector<ff::String> files = _resourceSourceFiles;
 	bool debugBuild = IsDebugBuild();
@@ -393,6 +394,7 @@ void ff::Module::RebuildResourcesFromSourceAsync()
 				_resources = *newResources;
 			}
 		});
+#endif
 }
 
 ff::Event<ff::Module*>& ff::Module::GetResourceRebuiltEvent()
