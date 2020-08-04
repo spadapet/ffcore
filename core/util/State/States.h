@@ -17,7 +17,6 @@ namespace ff
 		virtual std::shared_ptr<State> Advance(AppGlobals* globals) override;
 		virtual void Render(AppGlobals* globals, IRenderTarget* target, IRenderDepth* depth) override;
 		virtual void AdvanceInput(AppGlobals* globals) override;
-		virtual void AdvanceDebugInput(AppGlobals* globals) override;
 		virtual void OnFrameStarted(AppGlobals* globals, AdvanceType type) override;
 		virtual void OnFrameRendering(AppGlobals* globals, AdvanceType type) override;
 		virtual void OnFrameRendered(AppGlobals* globals, AdvanceType type, IRenderTarget* target, IRenderDepth* depth) override;

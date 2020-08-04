@@ -52,13 +52,6 @@ void ff::StateWrapper::AdvanceInput(AppGlobals* globals)
 	_state->AdvanceInput(globals);
 }
 
-void ff::StateWrapper::AdvanceDebugInput(AppGlobals* globals)
-{
-	noAssertRet(_state != nullptr);
-	_state->AdvanceDebugInput(globals);
-
-}
-
 void ff::StateWrapper::OnFrameStarted(AppGlobals* globals, AdvanceType type)
 {
 	noAssertRet(_state != nullptr);

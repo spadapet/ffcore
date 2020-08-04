@@ -57,7 +57,7 @@ ff::DebugPageState::DebugPageState(AppGlobals* globals)
 	, _render(globals->GetGraph()->CreateRenderer())
 	, _memStats{ 0 }
 {
-	_inputDevices._keys.Push(globals->GetKeysDebug());
+	_inputDevices._keys.Push(globals->GetKeys());
 	_globals->AddDebugPage(this);
 }
 
@@ -78,7 +78,7 @@ void ff::DebugPageState::Render(AppGlobals* globals, IRenderTarget* target, IRen
 	_rpsCounter++;
 }
 
-void ff::DebugPageState::AdvanceDebugInput(AppGlobals* globals)
+void ff::DebugPageState::AdvanceInput(AppGlobals* globals)
 {
 	noAssertRet(_input.HasObject() && _input->Advance(_inputDevices, ff::SECONDS_PER_ADVANCE_D));
 

@@ -575,7 +575,7 @@ static void GetPreMultipliedAlphaBlend(D3D11_RENDER_TARGET_BLEND_DESC& desc)
 	// newAlpha = (srcAlpha * SrcBlendAlpha) BlendOpAlpha (destAlpha * DestBlendAlpha)
 
 	desc.BlendEnable = TRUE;
-	desc.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	desc.SrcBlend = D3D11_BLEND_ONE;
 	desc.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	desc.BlendOp = D3D11_BLEND_OP_ADD;
 	desc.SrcBlendAlpha = D3D11_BLEND_ONE;

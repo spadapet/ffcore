@@ -27,15 +27,12 @@ namespace ff
 	class XamlGlobalState : public ff::State
 	{
 	public:
-		UTIL_API XamlGlobalState(ff::AppGlobals* appGlobals);
+		UTIL_API XamlGlobalState(ff::AppGlobals* appGlobals, ff::IXamlGlobalHelper* helper);
 		UTIL_API ~XamlGlobalState();
 
-		static XamlGlobalState* Get();
+		UTIL_API static XamlGlobalState* Get();
 
-		UTIL_API bool Startup(ff::IXamlGlobalHelper* helper);
-		UTIL_API void Shutdown();
 		UTIL_API ff::IPalette* GetPalette() const;
-		UTIL_API void SetPalette(ff::IPalette* palette);
 		UTIL_API std::shared_ptr<XamlView> CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API std::shared_ptr<XamlView> CreateView(Noesis::FrameworkElement* content, bool perPixelAntiAlias = false, bool subPixelRendering = false);
 		UTIL_API const ff::Vector<XamlView*>& GetInputViews() const;
@@ -52,11 +49,14 @@ namespace ff
 
 		// State
 		virtual std::shared_ptr<State> Advance(AppGlobals* globals) override;
-		virtual void AdvanceDebugInput(ff::AppGlobals* globals) override;
+		virtual void AdvanceInput(ff::AppGlobals* globals) override;
 		virtual void OnFrameRendering(ff::AppGlobals* globals, ff::AdvanceType type) override;
 		virtual void OnFrameRendered(ff::AppGlobals* globals, ff::AdvanceType type, ff::IRenderTarget* target, ff::IRenderDepth* depth) override;
 
 	private:
+		void Startup();
+		void Shutdown();
+
 		static void StaticUpdateCursorCallback(void* user, Noesis::IView* view, Noesis::Cursor cursor);
 		static void StaticOpenUrlCallback(void* user, const char* url);
 		static void StaticPlaySoundCallback(void* user, const char* filename, float volume);
@@ -69,8 +69,7 @@ namespace ff
 		void SoftwareKeyboardCallback(Noesis::UIElement* focused, bool open);
 
 		ff::AppGlobals* _appGlobals;
-		ff::ComPtr<ff::IPalette> _palette;
-		ff::IResourceAccess* _resources;
+		ff::IXamlGlobalHelper* _helper;
 		ff::Vector<XamlView*> _views;
 		ff::Vector<XamlView*> _inputViews;
 		ff::Vector<XamlView*> _renderedViews;

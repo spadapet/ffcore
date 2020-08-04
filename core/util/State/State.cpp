@@ -35,14 +35,6 @@ void ff::State::AdvanceInput(AppGlobals* globals)
 	}
 }
 
-void ff::State::AdvanceDebugInput(AppGlobals* globals)
-{
-	for (size_t i = 0; i < GetChildStateCount(); i++)
-	{
-		GetChildState(i)->AdvanceDebugInput(globals);
-	}
-}
-
 void ff::State::OnFrameStarted(AppGlobals* globals, AdvanceType type)
 {
 	for (size_t i = 0; i < GetChildStateCount(); i++)

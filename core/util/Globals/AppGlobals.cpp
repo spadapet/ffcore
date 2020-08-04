@@ -83,29 +83,14 @@ ff::IPointerDevice* ff::AppGlobals::GetPointer() const
 	return _pointer;
 }
 
-ff::IPointerDevice* ff::AppGlobals::GetPointerDebug() const
-{
-	return _pointerDebug;
-}
-
 ff::IKeyboardDevice* ff::AppGlobals::GetKeys() const
 {
 	return _keyboard;
 }
 
-ff::IKeyboardDevice* ff::AppGlobals::GetKeysDebug() const
-{
-	return _keyboardDebug;
-}
-
 ff::IJoystickInput* ff::AppGlobals::GetJoysticks() const
 {
 	return _joysticks;
-}
-
-ff::IJoystickInput* ff::AppGlobals::GetJoysticksDebug() const
-{
-	return _joysticksDebug;
 }
 
 ff::IRenderTargetWindow* ff::AppGlobals::GetTarget() const
@@ -121,11 +106,6 @@ ff::IRenderDepth* ff::AppGlobals::GetDepth() const
 ff::IDeviceEventSink* ff::AppGlobals::GetDeviceEvents() const
 {
 	return _deviceEvents;
-}
-
-ff::IDeviceEventSink* ff::AppGlobals::GetDeviceEventsDebug() const
-{
-	return _deviceEventsDebug;
 }
 
 ff::IThreadDispatch* ff::AppGlobals::GetGameDispatch() const
@@ -391,9 +371,7 @@ void ff::AppGlobals::OnShutdown()
 	_target = nullptr;
 	_graph = nullptr;
 	_pointer = nullptr;
-	_pointerDebug = nullptr;
 	_keyboard = nullptr;
-	_keyboardDebug = nullptr;
 	_joysticks = nullptr;
 
 	::WriteLog(L"APP_SHUTDOWN_DONE");
@@ -593,7 +571,6 @@ bool ff::AppGlobals::InitializeDeviceEvents()
 {
 	::WriteLog(L"APP_INIT_DEVICE_EVENTS");
 	assertRetVal(_deviceEvents = ff::CreateDeviceEventSink(), false);
-	assertRetVal(_deviceEventsDebug = ff::CreateDeviceEventSink(), false);
 	return true;
 }
 
@@ -603,17 +580,11 @@ bool ff::AppGlobals::InitializePointer()
 
 	::WriteLog(L"APP_INIT_POINTER");
 	assertRetVal(_pointer = CreatePointerDevice(), false);
-	assertRetVal(_pointerDebug = CreatePointerDevice(), false);
 
 	ComPtr<IDeviceEventProvider> provider;
 	if (provider.QueryFrom(_pointer))
 	{
 		provider->SetSink(_deviceEvents);
-	}
-
-	if (provider.QueryFrom(_pointerDebug))
-	{
-		provider->SetSink(_deviceEventsDebug);
 	}
 
 	return true;
@@ -625,17 +596,11 @@ bool ff::AppGlobals::InitializeKeyboard()
 
 	::WriteLog(L"APP_INIT_KEYBOARD");
 	assertRetVal(_keyboard = CreateKeyboardDevice(), false);
-	assertRetVal(_keyboardDebug = CreateKeyboardDevice(), false);
 
 	ComPtr<IDeviceEventProvider> provider;
 	if (provider.QueryFrom(_keyboard))
 	{
 		provider->SetSink(_deviceEvents);
-	}
-
-	if (provider.QueryFrom(_keyboardDebug))
-	{
-		provider->SetSink(_deviceEventsDebug);
 	}
 
 	return true;
@@ -647,17 +612,11 @@ bool ff::AppGlobals::InitializeJoystick()
 
 	::WriteLog(L"APP_INIT_JOYSTICKS");
 	assertRetVal(_joysticks = CreateJoystickInput(), false);
-	assertRetVal(_joysticksDebug = CreateJoystickInput(), false);
 
 	ComPtr<IDeviceEventProvider> provider;
 	if (provider.QueryFrom(_joysticks))
 	{
 		provider->SetSink(_deviceEvents);
-	}
-
-	if (provider.QueryFrom(_joysticksDebug))
-	{
-		provider->SetSink(_deviceEventsDebug);
 	}
 
 	return true;
@@ -898,37 +857,20 @@ void ff::AppGlobals::KillPendingInput()
 	{
 		_joysticks->KillPending();
 	}
-
-	if (_keyboardDebug)
-	{
-		_keyboardDebug->KillPending();
-	}
-
-	if (_pointerDebug)
-	{
-		_pointerDebug->KillPending();
-	}
-
-	if (_joysticksDebug)
-	{
-		_joysticksDebug->KillPending();
-	}
 }
 
 void ff::AppGlobals::FrameAdvanceAndRender()
 {
-	FrameAdvanceDebugResources();
+	FrameAdvanceResources();
 
 	AdvanceType advanceType = FrameStartTimer();
-
 	while (FrameAdvanceTimer(advanceType))
 	{
 		if (_frameTime._advanceCount > 1)
 		{
-			FrameAdvanceDebugResources();
+			FrameAdvanceResources();
 		}
 
-		FrameAdvanceResources();
 		_gameState->Advance(this);
 
 		if (_frameTime._advanceCount > 0 && _frameTime._advanceCount <= _frameTime._advanceTime.size())
@@ -943,6 +885,9 @@ void ff::AppGlobals::FrameAdvanceAndRender()
 
 void ff::AppGlobals::FrameAdvanceResources()
 {
+	_gameLoopDispatch->Flush();
+	_graphCommands.Flush(this);
+
 	if (_keyboard)
 	{
 		_keyboard->Advance();
@@ -969,34 +914,6 @@ void ff::AppGlobals::FrameAdvanceResources()
 	}
 
 	_gameState->AdvanceInput(this);
-}
-
-void ff::AppGlobals::FrameAdvanceDebugResources()
-{
-	_gameLoopDispatch->Flush();
-	_graphCommands.Flush(this);
-
-	if (_keyboardDebug)
-	{
-		_keyboardDebug->Advance();
-	}
-
-	if (_pointerDebug)
-	{
-		_pointerDebug->Advance();
-	}
-
-	if (_joysticksDebug)
-	{
-		_joysticksDebug->Advance();
-	}
-
-	if (_deviceEventsDebug)
-	{
-		_deviceEventsDebug->Advance();
-	}
-
-	_gameState->AdvanceDebugInput(this);
 }
 
 void ff::AppGlobals::FrameResetTimer()

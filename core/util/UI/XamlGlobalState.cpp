@@ -134,13 +134,15 @@ static Noesis::MemoryCallbacks s_memoryCallbacks =
 	::NoesisAllocSize,
 };
 
-ff::XamlGlobalState::XamlGlobalState(ff::AppGlobals* appGlobals)
+ff::XamlGlobalState::XamlGlobalState(ff::AppGlobals* appGlobals, ff::IXamlGlobalHelper* helper)
 	: _appGlobals(appGlobals)
-	, _resources(nullptr)
+	, _helper(helper)
 	, _focusedView(nullptr)
 {
 	assert(!s_globals);
 	s_globals = this;
+
+	Startup();
 }
 
 ff::XamlGlobalState::~XamlGlobalState()
@@ -151,10 +153,9 @@ ff::XamlGlobalState::~XamlGlobalState()
 	s_globals = nullptr;
 }
 
-bool ff::XamlGlobalState::Startup(ff::IXamlGlobalHelper* helper)
+void ff::XamlGlobalState::Startup()
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
-	assertRetVal(!s_assertHandler && helper && _appGlobals->GetGraph()->AsGraphDevice11(), false);
 
 	// Global handlers
 
@@ -162,7 +163,7 @@ bool ff::XamlGlobalState::Startup(ff::IXamlGlobalHelper* helper)
 	s_errorHandler = Noesis::SetErrorHandler(::NoesisErrorHandler);
 	s_logHandler = Noesis::SetLogHandler(::NoesisLogHandler);
 	Noesis::SetMemoryCallbacks(s_memoryCallbacks);
-	Noesis::GUI::Init(ff::StringToUTF8(helper->GetNoesisLicenseName()).Data(), ff::StringToUTF8(helper->GetNoesisLicenseKey()).Data());
+	Noesis::GUI::Init(ff::StringToUTF8(_helper->GetNoesisLicenseName()).Data(), ff::StringToUTF8(_helper->GetNoesisLicenseKey()).Data());
 
 	// Callbacks
 
@@ -173,9 +174,7 @@ bool ff::XamlGlobalState::Startup(ff::IXamlGlobalHelper* helper)
 
 	// Resource providers
 
-	_palette = helper->GetPalette();
-	_resources = helper->GetXamlResources();
-	_renderDevice = Noesis::MakePtr<XamlRenderDevice11>(_appGlobals->GetGraph(), helper->IsSRGB());
+	_renderDevice = Noesis::MakePtr<XamlRenderDevice11>(_appGlobals->GetGraph(), _helper->IsSRGB());
 	_xamlProvider = Noesis::MakePtr<XamlProvider>(this);
 	_fontProvider = Noesis::MakePtr<XamlFontProvider>(this);
 	_textureProvider = Noesis::MakePtr<XamlTextureProvider>(this);
@@ -185,45 +184,35 @@ bool ff::XamlGlobalState::Startup(ff::IXamlGlobalHelper* helper)
 	Noesis::GUI::SetFontProvider(_fontProvider);
 
 	RegisterComponents();
-	helper->RegisterNoesisComponents();
 
 	// Default font
 	{
-		ff::Vector<char> defaultFont8 = ff::StringToUTF8(helper->GetDefaultFont());
+		ff::Vector<char> defaultFont8 = ff::StringToUTF8(_helper->GetDefaultFont());
 		const char* defaultFonts = defaultFont8.Size() ? defaultFont8.Data() : "Segoe UI";
 		Noesis::GUI::SetFontFallbacks(&defaultFonts, 1);
-		Noesis::GUI::SetFontDefaultProperties(helper->GetDefaultFontSize(), Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
+		Noesis::GUI::SetFontDefaultProperties(_helper->GetDefaultFontSize(), Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
 	}
 
 	// Application resources
 	{
-		ff::String resourcesName = helper->GetApplicationResourcesName();
+		ff::String resourcesName = _helper->GetApplicationResourcesName();
 		if (!resourcesName.empty())
 		{
 			ff::Vector<char> resourcesUtf8 = ff::StringToUTF8(resourcesName);
 			_applicationResources = Noesis::GUI::LoadXaml<Noesis::ResourceDictionary>(resourcesUtf8.ConstData());
-			assertRetVal(_applicationResources, false);
-
-			helper->OnApplicationResourcesLoaded(_applicationResources);
+			_helper->OnApplicationResourcesLoaded(_applicationResources);
 			Noesis::GUI::SetApplicationResources(_applicationResources);
 		}
 	}
 
 	::NeosisDumpMemUsage();
-
-	return true;
 }
 
 void ff::XamlGlobalState::Shutdown()
 {
 	assert(ff::GetGameThreadDispatch()->IsCurrentThread());
 
-	noAssertRet(_renderDevice); // already shut down
-
-	::NeosisDumpMemUsage();
-
-	ff::Vector<XamlView*> views = _views;
-	for (XamlView* view : views)
+	for (XamlView* view : ff::Vector<XamlView*>(_views))
 	{
 		view->Destroy();
 	}
@@ -235,12 +224,14 @@ void ff::XamlGlobalState::Shutdown()
 	_fontProvider = nullptr;
 	_textureProvider = nullptr;
 	_renderDevice = nullptr;
-	_resources = nullptr;
 
 	Noesis::GUI::Shutdown();
 
 	::NeosisDumpMemUsage();
 	assertSz(!Noesis::GetAllocatedMemory(), L"NOESIS Memory Leak");
+
+	Noesis::SetLogHandler(s_logHandler);
+	s_logHandler = nullptr;
 
 	Noesis::SetErrorHandler(s_errorHandler);
 	s_errorHandler = nullptr;
@@ -251,12 +242,7 @@ void ff::XamlGlobalState::Shutdown()
 
 ff::IPalette* ff::XamlGlobalState::GetPalette() const
 {
-	return _palette;
-}
-
-void ff::XamlGlobalState::SetPalette(ff::IPalette* palette)
-{
-	_palette = palette;
+	return _helper->GetPalette();
 }
 
 std::shared_ptr<ff::XamlView> ff::XamlGlobalState::CreateView(ff::StringRef xamlFile, bool perPixelAntiAlias, bool subPixelRendering)
@@ -282,7 +268,7 @@ ff::AppGlobals* ff::XamlGlobalState::GetAppGlobals() const
 
 ff::IResourceAccess* ff::XamlGlobalState::GetResourceAccess() const
 {
-	return _resources;
+	return _helper->GetXamlResources();
 }
 
 Noesis::RenderDevice* ff::XamlGlobalState::GetRenderDevice() const
@@ -328,9 +314,9 @@ std::shared_ptr<ff::State> ff::XamlGlobalState::Advance(ff::AppGlobals* globals)
 	return ff::State::Advance(globals);
 }
 
-void ff::XamlGlobalState::AdvanceDebugInput(ff::AppGlobals* globals)
+void ff::XamlGlobalState::AdvanceInput(ff::AppGlobals* globals)
 {
-	for (const ff::DeviceEvent& event : globals->GetDeviceEventsDebug()->GetEvents())
+	for (const ff::DeviceEvent& event : globals->GetDeviceEvents()->GetEvents())
 	{
 		switch (event._type)
 		{
@@ -589,6 +575,8 @@ void ff::XamlGlobalState::RegisterComponents()
 	Noesis::RegisterComponent<ff::BoolToObjectConverter>();
 	Noesis::RegisterComponent<ff::BoolToVisibleConverter>();
 	Noesis::RegisterComponent<ff::SetPanelChildFocusAction>();
+
+	_helper->RegisterNoesisComponents();
 }
 
 void ff::XamlGlobalState::UpdateCursorCallback(Noesis::IView* view, Noesis::Cursor cursor)

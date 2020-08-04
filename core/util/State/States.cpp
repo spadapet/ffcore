@@ -66,14 +66,6 @@ void ff::States::AdvanceInput(AppGlobals* globals)
 	}
 }
 
-void ff::States::AdvanceDebugInput(AppGlobals* globals)
-{
-	for (const std::shared_ptr<State>& state : _states)
-	{
-		state->AdvanceDebugInput(globals);
-	}
-}
-
 void ff::States::OnFrameStarted(AppGlobals* globals, AdvanceType type)
 {
 	for (const std::shared_ptr<State>& state : _states)

@@ -58,15 +58,11 @@ namespace ff
 		UTIL_API IGraphDevice* GetGraph() const;
 		UTIL_API IAudioDevice* GetAudio() const;
 		UTIL_API IPointerDevice* GetPointer() const;
-		UTIL_API IPointerDevice* GetPointerDebug() const;
 		UTIL_API IKeyboardDevice* GetKeys() const;
-		UTIL_API IKeyboardDevice* GetKeysDebug() const;
 		UTIL_API IJoystickInput* GetJoysticks() const;
-		UTIL_API IJoystickInput* GetJoysticksDebug() const;
 		UTIL_API IRenderTargetWindow* GetTarget() const;
 		UTIL_API IRenderDepth* GetDepth() const;
 		UTIL_API IDeviceEventSink* GetDeviceEvents() const;
-		UTIL_API IDeviceEventSink* GetDeviceEventsDebug() const;
 		UTIL_API IThreadDispatch* GetGameDispatch() const;
 		UTIL_API IAppGlobalsHelper* GetAppGlobalsHelper() const;
 		UTIL_API const GlobalTime& GetGlobalTime() const;
@@ -160,7 +156,6 @@ namespace ff
 		// Update during game loop
 		void FrameAdvanceAndRender();
 		void FrameAdvanceResources();
-		void FrameAdvanceDebugResources();
 		void FrameResetTimer();
 		AdvanceType FrameStartTimer();
 		bool FrameAdvanceTimer(AdvanceType advanceType);
@@ -187,13 +182,9 @@ namespace ff
 		ComPtr<IRenderTargetWindow> _target;
 		ComPtr<IRenderDepth> _depth;
 		ComPtr<IKeyboardDevice> _keyboard;
-		ComPtr<IKeyboardDevice> _keyboardDebug;
 		ComPtr<IJoystickInput> _joysticks;
-		ComPtr<IJoystickInput> _joysticksDebug;
 		ComPtr<IPointerDevice> _pointer;
-		ComPtr<IPointerDevice> _pointerDebug;
 		ComPtr<IDeviceEventSink> _deviceEvents;
-		ComPtr<IDeviceEventSink> _deviceEventsDebug;
 
 		// Log
 		String _logFile;
