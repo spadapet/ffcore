@@ -3,10 +3,6 @@
 
 namespace ff
 {
-	struct Component
-	{
-	};
-
 	// Creates and deletes components of a certain type for any entity
 	class ComponentFactory
 	{
@@ -16,27 +12,24 @@ namespace ff
 
 		UTIL_API ~ComponentFactory();
 
-		ff::Component& New(Entity entity, bool* usedExisting = nullptr);
-		ff::Component* Clone(Entity entity, Entity sourceEntity);
-		ff::Component* Lookup(Entity entity) const;
+		void* New(Entity entity, bool* usedExisting = nullptr);
+		void* Clone(Entity entity, Entity sourceEntity);
+		void* Lookup(Entity entity) const;
 		bool Delete(Entity entity);
-		void* CastToVoid(Component* component) const;
 
 	private:
 		UTIL_API ComponentFactory(
 			std::unique_ptr<ff::IBytePoolAllocator>&& allocator,
-			std::function<void(Component&)>&& constructor,
-			std::function<void(Component&, const Component&)>&& copyConstructor,
-			std::function<void(Component&)>&& destructor,
-			std::function<void* (Component*)>&& castFromBase);
+			std::function<void(void*)>&& constructor,
+			std::function<void(void*, const void*)>&& copyConstructor,
+			std::function<void(void*)>&& destructor);
 
-		std::function<void(Component&)> _constructor;
-		std::function<void(Component&, const Component&)> _copyConstructor;
-		std::function<void(Component&)> _destructor;
-		std::function<void* (Component*)> _castFromBase;
+		std::function<void(void*)> _constructor;
+		std::function<void(void*, const void*)> _copyConstructor;
+		std::function<void(void*)> _destructor;
 
 		std::unique_ptr<ff::IBytePoolAllocator> _allocator;
-		ff::Map<Entity, ff::Component*> _entityToComponent;
+		ff::Map<Entity, void*> _entityToComponent;
 	};
 
 	typedef std::shared_ptr<ComponentFactory>(*CreateComponentFactoryFunc)();
@@ -56,28 +49,19 @@ std::shared_ptr<ff::ComponentFactory> ff::ComponentFactory::Create()
 		new ComponentFactory(
 			std::make_unique<ff::BytePoolAllocator<sizeof(T), alignof(T), false>>(),
 			// T::T constructor
-			[](Component& component)
+			[](void* component)
 			{
-				T* myComponent = static_cast<T*>(&component);
-				::new(myComponent) T();
+				::new(component) T();
 			},
 			// T::T(T) constructor
-				[](Component& component, const Component& sourceComponent)
+				[](void* component, const void* sourceComponent)
 			{
-				T* myComponent = static_cast<T*>(&component);
-				const T* mySourceComponent = static_cast<const T*>(&sourceComponent);
-				::new(myComponent) T(*mySourceComponent);
+				::new(component) T(*reinterpret_cast<const T*>(sourceComponent));
 			},
 				// T::~T destructor
-				[](Component& component)
+				[](void* component)
 			{
-				T* myComponent = static_cast<T*>(&component);
-				myComponent->~T();
-			},
-				// castFromBase
-				[](Component* component)
-			{
-				return static_cast<T*>(component);
+				reinterpret_cast<T*>(component)->~T();
 			}));
 }
 
@@ -86,15 +70,6 @@ std::shared_ptr<ff::ComponentFactory> ff::ComponentFactory::Create()
 #define DECLARE_ENTRY_COMPONENTS() \
 	static const ff::ComponentTypeToFactoryEntry *GetComponentTypes(); \
 	static size_t GetComponentCount();
-
-#define DECLARE_ENTRY_COMPONENTS2(className) \
-	className(); \
-	DECLARE_ENTRY_COMPONENTS()
-
-#define DECLARE_ENTRY_COMPONENTS3(className) \
-	className(); \
-	~className(); \
-	DECLARE_ENTRY_COMPONENTS()
 
 #define BEGIN_ENTRY_COMPONENTS(className) \
 	static const ff::ComponentTypeToFactoryEntry s_components_##className[] \

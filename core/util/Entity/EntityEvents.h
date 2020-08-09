@@ -16,17 +16,13 @@ namespace ff
 	UTIL_API hash_t GetEntityEventDeleted();
 	UTIL_API hash_t GetEntityEventNull();
 
-	struct EntityEventArgs
-	{
-	};
-
 	class IEntityEventHandler
 	{
 	public:
 		UTIL_API virtual ~IEntityEventHandler();
 
 		UTIL_API virtual void OnEntityDeleted(Entity entity);
-		UTIL_API virtual void OnEntityEvent(Entity entity, hash_t eventId, EntityEventArgs* eventArgs);
+		UTIL_API virtual void OnEntityEvent(Entity entity, hash_t eventId, void* eventArgs);
 	};
 
 	class EntityEventConnection

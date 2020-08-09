@@ -31,7 +31,7 @@ ff::IEntityEventHandler::~IEntityEventHandler()
 {
 }
 
-void ff::IEntityEventHandler::OnEntityEvent(Entity entity, hash_t eventId, EntityEventArgs* eventArgs)
+void ff::IEntityEventHandler::OnEntityEvent(Entity entity, hash_t eventId, void* eventArgs)
 {
 }
 

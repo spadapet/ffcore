@@ -6,7 +6,6 @@ namespace ff
 {
 	class EntityDomain;
 	class IEntityEventHandler;
-	struct EntityEventArgs;
 
 	struct EntityBase;
 	typedef EntityBase* Entity;
@@ -33,7 +32,7 @@ namespace ff
 		UTIL_API bool IsActive();
 		UTIL_API bool IsPendingDeletion();
 
-		UTIL_API void TriggerEvent(hash_t eventId, EntityEventArgs* args = nullptr);
+		UTIL_API void TriggerEvent(hash_t eventId, void* args = nullptr);
 		UTIL_API bool AddEventHandler(hash_t eventId, IEntityEventHandler* handler);
 		UTIL_API bool RemoveEventHandler(hash_t eventId, IEntityEventHandler* handler);
 	};

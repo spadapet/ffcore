@@ -38,7 +38,7 @@ static bool TestLoadResources(const ff::Dict &dict)
 	dict.DebugDump();
 
 	ff::ComPtr<ff::IResources> resources;
-	assertRetVal(ff::CreateResources(nullptr, nullptr, dict, &resources), false);
+	assertRetVal(ff::CreateResources(nullptr, dict, &resources), false);
 
 	ff::Vector<ff::AutoResourceValue> values;
 	ff::Vector<ff::String> names = dict.GetAllNames();
@@ -122,7 +122,7 @@ protected:
 
 				ff::ComPtr<ff::IResources> resources;
 				ff::ComPtr<ff::IResourceSaveFile> saver;
-				if (ff::CreateResources(&_globals, nullptr, resourceDict, &resources) &&
+				if (ff::CreateResources(&_globals, resourceDict, &resources) &&
 					resources->FlushResource(resources->GetResource(name))->QueryObject(__uuidof(ff::IResourceSaveFile), (void**)&saver))
 				{
 					ff::String file = _path;

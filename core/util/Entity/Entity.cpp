@@ -46,7 +46,7 @@ bool ff::EntityBase::IsPendingDeletion()
 	return GetDomain()->IsEntityPendingDeletion(this);
 }
 
-void ff::EntityBase::TriggerEvent(hash_t eventId, EntityEventArgs* args)
+void ff::EntityBase::TriggerEvent(hash_t eventId, void* args)
 {
 	GetDomain()->TriggerEvent(eventId, this, args);
 }

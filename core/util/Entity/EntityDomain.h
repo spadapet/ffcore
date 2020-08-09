@@ -21,7 +21,7 @@ namespace ff
 		// Bucket methods (T must derive from EntityBucketEntry)
 		template<typename T> IEntityBucket<T>* GetBucket();
 
-		// Component methods (T must derive from Component)
+		// Component methods
 		template<typename T> T* AddComponent(Entity entity);
 		template<typename T> T* CloneComponent(Entity entity, Entity sourceEntity);
 		template<typename T> T* GetComponent(Entity entity);
@@ -42,8 +42,8 @@ namespace ff
 		UTIL_API bool IsEntityPendingDeletion(Entity entity);
 
 		// Events can be entity-specific or global
-		UTIL_API void TriggerEvent(hash_t eventId, Entity entity, EntityEventArgs* args = nullptr);
-		UTIL_API void TriggerEvent(hash_t eventId, EntityEventArgs* args = nullptr);
+		UTIL_API void TriggerEvent(hash_t eventId, Entity entity, void* args = nullptr);
+		UTIL_API void TriggerEvent(hash_t eventId, void* args = nullptr);
 
 		// Event registration can be entity-specific or global
 		UTIL_API bool AddEventHandler(hash_t eventId, Entity entity, IEntityEventHandler* handler);
@@ -210,9 +210,9 @@ namespace ff
 		};
 
 		// Component methods
-		UTIL_API Component* AddComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
-		UTIL_API Component* CloneComponent(Entity entity, Entity sourceEntity, ComponentFactoryEntry* factoryEntry);
-		UTIL_API Component* GetComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
+		UTIL_API void* AddComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
+		UTIL_API void* CloneComponent(Entity entity, Entity sourceEntity, ComponentFactoryEntry* factoryEntry);
+		UTIL_API void* GetComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
 		UTIL_API bool DeleteComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
 		UTIL_API ComponentFactoryEntry* AddComponentFactory(std::type_index componentType, CreateComponentFactoryFunc factoryFunc);
 		UTIL_API ComponentFactoryEntry* GetComponentFactory(std::type_index componentType);
@@ -226,14 +226,14 @@ namespace ff
 		void FlushDeletedEntities();
 		void RegisterActivatedEntity(EntityEntry* entityEntry);
 		void UnregisterDeactivatedEntity(EntityEntry* entityEntry);
-		void RegisterEntityWithBuckets(EntityEntry* entityEntry, ComponentFactoryEntry* newFactory, Component* component);
+		void RegisterEntityWithBuckets(EntityEntry* entityEntry, ComponentFactoryEntry* newFactory, void* component);
 		void UnregisterEntityWithBuckets(EntityEntry* entityEntry, ComponentFactoryEntry* deletingFactory);
 		void TryRegisterEntityWithBucket(EntityEntry* entityEntry, BucketBase* bucket);
 		void CreateBucketEntry(EntityEntry* entityEntry, BucketBase* bucket);
 		void DeleteBucketEntry(EntityEntry* entityEntry, BucketBase* bucket);
 
 		// Event methods
-		void TriggerEvent(EventHandlerEntry* eventEntry, Entity entity, EntityEventArgs* args);
+		void TriggerEvent(EventHandlerEntry* eventEntry, Entity entity, void* args);
 		bool AddEventHandler(EventHandlerEntry* eventEntry, Entity entity, IEntityEventHandler* handler);
 		bool RemoveEventHandler(EventHandlerEntry* eventEntry, Entity entity, IEntityEventHandler* handler);
 		EventHandlerEntry* GetEventEntry(hash_t eventId);
@@ -253,22 +253,22 @@ namespace ff
 template<typename T>
 T* ff::EntityDomain::AddComponent(Entity entity)
 {
-	Component* component = AddComponent(entity, GetComponentFactory<T>());
-	return static_cast<T*>(component);
+	void* component = AddComponent(entity, GetComponentFactory<T>());
+	return reinterpret_cast<T*>(component);
 }
 
 template<typename T>
 T* ff::EntityDomain::CloneComponent(Entity entity, Entity sourceEntity)
 {
-	Component* component = CloneComponent(entity, sourceEntity, GetComponentFactory<T>());
-	return static_cast<T*>(component);
+	void* component = CloneComponent(entity, sourceEntity, GetComponentFactory<T>());
+	return reinterpret_cast<T*>(component);
 }
 
 template<typename T>
 T* ff::EntityDomain::GetComponent(Entity entity)
 {
-	Component* component = GetComponent(entity, GetComponentFactory<T>());
-	return static_cast<T*>(component);
+	void* component = GetComponent(entity, GetComponentFactory<T>());
+	return reinterpret_cast<T*>(component);
 }
 
 template<typename T>

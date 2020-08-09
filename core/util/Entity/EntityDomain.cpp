@@ -183,12 +183,12 @@ ff::EntityDomain::ComponentFactoryEntry* ff::EntityDomain::GetComponentFactory(s
 	return i ? &i->GetEditableValue() : nullptr;
 }
 
-ff::Component* ff::EntityDomain::AddComponent(Entity entity, ComponentFactoryEntry* factoryEntry)
+void* ff::EntityDomain::AddComponent(Entity entity, ComponentFactoryEntry* factoryEntry)
 {
 	assertRetVal(factoryEntry, nullptr);
 
 	bool usedExisting = false;
-	Component* component = &factoryEntry->_factory->New(entity, &usedExisting);
+	void* component = factoryEntry->_factory->New(entity, &usedExisting);
 
 	if (!usedExisting)
 	{
@@ -204,10 +204,10 @@ ff::Component* ff::EntityDomain::AddComponent(Entity entity, ComponentFactoryEnt
 	return component;
 }
 
-ff::Component* ff::EntityDomain::CloneComponent(Entity entity, Entity sourceEntity, ComponentFactoryEntry* factoryEntry)
+void* ff::EntityDomain::CloneComponent(Entity entity, Entity sourceEntity, ComponentFactoryEntry* factoryEntry)
 {
 	assertRetVal(factoryEntry, nullptr);
-	Component* component = GetComponent(entity, factoryEntry);
+	void* component = GetComponent(entity, factoryEntry);
 	assertRetVal(component == nullptr, component);
 
 	component = factoryEntry->_factory->Clone(entity, sourceEntity);
@@ -222,7 +222,7 @@ ff::Component* ff::EntityDomain::CloneComponent(Entity entity, Entity sourceEnti
 	return component;
 }
 
-ff::Component* ff::EntityDomain::GetComponent(Entity entity, ComponentFactoryEntry* factoryEntry)
+void* ff::EntityDomain::GetComponent(Entity entity, ComponentFactoryEntry* factoryEntry)
 {
 	assertRetVal(factoryEntry, nullptr);
 	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
@@ -371,7 +371,7 @@ void ff::EntityDomain::UnregisterDeactivatedEntity(EntityEntry* entityEntry)
 }
 
 // Called when a new component is added to an entity
-void ff::EntityDomain::RegisterEntityWithBuckets(EntityEntry* entityEntry, ComponentFactoryEntry* factoryEntry, Component* component)
+void ff::EntityDomain::RegisterEntityWithBuckets(EntityEntry* entityEntry, ComponentFactoryEntry* factoryEntry, void* component)
 {
 	uint64_t entityBits = entityEntry->_componentBits;
 
@@ -404,7 +404,7 @@ void ff::EntityDomain::RegisterEntityWithBuckets(EntityEntry* entityEntry, Compo
 			EntityBucketEntry* bucketEntry = iter->GetValue();
 			void** derivedComponents = static_cast<FakeBucketEntry*>(bucketEntry)->_components;
 
-			derivedComponents[bucketComponentEntry._bucketEntryIndex] = factoryEntry->_factory->CastToVoid(component);
+			derivedComponents[bucketComponentEntry._bucketEntryIndex] = component;
 		}
 	}
 }
@@ -518,13 +518,10 @@ void ff::EntityDomain::CreateBucketEntry(EntityEntry* entityEntry, BucketBase* b
 	void** derivedComponents = static_cast<FakeBucketEntry*>(bucketEntry)->_components;
 	for (const ComponentFactoryBucketEntry& factoryEntry : bucket->_components)
 	{
-		Component* component = GetComponent(bucketEntry->_entity, factoryEntry._factory);
+		void* component = GetComponent(bucketEntry->_entity, factoryEntry._factory);
 		assert(component != nullptr || !factoryEntry._required);
 
-		*derivedComponents = (component != nullptr)
-			? factoryEntry._factory->_factory->CastToVoid(component)
-			: nullptr;
-
+		*derivedComponents = component;
 		derivedComponents++;
 	}
 
@@ -611,17 +608,17 @@ ff::EntityDomain::EventHandlerEntry* ff::EntityDomain::GetEventEntry(hash_t even
 	return iter ? &iter->GetEditableValue() : nullptr;
 }
 
-void ff::EntityDomain::TriggerEvent(hash_t eventId, Entity entity, EntityEventArgs* args)
+void ff::EntityDomain::TriggerEvent(hash_t eventId, Entity entity, void* args)
 {
 	TriggerEvent(GetEventEntry(eventId), entity, args);
 }
 
-void ff::EntityDomain::TriggerEvent(hash_t eventId, EntityEventArgs* args)
+void ff::EntityDomain::TriggerEvent(hash_t eventId, void* args)
 {
 	TriggerEvent(GetEventEntry(eventId), INVALID_ENTITY, args);
 }
 
-void ff::EntityDomain::TriggerEvent(EventHandlerEntry* eventEntry, Entity entity, EntityEventArgs* args)
+void ff::EntityDomain::TriggerEvent(EventHandlerEntry* eventEntry, Entity entity, void* args)
 {
 	assertRet(eventEntry && eventEntry->_eventId != ENTITY_EVENT_ANY);
 

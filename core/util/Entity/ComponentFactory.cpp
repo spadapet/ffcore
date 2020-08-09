@@ -3,15 +3,13 @@
 
 ff::ComponentFactory::ComponentFactory(
 	std::unique_ptr<ff::IBytePoolAllocator>&& allocator,
-	std::function<void(Component&)>&& constructor,
-	std::function<void(Component&, const Component&)>&& copyConstructor,
-	std::function<void(Component&)>&& destructor,
-	std::function<void* (Component*)>&& castFromBase)
+	std::function<void(void*)>&& constructor,
+	std::function<void(void*, const void*)>&& copyConstructor,
+	std::function<void(void*)>&& destructor)
 	: _allocator(std::move(allocator))
 	, _constructor(std::move(constructor))
 	, _copyConstructor(std::move(copyConstructor))
 	, _destructor(std::move(destructor))
-	, _castFromBase(std::move(castFromBase))
 {
 }
 
@@ -22,14 +20,13 @@ ff::ComponentFactory::~ComponentFactory()
 	// just in case the component list isn't empty, clean them up
 	for (auto kvp : _entityToComponent)
 	{
-		Component* component = kvp.GetEditableValue();
-		_destructor(*component);
+		_destructor(kvp.GetEditableValue());
 	}
 }
 
-ff::Component& ff::ComponentFactory::New(Entity entity, bool* usedExisting)
+void* ff::ComponentFactory::New(Entity entity, bool* usedExisting)
 {
-	Component* component = Lookup(entity);
+	void* component = Lookup(entity);
 
 	if (usedExisting != nullptr)
 	{
@@ -38,31 +35,31 @@ ff::Component& ff::ComponentFactory::New(Entity entity, bool* usedExisting)
 
 	if (component == nullptr)
 	{
-		component = reinterpret_cast<Component*>(_allocator->NewBytes());
+		component = _allocator->NewBytes();
 		_entityToComponent.SetKey(entity, component);
-		_constructor(*component);
-	}
-
-	return *component;
-}
-
-ff::Component* ff::ComponentFactory::Clone(Entity entity, Entity sourceEntity)
-{
-	Component* component = Lookup(entity);
-	Component* sourceComponent = Lookup(sourceEntity);
-	assert(component == nullptr);
-
-	if (component == nullptr && sourceComponent != nullptr)
-	{
-		component = reinterpret_cast<Component*>(_allocator->NewBytes());
-		_entityToComponent.SetKey(entity, component);
-		_copyConstructor(*component, *sourceComponent);
+		_constructor(component);
 	}
 
 	return component;
 }
 
-ff::Component* ff::ComponentFactory::Lookup(Entity entity) const
+void* ff::ComponentFactory::Clone(Entity entity, Entity sourceEntity)
+{
+	void* component = Lookup(entity);
+	const void* sourceComponent = Lookup(sourceEntity);
+	assert(component == nullptr);
+
+	if (component == nullptr && sourceComponent != nullptr)
+	{
+		component = _allocator->NewBytes();
+		_entityToComponent.SetKey(entity, component);
+		_copyConstructor(component, sourceComponent);
+	}
+
+	return component;
+}
+
+void* ff::ComponentFactory::Lookup(Entity entity) const
 {
 	auto iter = _entityToComponent.GetKey(entity);
 	return iter ? iter->GetEditableValue() : nullptr;
@@ -73,18 +70,13 @@ bool ff::ComponentFactory::Delete(Entity entity)
 	auto iter = _entityToComponent.GetKey(entity);
 	if (iter)
 	{
-		Component* component = iter->GetEditableValue();
+		void* component = iter->GetEditableValue();
 		_entityToComponent.DeleteKey(*iter);
-		_destructor(*component);
+		_destructor(component);
 		_allocator->DeleteBytes(component);
 
 		return true;
 	}
 
 	return false;
-}
-
-void* ff::ComponentFactory::CastToVoid(Component* component) const
-{
-	return _castFromBase(component);
 }
