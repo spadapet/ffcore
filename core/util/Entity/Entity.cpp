@@ -6,19 +6,14 @@ ff::EntityDomain* ff::EntityBase::GetDomain()
 	return ff::EntityDomain::Get(this);
 }
 
-ff::Entity ff::EntityBase::Clone(StringRef name)
+ff::Entity ff::EntityBase::Clone()
 {
-	return GetDomain()->CloneEntity(this, name);
+	return GetDomain()->CloneEntity(this);
 }
 
-ff::StringRef ff::EntityBase::GetName()
+ff::hash_t ff::EntityBase::GetHash()
 {
-	return GetDomain()->GetEntityName(this);
-}
-
-ff::EntityId ff::EntityBase::GetId()
-{
-	return EntityDomain::GetId(this);
+	return EntityDomain::GetHash(this);
 }
 
 void ff::EntityBase::Activate()
@@ -39,11 +34,6 @@ void ff::EntityBase::Delete()
 bool ff::EntityBase::IsActive()
 {
 	return GetDomain()->IsEntityActive(this);
-}
-
-bool ff::EntityBase::IsPendingDeletion()
-{
-	return GetDomain()->IsEntityPendingDeletion(this);
 }
 
 void ff::EntityBase::TriggerEvent(hash_t eventId, void* args)
@@ -79,7 +69,7 @@ private:
 };
 
 WeakEntityListener::WeakEntityListener()
-	: _entity(ff::INVALID_ENTITY)
+	: _entity(nullptr)
 {
 }
 
@@ -96,7 +86,7 @@ void WeakEntityListener::Connect(ff::Entity entity)
 
 		_entity = entity;
 
-		if (_entity != ff::INVALID_ENTITY)
+		if (_entity)
 		{
 			_entity->GetDomain()->AddEventHandler(ff::ENTITY_EVENT_NULL, _entity, this);
 		}
@@ -105,10 +95,10 @@ void WeakEntityListener::Connect(ff::Entity entity)
 
 void WeakEntityListener::Disconnect()
 {
-	if (_entity != ff::INVALID_ENTITY)
+	if (_entity)
 	{
 		_entity->GetDomain()->RemoveEventHandler(ff::ENTITY_EVENT_NULL, _entity, this);
-		_entity = ff::INVALID_ENTITY;
+		_entity = nullptr;
 	}
 }
 
@@ -175,7 +165,7 @@ void ff::WeakEntity::Delete()
 
 bool ff::WeakEntity::IsValid() const
 {
-	return GetEntity() != ff::INVALID_ENTITY;
+	return GetEntity() != nullptr;
 }
 
 ff::Entity ff::WeakEntity::GetEntity() const
@@ -185,7 +175,8 @@ ff::Entity ff::WeakEntity::GetEntity() const
 
 ff::EntityDomain* ff::WeakEntity::GetDomain() const
 {
-	return ff::EntityDomain::TryGet(GetEntity());
+	ff::Entity entity = GetEntity();
+	return entity ? entity->GetDomain() : nullptr;
 }
 
 ff::WeakEntity& ff::WeakEntity::operator=(Entity entity)

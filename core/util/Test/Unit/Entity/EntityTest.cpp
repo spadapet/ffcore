@@ -35,59 +35,18 @@ struct TestComponent3
 	int _val;
 };
 
-struct TestBucketEntry : ff::EntityBucketEntry
+struct TestBucketEntry : public ff::BucketEntry<TestComponent1, TestComponent2>
 {
-	TestBucketEntry()
-	{
-		ZeroObject(*this);
-	}
-
-	DECLARE_ENTRY_COMPONENTS();
-	TestComponent1* _comp1;
-	TestComponent2* _comp2;
-
-	// Extra data can go after the components (not before)
 	bool _test;
 };
 
-BEGIN_ENTRY_COMPONENTS(TestBucketEntry)
-HAS_COMPONENT(TestComponent1)
-HAS_COMPONENT(TestComponent2)
-END_ENTRY_COMPONENTS(TestBucketEntry)
-
-struct TestBucketEntry2 : ff::EntityBucketEntry
+struct TestBucketEntry2 : public ff::BucketEntry<TestComponent1, ff::Optional<TestComponent2>>
 {
-	TestBucketEntry2()
-	{
-		ZeroObject(*this);
-	}
-
-	DECLARE_ENTRY_COMPONENTS();
-	TestComponent1* _comp1;
-	TestComponent2* _comp2;
 };
 
-BEGIN_ENTRY_COMPONENTS(TestBucketEntry2)
-HAS_COMPONENT(TestComponent1)
-HAS_OPTIONAL_COMPONENT(TestComponent2)
-END_ENTRY_COMPONENTS(TestBucketEntry2)
-
-struct TestBucketEntry3 : ff::EntityBucketEntry
+struct TestBucketEntry3 : public ff::BucketEntry<ff::Optional<TestComponent1>, ff::Optional<TestComponent2>>
 {
-	TestBucketEntry3()
-	{
-		ZeroObject(*this);
-	}
-
-	DECLARE_ENTRY_COMPONENTS();
-	TestComponent1* _comp1;
-	TestComponent2* _comp2;
 };
-
-BEGIN_ENTRY_COMPONENTS(TestBucketEntry3)
-HAS_OPTIONAL_COMPONENT(TestComponent1)
-HAS_OPTIONAL_COMPONENT(TestComponent2)
-END_ENTRY_COMPONENTS(TestBucketEntry3)
 
 struct TestEventArgs
 {
@@ -116,7 +75,7 @@ public:
 
 void TestEventHandler::OnEntityEvent(ff::Entity entity, ff::hash_t eventId, void* eventArgs)
 {
-	if (entity == ff::INVALID_ENTITY)
+	if (!entity)
 	{
 		_count += 1000;
 	}
@@ -136,13 +95,10 @@ static bool EntityTestGeneral()
 	ff::EntityDomain domain;
 	ff::IEntityBucket<TestBucketEntry>* bucket = domain.GetBucket<TestBucketEntry>();
 
-	ff::Entity entity1 = domain.CreateEntity(ff::String(L"TestEntity"));
-	assertRetVal(domain.GetEntityName(entity1) == L"TestEntity", false);
-	assertRetVal(domain.GetEntity(ff::String(L"TestEntity")) == ff::INVALID_ENTITY, false); // not activated yet
-
-	TestComponent1* t1 = domain.AddComponent<TestComponent1>(entity1);
-	TestComponent2* t2 = domain.AddComponent<TestComponent2>(entity1);
-	TestComponent2* t3 = domain.AddComponent<TestComponent2>(entity1);
+	ff::Entity entity1 = domain.CreateEntity();
+	TestComponent1* t1 = domain.SetComponent<TestComponent1>(entity1);
+	TestComponent2* t2 = domain.SetComponent<TestComponent2>(entity1);
+	TestComponent2* t3 = domain.SetComponent<TestComponent2>(entity1);
 	assertRetVal(domain.GetComponent<TestComponent1>(entity1) == t1, false);
 	assertRetVal(domain.GetComponent<TestComponent2>(entity1) == t2, false);
 	assertRetVal(t2 == t3, false);
@@ -153,8 +109,6 @@ static bool EntityTestGeneral()
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
 
 	domain.ActivateEntity(entity1);
-	assertRetVal(domain.GetEntity(ff::String(L"TestEntity")) == entity1, false);
-
 	ff::Entity entity2 = domain.CloneEntity(entity1);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
 
@@ -163,10 +117,11 @@ static bool EntityTestGeneral()
 
 	const TestBucketEntry* firstEntry = bucket->GetEntries().GetFirst();
 	assertRetVal(firstEntry, false);
-	assertRetVal(firstEntry->_entity == entity1, false);
-	assertRetVal(firstEntry->_comp1 == t1, false);
-	assertRetVal(firstEntry->_comp2 == t2, false);
-	assertRetVal(firstEntry->_comp2->_bounds == testBounds, false);
+	assertRetVal(firstEntry->GetEntity() == entity1, false);
+	assertRetVal(firstEntry->GetComponent<TestComponent1>() == t1, false);
+	assertRetVal(firstEntry->GetComponent<TestComponent2>() == t2, false);
+	assertRetVal(firstEntry->GetComponent<TestComponent2>()->_bounds == testBounds, false);
+	assertRetVal(firstEntry->GetComponent<TestComponent3>() == nullptr, false);
 
 	domain.DeactivateEntity(entity1);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
@@ -190,7 +145,6 @@ static bool EntityTestGeneral()
 	}
 	assertRetVal(domain.RemoveEventHandler(testEventId, entity1, &handler), false);
 	assertRetVal(domain.RemoveEventHandler(testEventId, entity2, &handler), false);
-	assertRetVal(!domain.RemoveEventHandler(ff::HashFunc(L"TestEvent2"), &handler), false);
 
 	domain.DeleteEntity(entity1);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
@@ -208,13 +162,13 @@ static bool EntityTestAddRemoveComponent()
 
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
 
-	TestComponent1* t1 = domain.AddComponent<TestComponent1>(entity);
+	TestComponent1* t1 = domain.SetComponent<TestComponent1>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
 
-	TestComponent2* t2 = domain.AddComponent<TestComponent2>(entity);
+	TestComponent2* t2 = domain.SetComponent<TestComponent2>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
 
-	TestComponent3* t3 = domain.AddComponent<TestComponent3>(entity);
+	TestComponent3* t3 = domain.SetComponent<TestComponent3>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
 
 	assertRetVal(domain.DeleteComponent<TestComponent1>(entity), false);
@@ -239,23 +193,23 @@ static bool EntityTestAddRemoveOneOptionalComponent1()
 
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
 
-	TestComponent1* t1 = domain.AddComponent<TestComponent1>(entity);
+	TestComponent1* t1 = domain.SetComponent<TestComponent1>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 != nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 == nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() == nullptr, false);
 
-	TestComponent2* t2 = domain.AddComponent<TestComponent2>(entity);
+	TestComponent2* t2 = domain.SetComponent<TestComponent2>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 != nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() != nullptr, false);
 
-	TestComponent3* t3 = domain.AddComponent<TestComponent3>(entity);
+	TestComponent3* t3 = domain.SetComponent<TestComponent3>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
 
 	assertRetVal(domain.DeleteComponent<TestComponent2>(entity), false);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 != nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 == nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() == nullptr, false);
 
 	assertRetVal(domain.DeleteComponent<TestComponent1>(entity), false);
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
@@ -273,18 +227,18 @@ static bool EntityTestAddRemoveOneOptionalComponent2()
 
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
 
-	TestComponent2* t2 = domain.AddComponent<TestComponent2>(entity);
+	TestComponent2* t2 = domain.SetComponent<TestComponent2>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
 
-	TestComponent1* t1 = domain.AddComponent<TestComponent1>(entity);
+	TestComponent1* t1 = domain.SetComponent<TestComponent1>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 != nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() != nullptr, false);
 
 	assertRetVal(domain.DeleteComponent<TestComponent2>(entity), false);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 != nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 == nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() == nullptr, false);
 
 	assertRetVal(domain.DeleteComponent<TestComponent1>(entity), false);
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
@@ -302,23 +256,23 @@ static bool EntityTestAddRemoveAllOptionalComponents()
 
 	assertRetVal(bucket->GetEntries().Size() == 0, false);
 
-	TestComponent2* t2 = domain.AddComponent<TestComponent2>(entity);
+	TestComponent2* t2 = domain.SetComponent<TestComponent2>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 == nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() == nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() != nullptr, false);
 
-	TestComponent1* t1 = domain.AddComponent<TestComponent1>(entity);
+	TestComponent1* t1 = domain.SetComponent<TestComponent1>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 != nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() != nullptr, false);
 
-	TestComponent3* t3 = domain.AddComponent<TestComponent3>(entity);
+	TestComponent3* t3 = domain.SetComponent<TestComponent3>(entity);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
 
 	assertRetVal(domain.DeleteComponent<TestComponent2>(entity), false);
 	assertRetVal(bucket->GetEntries().Size() == 1, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp1 != nullptr, false);
-	assertRetVal(bucket->GetEntries().GetFirst()->_comp2 == nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent1>() != nullptr, false);
+	assertRetVal(bucket->GetEntries().GetFirst()->GetComponent<TestComponent2>() == nullptr, false);
 
 	assertRetVal(domain.DeleteComponent<TestComponent1>(entity), false);
 	assertRetVal(bucket->GetEntries().Size() == 0, false);

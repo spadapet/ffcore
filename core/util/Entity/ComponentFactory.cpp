@@ -3,14 +3,25 @@
 
 ff::ComponentFactory::ComponentFactory(
 	std::unique_ptr<ff::IBytePoolAllocator>&& allocator,
-	std::function<void(void*)>&& constructor,
 	std::function<void(void*, const void*)>&& copyConstructor,
 	std::function<void(void*)>&& destructor)
 	: _allocator(std::move(allocator))
-	, _constructor(std::move(constructor))
 	, _copyConstructor(std::move(copyConstructor))
 	, _destructor(std::move(destructor))
 {
+}
+
+void* ff::ComponentFactory::NewBytes(Entity entity, bool& usedExisting)
+{
+	void* component = Lookup(entity);
+	usedExisting = (component != nullptr);
+	if (component == nullptr)
+	{
+		component = _allocator->NewBytes();
+		_entityToComponent.SetKey(entity, component);
+	}
+
+	return component;
 }
 
 ff::ComponentFactory::~ComponentFactory()
@@ -18,29 +29,10 @@ ff::ComponentFactory::~ComponentFactory()
 	assert(_entityToComponent.IsEmpty());
 
 	// just in case the component list isn't empty, clean them up
-	for (auto kvp : _entityToComponent)
+	for (auto& kvp : _entityToComponent)
 	{
 		_destructor(kvp.GetEditableValue());
 	}
-}
-
-void* ff::ComponentFactory::New(Entity entity, bool* usedExisting)
-{
-	void* component = Lookup(entity);
-
-	if (usedExisting != nullptr)
-	{
-		*usedExisting = (component != nullptr);
-	}
-
-	if (component == nullptr)
-	{
-		component = _allocator->NewBytes();
-		_entityToComponent.SetKey(entity, component);
-		_constructor(component);
-	}
-
-	return component;
 }
 
 void* ff::ComponentFactory::Clone(Entity entity, Entity sourceEntity)

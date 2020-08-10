@@ -1,5 +1,4 @@
 #pragma once
-#include "Entity/ComponentFactory.h"
 #include "Entity/EntityBucket.h"
 #include "Entity/EntityEvents.h"
 
@@ -11,35 +10,24 @@ namespace ff
 		UTIL_API EntityDomain();
 		UTIL_API ~EntityDomain();
 
-		UTIL_API static EntityDomain* Get(Entity entity);
-		UTIL_API static EntityId GetId(Entity entity);
-		UTIL_API static EntityDomain* TryGet(Entity entity);
-
-		// Must call once per frame
-		UTIL_API void Advance();
-
-		// Bucket methods (T must derive from EntityBucketEntry)
+		// Bucket methods (T must be of type BucketEntry<Comp1, Comp2, ...>)
 		template<typename T> IEntityBucket<T>* GetBucket();
 
 		// Component methods
-		template<typename T> T* AddComponent(Entity entity);
-		template<typename T> T* CloneComponent(Entity entity, Entity sourceEntity);
+		template<typename T, typename... Args> T* SetComponent(Entity entity, Args&&... args);
 		template<typename T> T* GetComponent(Entity entity);
 		template<typename T> bool DeleteComponent(Entity entity);
 
 		// Entity methods (not activated by default)
-		UTIL_API Entity CreateEntity(StringRef name = String());
-		UTIL_API Entity CloneEntity(Entity sourceEntity, StringRef name = String());
-		UTIL_API Entity GetEntity(StringRef name) const;
-		UTIL_API Entity GetEntity(EntityId id) const;
-		UTIL_API StringRef GetEntityName(Entity entity) const;
-		UTIL_API EntityId GetEntityId(Entity entity) const;
+		UTIL_API Entity CreateEntity();
+		UTIL_API Entity CloneEntity(Entity sourceEntity);
 		UTIL_API void ActivateEntity(Entity entity);
 		UTIL_API void DeactivateEntity(Entity entity);
 		UTIL_API void DeleteEntity(Entity entity);
 		UTIL_API void DeleteEntities();
 		UTIL_API bool IsEntityActive(Entity entity);
-		UTIL_API bool IsEntityPendingDeletion(Entity entity);
+		UTIL_API static EntityDomain* Get(Entity entity);
+		UTIL_API static ff::hash_t GetHash(Entity entity);
 
 		// Events can be entity-specific or global
 		UTIL_API void TriggerEvent(hash_t eventId, Entity entity, void* args = nullptr);
@@ -63,10 +51,11 @@ namespace ff
 		{
 			bool operator==(const ComponentFactoryBucketEntry& rhs) const
 			{
-				return _factory == rhs._factory && _required == rhs._required;
+				return _factory == rhs._factory && _offset == rhs._offset && _required == rhs._required;
 			}
 
 			ComponentFactoryEntry* _factory;
+			size_t _offset;
 			bool _required;
 		};
 
@@ -75,18 +64,12 @@ namespace ff
 		{
 			bool operator==(const BucketComponentFactoryEntry& rhs) const
 			{
-				return _bucket == rhs._bucket && _bucketEntryIndex == rhs._bucketEntryIndex && _required == rhs._required;
+				return _bucket == rhs._bucket && _offset == rhs._offset && _required == rhs._required;
 			}
 
 			BucketBase* _bucket;
-			size_t _bucketEntryIndex;
+			size_t _offset;
 			bool _required;
-		};
-
-		// Allows access into the components of EntityBucketEntry
-		struct FakeBucketEntry : public EntityBucketEntry
-		{
-			void* _components[1];
 		};
 
 		struct EventHandler
@@ -108,7 +91,7 @@ namespace ff
 
 		struct ComponentFactoryEntry
 		{
-			std::shared_ptr<ComponentFactory> _factory;
+			std::unique_ptr<ComponentFactory> _factory;
 			Vector<BucketComponentFactoryEntry> _buckets;
 			uint64_t _bit;
 		};
@@ -121,13 +104,11 @@ namespace ff
 			}
 
 			EntityDomain* _domain;
-			String _name;
 			Vector<EventHandler> _eventHandlers;
 			Vector<BucketBase*> _buckets;
 			Vector<ComponentFactoryEntry*> _components;
 			uint64_t _componentBits;
-			EntityId _id;
-			bool _valid;
+			ff::hash_t _hash;
 			bool _active;
 		};
 
@@ -137,10 +118,10 @@ namespace ff
 
 			uint64_t _requiredComponentBits;
 			Vector<ComponentFactoryBucketEntry> _components;
-			Map<Entity, EntityBucketEntry*> _entityToEntry;
-			std::function<EntityBucketEntry * (Entity)> _newEntryFunc;
+			Map<Entity, BucketEntryBase*> _entityToEntry;
+			std::function<BucketEntryBase* (Entity)> _newEntryFunc;
 			std::function<void(Entity)> _deleteEntryFunc;
-			std::function<void(EntityBucketEntry*)> _notifyAdd;
+			std::function<void(BucketEntryBase*)> _notifyAdd;
 		};
 
 		template<typename TEntry>
@@ -148,11 +129,11 @@ namespace ff
 		{
 			Bucket()
 			{
-				_newEntryFunc = [this](Entity entity) -> EntityBucketEntry*
+				_newEntryFunc = [this](Entity entity) -> BucketEntryBase*
 				{
-					EntityBucketEntry* entry = &_entries.Push();
+					BucketEntryBase* entry = &_entries.Push();
+					*reinterpret_cast<Entity*>(entry) = entity;
 					_entityToEntry.SetKey(entity, entry);
-					entry->_entity = entity;
 					return entry;
 				};
 
@@ -162,21 +143,21 @@ namespace ff
 					assertRet(iter);
 					TEntry* entry = static_cast<TEntry*>(iter->GetValue());
 
-					for (auto i = _listeners.crbegin(); i != _listeners.crend(); i++)
+					for (size_t i = _listeners.Size(); i; i--)
 					{
-						(*i)->OnEntryRemoving(*entry);
+						_listeners[i - 1]->OnEntryRemoving(*entry);
 					}
 
 					_entityToEntry.DeleteKey(*iter);
 					_entries.Delete(*entry);
 				};
 
-				_notifyAdd = [this](EntityBucketEntry* entry) -> void
+				_notifyAdd = [this](BucketEntryBase* entry) -> void
 				{
 					TEntry& tentry = *static_cast<TEntry*>(entry);
-					for (auto i = _listeners.crbegin(); i != _listeners.crend(); i++)
+					for (size_t i = _listeners.Size(); i; i--)
 					{
-						(*i)->OnEntryAdded(tentry);
+						_listeners[i - 1]->OnEntryAdded(tentry);
 					}
 				};
 			}
@@ -189,8 +170,7 @@ namespace ff
 			virtual TEntry* GetEntry(Entity entity) const override
 			{
 				auto iter = _entityToEntry.GetKey(entity);
-				noAssertRetVal(iter, nullptr);
-				return static_cast<TEntry*>(iter->GetValue());
+				return iter ? static_cast<TEntry*>(iter->GetValue()) : nullptr;
 			}
 
 			virtual void AddListener(IEntityBucketListener<TEntry>* listener) override
@@ -206,24 +186,22 @@ namespace ff
 			}
 
 			List<TEntry> _entries;
-			Vector<IEntityBucketListener<TEntry>*, 8> _listeners;
+			Vector<IEntityBucketListener<TEntry>*> _listeners;
 		};
 
 		// Component methods
-		UTIL_API void* AddComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
-		UTIL_API void* CloneComponent(Entity entity, Entity sourceEntity, ComponentFactoryEntry* factoryEntry);
+		UTIL_API void SetComponent(Entity entity, ComponentFactoryEntry* factoryEntry, void* component, bool usedExisting);
 		UTIL_API void* GetComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
 		UTIL_API bool DeleteComponent(Entity entity, ComponentFactoryEntry* factoryEntry);
 		UTIL_API ComponentFactoryEntry* AddComponentFactory(std::type_index componentType, CreateComponentFactoryFunc factoryFunc);
 		UTIL_API ComponentFactoryEntry* GetComponentFactory(std::type_index componentType);
 		template<typename T> ComponentFactoryEntry* GetComponentFactory();
-		Vector<ComponentFactoryBucketEntry> FindComponentEntries(const ComponentTypeToFactoryEntry* componentTypes, size_t count);
+		Vector<ComponentFactoryBucketEntry> FindComponentEntries(const BucketEntryBase::ComponentEntry* componentEntries);
 
 		// Bucket methods
-		UTIL_API void InitBucket(BucketBase* bucket, const ComponentTypeToFactoryEntry* componentTypes, size_t componentCount);
+		UTIL_API void InitBucket(BucketBase* bucket, const BucketEntryBase::ComponentEntry* componentEntries);
 
 		// Entity methods
-		void FlushDeletedEntities();
 		void RegisterActivatedEntity(EntityEntry* entityEntry);
 		void UnregisterDeactivatedEntity(EntityEntry* entityEntry);
 		void RegisterEntityWithBuckets(EntityEntry* entityEntry, ComponentFactoryEntry* newFactory, void* component);
@@ -239,28 +217,21 @@ namespace ff
 		EventHandlerEntry* GetEventEntry(hash_t eventId);
 
 		// Data
-		EntityId _lastEntityId;
+		ff::hash_t _lastEntityHash;
 		List<EntityEntry> _entities;
-		Vector<EntityEntry*> _deletedEntities;
-		Map<String, EntityEntry*> _entitiesByName;
-		Map<EntityId, EntityEntry*, NonHasher<EntityId>> _entitiesById;
 		Map<hash_t, EventHandlerEntry, NonHasher<hash_t>> _events;
-		Map<std::type_index, std::shared_ptr<BucketBase>> _buckets;
+		Map<std::type_index, std::unique_ptr<BucketBase>> _buckets;
 		Map<std::type_index, ComponentFactoryEntry> _componentFactories;
 	};
 }
 
-template<typename T>
-T* ff::EntityDomain::AddComponent(Entity entity)
+template<typename T, typename... Args>
+T* ff::EntityDomain::SetComponent(Entity entity, Args&&... args)
 {
-	void* component = AddComponent(entity, GetComponentFactory<T>());
-	return reinterpret_cast<T*>(component);
-}
-
-template<typename T>
-T* ff::EntityDomain::CloneComponent(Entity entity, Entity sourceEntity)
-{
-	void* component = CloneComponent(entity, sourceEntity, GetComponentFactory<T>());
+	bool usedExisting;
+	ComponentFactoryEntry* factory = GetComponentFactory<T>();
+	void* component = factory->_factory->New<T, Args...>(entity, usedExisting, std::forward<Args>(args)...);
+	SetComponent(entity, factory, component, usedExisting);
 	return reinterpret_cast<T*>(component);
 }
 
@@ -282,8 +253,7 @@ ff::EntityDomain::ComponentFactoryEntry* ff::EntityDomain::GetComponentFactory()
 {
 	std::type_index type(typeid(T));
 	ComponentFactoryEntry* factory = GetComponentFactory(type);
-
-	if (factory == nullptr)
+	if (!factory)
 	{
 		factory = AddComponentFactory(type, &ff::ComponentFactory::Create<T>);
 	}
@@ -296,11 +266,10 @@ ff::IEntityBucket<T>* ff::EntityDomain::GetBucket()
 {
 	std::type_index type(typeid(T));
 	auto iter = _buckets.GetKey(type);
-
 	if (!iter)
 	{
-		std::shared_ptr<BucketBase> bucketBase = std::make_shared<Bucket<T>>();
-		InitBucket(bucketBase.get(), T::GetComponentTypes(), T::GetComponentCount());
+		std::unique_ptr<BucketBase> bucketBase = std::make_unique<Bucket<T>>();
+		InitBucket(bucketBase.get(), T::GetComponentEntries());
 		iter = _buckets.SetKey(std::move(type), std::move(bucketBase));
 	}
 

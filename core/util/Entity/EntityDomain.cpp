@@ -2,72 +2,47 @@
 #include "Entity/EntityDomain.h"
 
 ff::EntityDomain::EntityDomain()
-	: _lastEntityId(0)
+	: _lastEntityHash(0)
 {
 }
 
 ff::EntityDomain::~EntityDomain()
 {
-	for (EntityEntry& entityEntry : _entities)
-	{
-		if (entityEntry._valid)
-		{
-			DeleteEntity(&entityEntry);
-		}
-	}
-
-	FlushDeletedEntities();
+	DeleteEntities();
 }
 
 ff::EntityDomain* ff::EntityDomain::Get(Entity entity)
 {
-	EntityEntry* entry = EntityEntry::FromEntity(entity);
-	return entry->_domain;
+	return EntityEntry::FromEntity(entity)->_domain;
 }
 
-ff::EntityId ff::EntityDomain::GetId(Entity entity)
+ff::hash_t ff::EntityDomain::GetHash(Entity entity)
 {
-	EntityEntry* entry = EntityEntry::FromEntity(entity);
-	return entry->_id;
+	return EntityEntry::FromEntity(entity)->_hash;
 }
 
-ff::EntityDomain* ff::EntityDomain::TryGet(Entity entity)
-{
-	EntityEntry* entry = EntityEntry::FromEntity(entity);
-	return entry ? entry->_domain : nullptr;
-}
-
-void ff::EntityDomain::Advance()
-{
-	FlushDeletedEntities();
-}
-
-ff::Entity ff::EntityDomain::CreateEntity(StringRef name)
+ff::Entity ff::EntityDomain::CreateEntity()
 {
 	EntityEntry& entityEntry = _entities.Push();
 	entityEntry._domain = this;
-	entityEntry._name = name;
 	entityEntry._componentBits = 0;
-	entityEntry._id = ++_lastEntityId;
-	entityEntry._valid = true;
+	entityEntry._hash = ++_lastEntityHash;
 	entityEntry._active = false;
 
 	return &entityEntry;
 }
 
-ff::Entity ff::EntityDomain::CloneEntity(Entity sourceEntity, StringRef name)
+ff::Entity ff::EntityDomain::CloneEntity(Entity sourceEntity)
 {
 	EntityEntry* sourceEntityEntry = EntityEntry::FromEntity(sourceEntity);
-	assertRetVal(sourceEntityEntry->_valid, INVALID_ENTITY);
-
-	Entity newEntity = CreateEntity(name);
-	EntityEntry* newEntityEntry = EntityEntry::FromEntity(newEntity);
+	Entity newEntity = CreateEntity();
 
 	for (const ComponentFactoryEntry* factoryEntry : sourceEntityEntry->_components)
 	{
 		factoryEntry->_factory->Clone(newEntity, sourceEntity);
 	}
 
+	EntityEntry* newEntityEntry = EntityEntry::FromEntity(newEntity);
 	newEntityEntry->_componentBits = sourceEntityEntry->_componentBits;
 	newEntityEntry->_components = sourceEntityEntry->_components;
 	newEntityEntry->_buckets = sourceEntityEntry->_buckets;
@@ -75,35 +50,9 @@ ff::Entity ff::EntityDomain::CloneEntity(Entity sourceEntity, StringRef name)
 	return newEntity;
 }
 
-ff::Entity ff::EntityDomain::GetEntity(StringRef name) const
-{
-	auto i = _entitiesByName.GetKey(name);
-	return i ? i->GetValue() : ff::INVALID_ENTITY;
-}
-
-ff::Entity ff::EntityDomain::GetEntity(EntityId id) const
-{
-	auto i = _entitiesById.GetKey(id);
-	return i ? i->GetValue() : ff::INVALID_ENTITY;
-}
-
-ff::StringRef ff::EntityDomain::GetEntityName(Entity entity) const
-{
-	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	return entityEntry->_name;
-}
-
-ff::EntityId ff::EntityDomain::GetEntityId(Entity entity) const
-{
-	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	return entityEntry->_id;
-}
-
 void ff::EntityDomain::ActivateEntity(Entity entity)
 {
 	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	assertRet(entityEntry->_valid);
-
 	if (!entityEntry->_active)
 	{
 		entityEntry->_active = true;
@@ -115,8 +64,6 @@ void ff::EntityDomain::ActivateEntity(Entity entity)
 void ff::EntityDomain::DeactivateEntity(Entity entity)
 {
 	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	assertRet(entityEntry->_valid);
-
 	if (entityEntry->_active)
 	{
 		entityEntry->_active = false;
@@ -128,49 +75,39 @@ void ff::EntityDomain::DeactivateEntity(Entity entity)
 void ff::EntityDomain::DeleteEntity(Entity entity)
 {
 	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	noAssertRet(entityEntry->_valid);
-
 	DeactivateEntity(entity);
 	TriggerEvent(ENTITY_EVENT_DELETED, entity);
 
-	entityEntry->_valid = false;
-	_deletedEntities.Push(entityEntry);
+	for (const ComponentFactoryEntry* factoryEntry : entityEntry->_components)
+	{
+		factoryEntry->_factory->Delete(entityEntry);
+	}
+
+	_entities.Delete(*entityEntry);
 }
 
 void ff::EntityDomain::DeleteEntities()
 {
-	ff::Vector<EntityEntry*> entities = _entities.ToPointerVector();
-	for (EntityEntry* entityEntry : entities)
+	while (_entities.Size())
 	{
-		DeleteEntity(entityEntry);
+		DeleteEntity(_entities.GetLast());
 	}
 }
 
 bool ff::EntityDomain::IsEntityActive(Entity entity)
 {
 	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	return entityEntry && entityEntry->_valid && entityEntry->_active;
+	return entityEntry && entityEntry->_active;
 }
 
-bool ff::EntityDomain::IsEntityPendingDeletion(Entity entity)
-{
-	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	return !entityEntry->_valid;
-}
-
-ff::EntityDomain::ComponentFactoryEntry* ff::EntityDomain::AddComponentFactory(
-	std::type_index componentType, CreateComponentFactoryFunc factoryFunc)
+ff::EntityDomain::ComponentFactoryEntry* ff::EntityDomain::AddComponentFactory(std::type_index componentType, CreateComponentFactoryFunc factoryFunc)
 {
 	auto iter = _componentFactories.GetKey(componentType);
 	if (!iter)
 	{
-		std::shared_ptr<ComponentFactory> factory = factoryFunc();
-		assertRetVal(factory != nullptr, nullptr);
-
 		ComponentFactoryEntry factoryEntry;
-		factoryEntry._factory = factory;
+		factoryEntry._factory = factoryFunc();
 		factoryEntry._bit = (uint64_t)1 << (_componentFactories.Size() % 64);
-
 		iter = _componentFactories.SetKey(std::move(componentType), std::move(factoryEntry));
 	}
 
@@ -183,13 +120,8 @@ ff::EntityDomain::ComponentFactoryEntry* ff::EntityDomain::GetComponentFactory(s
 	return i ? &i->GetEditableValue() : nullptr;
 }
 
-void* ff::EntityDomain::AddComponent(Entity entity, ComponentFactoryEntry* factoryEntry)
+void ff::EntityDomain::SetComponent(Entity entity, ComponentFactoryEntry* factoryEntry, void* component, bool usedExisting)
 {
-	assertRetVal(factoryEntry, nullptr);
-
-	bool usedExisting = false;
-	void* component = factoryEntry->_factory->New(entity, &usedExisting);
-
 	if (!usedExisting)
 	{
 		EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
@@ -200,33 +132,11 @@ void* ff::EntityDomain::AddComponent(Entity entity, ComponentFactoryEntry* facto
 
 		RegisterEntityWithBuckets(entityEntry, factoryEntry, component);
 	}
-
-	return component;
-}
-
-void* ff::EntityDomain::CloneComponent(Entity entity, Entity sourceEntity, ComponentFactoryEntry* factoryEntry)
-{
-	assertRetVal(factoryEntry, nullptr);
-	void* component = GetComponent(entity, factoryEntry);
-	assertRetVal(component == nullptr, component);
-
-	component = factoryEntry->_factory->Clone(entity, sourceEntity);
-	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-	assert(entityEntry->_components.Find(factoryEntry) == INVALID_SIZE);
-
-	entityEntry->_componentBits |= factoryEntry->_bit;
-	entityEntry->_components.Push(factoryEntry);
-
-	RegisterEntityWithBuckets(entityEntry, factoryEntry, component);
-
-	return component;
 }
 
 void* ff::EntityDomain::GetComponent(Entity entity, ComponentFactoryEntry* factoryEntry)
 {
-	assertRetVal(factoryEntry, nullptr);
 	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-
 	return ((entityEntry->_componentBits & factoryEntry->_bit) != 0)
 		? factoryEntry->_factory->Lookup(entity)
 		: nullptr;
@@ -234,9 +144,7 @@ void* ff::EntityDomain::GetComponent(Entity entity, ComponentFactoryEntry* facto
 
 bool ff::EntityDomain::DeleteComponent(Entity entity, ComponentFactoryEntry* factoryEntry)
 {
-	assertRetVal(factoryEntry, false);
 	EntityEntry* entityEntry = EntityEntry::FromEntity(entity);
-
 	size_t i = (entityEntry->_componentBits & factoryEntry->_bit) != 0
 		? entityEntry->_components.Find(factoryEntry)
 		: INVALID_SIZE;
@@ -261,30 +169,24 @@ bool ff::EntityDomain::DeleteComponent(Entity entity, ComponentFactoryEntry* fac
 	return false;
 }
 
-ff::Vector<ff::EntityDomain::ComponentFactoryBucketEntry> ff::EntityDomain::FindComponentEntries(
-	const ComponentTypeToFactoryEntry* componentTypes, size_t count)
+ff::Vector<ff::EntityDomain::ComponentFactoryBucketEntry> ff::EntityDomain::FindComponentEntries(const BucketEntryBase::ComponentEntry* componentEntries)
 {
 	ff::Vector<ComponentFactoryBucketEntry> entries;
-	entries.Reserve(count);
-
-	for (const ComponentTypeToFactoryEntry* componentType = componentTypes;
-		componentType != componentTypes + count;
-		componentType++)
+	for (const BucketEntryBase::ComponentEntry* componentEntry = componentEntries; componentEntry; componentEntry = componentEntry->_next)
 	{
 		ComponentFactoryBucketEntry bucketEntry;
-		bucketEntry._factory = AddComponentFactory(componentType->_type, componentType->_factory);
-		bucketEntry._required = componentType->_required;
-
-		assertRetVal(bucketEntry._factory != nullptr, ff::Vector<ComponentFactoryBucketEntry>());
+		bucketEntry._factory = AddComponentFactory(componentEntry->_type, componentEntry->_factory);
+		bucketEntry._offset = componentEntry->_offset;
+		bucketEntry._required = componentEntry->_required;
 		entries.Push(bucketEntry);
 	}
 
 	return entries;
 }
 
-void ff::EntityDomain::InitBucket(BucketBase* bucket, const ComponentTypeToFactoryEntry* componentTypes, size_t componentCount)
+void ff::EntityDomain::InitBucket(BucketBase* bucket, const BucketEntryBase::ComponentEntry* componentEntries)
 {
-	bucket->_components = FindComponentEntries(componentTypes, componentCount);
+	bucket->_components = FindComponentEntries(componentEntries);
 	bucket->_requiredComponentBits = 0;
 
 	for (const ComponentFactoryBucketEntry& factoryEntry : bucket->_components)
@@ -296,7 +198,7 @@ void ff::EntityDomain::InitBucket(BucketBase* bucket, const ComponentTypeToFacto
 
 		BucketComponentFactoryEntry bucketComponentEntry;
 		bucketComponentEntry._bucket = bucket;
-		bucketComponentEntry._bucketEntryIndex = &factoryEntry - bucket->_components.ConstData();
+		bucketComponentEntry._offset = factoryEntry._offset;
 		bucketComponentEntry._required = factoryEntry._required;
 
 		factoryEntry._factory->_buckets.Push(bucketComponentEntry);
@@ -308,37 +210,9 @@ void ff::EntityDomain::InitBucket(BucketBase* bucket, const ComponentTypeToFacto
 	}
 }
 
-void ff::EntityDomain::FlushDeletedEntities()
-{
-	while (_deletedEntities.Size())
-	{
-		Vector<EntityEntry*> entities = _deletedEntities;
-		_deletedEntities.Clear();
-
-		for (EntityEntry* entityEntry : entities)
-		{
-			assert(!entityEntry->_valid);
-
-			for (const ComponentFactoryEntry* factoryEntry : entityEntry->_components)
-			{
-				factoryEntry->_factory->Delete(entityEntry);
-			}
-
-			_entities.Delete(*entityEntry);
-		}
-	}
-}
-
 void ff::EntityDomain::RegisterActivatedEntity(EntityEntry* entityEntry)
 {
-	assert(entityEntry->_valid && entityEntry->_active);
-
-	if (!entityEntry->_name.empty())
-	{
-		_entitiesByName.InsertKey(entityEntry->_name, entityEntry);
-	}
-
-	_entitiesById.SetKey(entityEntry->_id, entityEntry);
+	assert(entityEntry->_active);
 
 	for (BucketBase* bucket : entityEntry->_buckets)
 	{
@@ -348,26 +222,17 @@ void ff::EntityDomain::RegisterActivatedEntity(EntityEntry* entityEntry)
 
 void ff::EntityDomain::UnregisterDeactivatedEntity(EntityEntry* entityEntry)
 {
-	assert(entityEntry->_valid && !entityEntry->_active);
-
-	_entitiesById.UnsetKey(entityEntry->_id);
-
-	if (!entityEntry->_name.empty())
-	{
-		for (auto i = _entitiesByName.GetKey(entityEntry->_name); i; i = _entitiesByName.GetNextDupeKey(*i))
-		{
-			if (i->GetValue() == entityEntry)
-			{
-				_entitiesByName.DeleteKey(*i);
-				break;
-			}
-		}
-	}
+	assert(!entityEntry->_active);
 
 	for (BucketBase* bucket : entityEntry->_buckets)
 	{
 		DeleteBucketEntry(entityEntry, bucket);
 	}
+}
+
+static void*& GetComponentFromBucket(ff::BucketEntryBase* bucketEntry, size_t offset)
+{
+	return *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(bucketEntry) + offset);
 }
 
 // Called when a new component is added to an entity
@@ -401,10 +266,8 @@ void ff::EntityDomain::RegisterEntityWithBuckets(EntityEntry* entityEntry, Compo
 			}
 
 			// Update an existing entry with the new optional component
-			EntityBucketEntry* bucketEntry = iter->GetValue();
-			void** derivedComponents = static_cast<FakeBucketEntry*>(bucketEntry)->_components;
-
-			derivedComponents[bucketComponentEntry._bucketEntryIndex] = component;
+			BucketEntryBase* bucketEntry = iter->GetValue();
+			::GetComponentFromBucket(bucketEntry, bucketComponentEntry._offset) = component;
 		}
 	}
 }
@@ -444,20 +307,18 @@ void ff::EntityDomain::UnregisterEntityWithBuckets(EntityEntry* entityEntry, Com
 				continue;
 			}
 
-			EntityBucketEntry* bucketEntry = iter->GetValue();
-			void** derivedComponents = static_cast<FakeBucketEntry*>(bucketEntry)->_components;
-
-			derivedComponents[bucketComponentEntry._bucketEntryIndex] = nullptr;
+			BucketEntryBase* bucketEntry = iter->GetValue();
+			::GetComponentFromBucket(bucketEntry, bucketComponentEntry._offset) = nullptr;
 
 			if (entityEntry->_active && bucketComponentEntry._bucket->_requiredComponentBits == 0)
 			{
 				deleteEntity = true;
-				for (size_t i = 0, componentCount = bucketComponentEntry._bucket->_components.Size();
-					i < componentCount && deleteEntity; i++)
+				for (const ComponentFactoryBucketEntry& componentBucketEntry : bucketComponentEntry._bucket->_components)
 				{
-					if (derivedComponents[i] != nullptr)
+					if (::GetComponentFromBucket(bucketEntry, componentBucketEntry._offset))
 					{
 						deleteEntity = false;
+						break;
 					}
 				}
 			}
@@ -511,38 +372,34 @@ void ff::EntityDomain::TryRegisterEntityWithBucket(EntityEntry* entityEntry, Buc
 
 void ff::EntityDomain::CreateBucketEntry(EntityEntry* entityEntry, BucketBase* bucket)
 {
-	assert(entityEntry->_valid && entityEntry->_active);
+	assert(entityEntry->_active);
 
-	EntityBucketEntry* bucketEntry = bucket->_newEntryFunc(entityEntry);
+	BucketEntryBase* bucketEntry = bucket->_newEntryFunc(entityEntry);
 
-	void** derivedComponents = static_cast<FakeBucketEntry*>(bucketEntry)->_components;
 	for (const ComponentFactoryBucketEntry& factoryEntry : bucket->_components)
 	{
-		void* component = GetComponent(bucketEntry->_entity, factoryEntry._factory);
+		void* component = GetComponent(bucketEntry->GetEntity(), factoryEntry._factory);
 		assert(component != nullptr || !factoryEntry._required);
-
-		*derivedComponents = component;
-		derivedComponents++;
+		::GetComponentFromBucket(bucketEntry, factoryEntry._offset) = component;
 	}
 
-	bucket->_entityToEntry.SetKey(bucketEntry->_entity, bucketEntry);
+	bucket->_entityToEntry.SetKey(bucketEntry->GetEntity(), bucketEntry);
 	bucket->_notifyAdd(bucketEntry);
 }
 
 void ff::EntityDomain::DeleteBucketEntry(EntityEntry* entityEntry, BucketBase* bucket)
 {
-	assert(entityEntry->_valid);
 	bucket->_deleteEntryFunc(entityEntry);
 }
 
 bool ff::EntityDomain::AddEventHandler(hash_t eventId, IEntityEventHandler* handler)
 {
-	return AddEventHandler(GetEventEntry(eventId), INVALID_ENTITY, handler);
+	return AddEventHandler(GetEventEntry(eventId), nullptr, handler);
 }
 
 bool ff::EntityDomain::RemoveEventHandler(hash_t eventId, IEntityEventHandler* handler)
 {
-	return RemoveEventHandler(GetEventEntry(eventId), INVALID_ENTITY, handler);
+	return RemoveEventHandler(GetEventEntry(eventId), nullptr, handler);
 }
 
 bool ff::EntityDomain::AddEventHandler(hash_t eventId, Entity entity, IEntityEventHandler* handler)
@@ -559,14 +416,13 @@ bool ff::EntityDomain::AddEventHandler(EventHandlerEntry* eventEntry, Entity ent
 {
 	assertRetVal(eventEntry && handler, false);
 
-	Vector<EventHandler>& eventHandlers = (entity != INVALID_ENTITY)
+	Vector<EventHandler>& eventHandlers = entity
 		? EntityEntry::FromEntity(entity)->_eventHandlers
 		: eventEntry->_eventHandlers;
 
 	EventHandler eventHandler;
 	eventHandler._eventId = eventEntry->_eventId;
 	eventHandler._handler = handler;
-
 	eventHandlers.Push(eventHandler);
 
 	return true;
@@ -576,22 +432,16 @@ bool ff::EntityDomain::RemoveEventHandler(EventHandlerEntry* eventEntry, Entity 
 {
 	assertRetVal(eventEntry && handler, false);
 
-	Vector<EventHandler>& eventHandlers = (entity != INVALID_ENTITY)
+	Vector<EventHandler>& eventHandlers = entity
 		? EntityEntry::FromEntity(entity)->_eventHandlers
 		: eventEntry->_eventHandlers;
 
-	if (!eventHandlers.IsEmpty())
-	{
-		EventHandler eventHandler;
-		eventHandler._eventId = eventEntry->_eventId;
-		eventHandler._handler = handler;
+	EventHandler eventHandler;
+	eventHandler._eventId = eventEntry->_eventId;
+	eventHandler._handler = handler;
+	assertRetVal(eventHandlers.DeleteItem(eventHandler), false);
 
-		assertRetVal(eventHandlers.DeleteItem(eventHandler), false);
-
-		return true;
-	}
-
-	return false;
+	return true;
 }
 
 ff::EntityDomain::EventHandlerEntry* ff::EntityDomain::GetEventEntry(hash_t eventId)
@@ -601,11 +451,10 @@ ff::EntityDomain::EventHandlerEntry* ff::EntityDomain::GetEventEntry(hash_t even
 	{
 		EventHandlerEntry eventEntry;
 		eventEntry._eventId = eventId;
-
-		iter = _events.SetKey(eventId, eventEntry);
+		iter = _events.SetKey(eventId, std::move(eventEntry));
 	}
 
-	return iter ? &iter->GetEditableValue() : nullptr;
+	return &iter->GetEditableValue();
 }
 
 void ff::EntityDomain::TriggerEvent(hash_t eventId, Entity entity, void* args)
@@ -615,7 +464,7 @@ void ff::EntityDomain::TriggerEvent(hash_t eventId, Entity entity, void* args)
 
 void ff::EntityDomain::TriggerEvent(hash_t eventId, void* args)
 {
-	TriggerEvent(GetEventEntry(eventId), INVALID_ENTITY, args);
+	TriggerEvent(GetEventEntry(eventId), nullptr, args);
 }
 
 void ff::EntityDomain::TriggerEvent(EventHandlerEntry* eventEntry, Entity entity, void* args)
@@ -623,27 +472,24 @@ void ff::EntityDomain::TriggerEvent(EventHandlerEntry* eventEntry, Entity entity
 	assertRet(eventEntry && eventEntry->_eventId != ENTITY_EVENT_ANY);
 
 	// Call listeners for the specific entity first
-	if (entity != INVALID_ENTITY)
+	if (entity)
 	{
-		bool deactivatedEvent = eventEntry->_eventId == ENTITY_EVENT_DEACTIVATED;
-		bool deletedEvent = eventEntry->_eventId == ENTITY_EVENT_DELETED;
+		const Vector<EventHandler>& eventHandlers = EntityEntry::FromEntity(entity)->_eventHandlers;
 
-		EntityEntry* entry = EntityEntry::FromEntity(entity);
-		noAssertRet(entry->_active || deactivatedEvent || deletedEvent);
-
-		const Vector<EventHandler>& eventHandlers = entry->_eventHandlers;
-		for (auto i = eventHandlers.crbegin(); i != eventHandlers.crend(); i++)
+		for (size_t i = eventHandlers.Size(); i; i--)
 		{
-			const EventHandler& eventHandler = *i;
-
+			const EventHandler& eventHandler = eventHandlers[i - 1];
 			if (eventHandler._eventId == eventEntry->_eventId || eventHandler._eventId == ENTITY_EVENT_ANY)
 			{
 				eventHandler._handler->OnEntityEvent(entity, eventEntry->_eventId, args);
 			}
+		}
 
-			if (deletedEvent && !eventHandlers.IsEmpty() && &eventHandlers.GetLast() >= &eventHandler)
+		if (eventEntry->_eventId == ENTITY_EVENT_DELETED)
+		{
+			for (size_t i = eventHandlers.Size(); i; i--)
 			{
-				eventHandler._handler->OnEntityDeleted(entity);
+				eventHandlers[i - 1]._handler->OnEntityDeleted(entity);
 			}
 		}
 	}
@@ -651,20 +497,18 @@ void ff::EntityDomain::TriggerEvent(EventHandlerEntry* eventEntry, Entity entity
 	// Call global listeners for a specific event
 	{
 		const Vector<EventHandler>& eventHandlers = eventEntry->_eventHandlers;
-		for (auto i = eventHandlers.crbegin(); i != eventHandlers.crend(); i++)
+		for (size_t i = eventHandlers.Size(); i; i--)
 		{
-			const EventHandler& eventHandler = *i;
-			eventHandler._handler->OnEntityEvent(entity, eventEntry->_eventId, args);
+			eventHandlers[i - 1]._handler->OnEntityEvent(entity, eventEntry->_eventId, args);
 		}
 	}
 
 	// Call global listeners for any event
 	{
 		const Vector<EventHandler>& eventHandlers = GetEventEntry(ENTITY_EVENT_ANY)->_eventHandlers;
-		for (auto i = eventHandlers.crbegin(); i != eventHandlers.crend(); i++)
+		for (size_t i = eventHandlers.Size(); i; i--)
 		{
-			const EventHandler& eventHandler = *i;
-			eventHandler._handler->OnEntityEvent(entity, eventEntry->_eventId, args);
+			eventHandlers[i - 1]._handler->OnEntityEvent(entity, eventEntry->_eventId, args);
 		}
 	}
 }

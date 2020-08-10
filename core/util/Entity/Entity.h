@@ -9,28 +9,22 @@ namespace ff
 
 	struct EntityBase;
 	typedef EntityBase* Entity;
-	const Entity INVALID_ENTITY = nullptr;
-
-	typedef unsigned int EntityId;
-	const EntityId INVALID_ENTITY_ID = 0;
 
 	struct EntityBase
 	{
 		UTIL_API EntityDomain* GetDomain();
 
-		template<typename T> T* AddComponent();
+		template<typename T, typename... Args> T* SetComponent(Args&&... args);
 		template<typename T> T* CloneComponent(Entity sourceEntity);
 		template<typename T> T* GetComponent();
 		template<typename T> bool DeleteComponent();
 
-		UTIL_API Entity Clone(StringRef name = String());
-		UTIL_API StringRef GetName();
-		UTIL_API EntityId GetId();
+		UTIL_API Entity Clone();
+		UTIL_API ff::hash_t GetHash();
 		UTIL_API void Activate();
 		UTIL_API void Deactivate();
 		UTIL_API void Delete();
 		UTIL_API bool IsActive();
-		UTIL_API bool IsPendingDeletion();
 
 		UTIL_API void TriggerEvent(hash_t eventId, void* args = nullptr);
 		UTIL_API bool AddEventHandler(hash_t eventId, IEntityEventHandler* handler);
@@ -68,14 +62,14 @@ namespace ff
 	template<>
 	inline hash_t HashFunc<Entity>(const Entity& val)
 	{
-		return val->GetId();
+		return val->GetHash();
 	}
 };
 
-template<typename T>
-T* ff::EntityBase::AddComponent()
+template<typename T, typename... Args>
+T* ff::EntityBase::SetComponent(Args&&... args)
 {
-	return GetDomain()->AddComponent<T>(this);
+	return GetDomain()->SetComponent<T, Args...>(this, std::forward<Args>(args)...);
 }
 
 template<typename T>

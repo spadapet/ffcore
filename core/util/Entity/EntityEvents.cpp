@@ -61,12 +61,12 @@ ff::EntityEventConnection::~EntityEventConnection()
 
 bool ff::EntityEventConnection::Connect(hash_t eventId, EntityDomain* domain, IEntityEventHandler* handler)
 {
-	return Connect(eventId, domain, ff::INVALID_ENTITY, handler);
+	return Connect(eventId, domain, nullptr, handler);
 }
 
 bool ff::EntityEventConnection::Connect(hash_t eventId, Entity entity, IEntityEventHandler* handler)
 {
-	return Connect(eventId, EntityDomain::TryGet(entity), entity, handler);
+	return Connect(eventId, entity ? entity->GetDomain() : nullptr, entity, handler);
 }
 
 bool ff::EntityEventConnection::Connect(hash_t eventId, EntityDomain* domain, Entity entity, IEntityEventHandler* handler)
@@ -111,6 +111,6 @@ void ff::EntityEventConnection::Init()
 {
 	_domain = nullptr;
 	_eventId = 0;
-	_entity = INVALID_ENTITY;
+	_entity = nullptr;
 	_handler = nullptr;
 }

@@ -8,23 +8,19 @@ namespace ff
 	{
 	public:
 		template<typename T>
-		static std::shared_ptr<ComponentFactory> Create();
+		static std::unique_ptr<ComponentFactory> Create();
 
+		UTIL_API ComponentFactory(std::unique_ptr<ff::IBytePoolAllocator>&& allocator, std::function<void(void*, const void*)>&& copyConstructor, std::function<void(void*)>&& destructor);
 		UTIL_API ~ComponentFactory();
 
-		void* New(Entity entity, bool* usedExisting = nullptr);
+		template<typename T, typename... Args> void* New(Entity entity, bool& usedExisting, Args&&... args);
 		void* Clone(Entity entity, Entity sourceEntity);
 		void* Lookup(Entity entity) const;
 		bool Delete(Entity entity);
 
 	private:
-		UTIL_API ComponentFactory(
-			std::unique_ptr<ff::IBytePoolAllocator>&& allocator,
-			std::function<void(void*)>&& constructor,
-			std::function<void(void*, const void*)>&& copyConstructor,
-			std::function<void(void*)>&& destructor);
+		UTIL_API void* NewBytes(Entity entity, bool& usedExisting);
 
-		std::function<void(void*)> _constructor;
 		std::function<void(void*, const void*)> _copyConstructor;
 		std::function<void(void*)> _destructor;
 
@@ -32,72 +28,36 @@ namespace ff
 		ff::Map<Entity, void*> _entityToComponent;
 	};
 
-	typedef std::shared_ptr<ComponentFactory>(*CreateComponentFactoryFunc)();
+	typedef std::unique_ptr<ComponentFactory>(*CreateComponentFactoryFunc)();
+}
 
-	struct ComponentTypeToFactoryEntry
+template<typename T, typename... Args>
+void* ff::ComponentFactory::New(Entity entity, bool& usedExisting, Args&&... args)
+{
+	void* component = NewBytes(entity, usedExisting);
+	if (usedExisting)
 	{
-		std::type_index _type;
-		CreateComponentFactoryFunc _factory;
-		bool _required;
-	};
+		*reinterpret_cast<T*>(component) = T(std::forward<Args>(args)...);
+	}
+	else
+	{
+		::new(component) T(std::forward<Args>(args)...);
+	}
+
+	return component;
 }
 
 template<typename T>
-std::shared_ptr<ff::ComponentFactory> ff::ComponentFactory::Create()
+std::unique_ptr<ff::ComponentFactory> ff::ComponentFactory::Create()
 {
-	return std::shared_ptr<ComponentFactory>(
-		new ComponentFactory(
-			std::make_unique<ff::BytePoolAllocator<sizeof(T), alignof(T), false>>(),
-			// T::T constructor
-			[](void* component)
-			{
-				::new(component) T();
-			},
-			// T::T(T) constructor
-				[](void* component, const void* sourceComponent)
-			{
-				::new(component) T(*reinterpret_cast<const T*>(sourceComponent));
-			},
-				// T::~T destructor
-				[](void* component)
-			{
-				reinterpret_cast<T*>(component)->~T();
-			}));
+	return std::make_unique<ComponentFactory>(
+		std::make_unique<ff::BytePoolAllocator<sizeof(T), alignof(T), false>>(),
+		[](void* component, const void* sourceComponent)
+		{
+			::new(component) T(*reinterpret_cast<const T*>(sourceComponent));
+		},
+		[](void* component)
+		{
+			reinterpret_cast<T*>(component)->~T();
+		});
 }
-
-// Helper macros
-
-#define DECLARE_ENTRY_COMPONENTS() \
-	static const ff::ComponentTypeToFactoryEntry *GetComponentTypes(); \
-	static size_t GetComponentCount();
-
-#define BEGIN_ENTRY_COMPONENTS(className) \
-	static const ff::ComponentTypeToFactoryEntry s_components_##className[] \
-	{
-
-#define HAS_COMPONENT(componentClass) \
-	{ std::type_index(typeid(componentClass)), &ff::ComponentFactory::Create<componentClass>, true },
-
-#define HAS_OPTIONAL_COMPONENT(componentClass) \
-	{ std::type_index(typeid(componentClass)), &ff::ComponentFactory::Create<componentClass>, false },
-
-#define END_ENTRY_COMPONENTS(className) \
-	}; \
-	const ff::ComponentTypeToFactoryEntry *className::GetComponentTypes() \
-	{ \
-		return s_components_##className; \
-	} \
-	size_t className::GetComponentCount() \
-	{ \
-		return _countof(s_components_##className); \
-	}
-
-#define EMPTY_ENTRY_COMPONENTS(className) \
-	const ff::ComponentTypeToFactoryEntry *className::GetComponentTypes() \
-	{ \
-		return nullptr; \
-	} \
-	size_t className::GetComponentCount() \
-	{ \
-		return 0; \
-	}
