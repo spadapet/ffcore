@@ -8,7 +8,6 @@
 #include <forward_list>
 #include <functional>
 #include <iostream>
-#include <regex>
 #include <type_traits>
 #include <typeindex>
 #include <typeinfo>
