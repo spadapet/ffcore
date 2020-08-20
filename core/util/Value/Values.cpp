@@ -33,6 +33,7 @@ static ff::ProcessStartup RegisterDefaultTypes([](ff::ProcessGlobals& globals)
 		ff::Value::RegisterType<ff::SavedDictValue, ff::SavedDictValueType>();
 		ff::Value::RegisterType<ff::SharedResourceWrapperValue, ff::SharedResourceWrapperValueType>();
 		ff::Value::RegisterType<ff::SizeValue, ff::SizeValueType>();
+		ff::Value::RegisterType<ff::StringStdVectorValue, ff::StringStdVectorValueType>();
 		ff::Value::RegisterType<ff::StringValue, ff::StringValueType>();
 		ff::Value::RegisterType<ff::StringVectorValue, ff::StringVectorValueType>();
 		ff::Value::RegisterType<ff::ValueVectorValue, ff::ValueVectorValueType>();

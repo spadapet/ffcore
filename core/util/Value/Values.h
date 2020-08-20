@@ -27,6 +27,7 @@
 #include "Value/SavedDictValue.h"
 #include "Value/SharedResourceWrapperValue.h"
 #include "Value/SizeValue.h"
+#include "Value/StringStdVectorValue.h"
 #include "Value/StringValue.h"
 #include "Value/StringValueType.h"
 #include "Value/StringVectorValue.h"

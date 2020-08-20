@@ -257,6 +257,7 @@
     <ClCompile Include="Value\SavedDictValue.cpp" />
     <ClCompile Include="Value\SharedResourceWrapperValue.cpp" />
     <ClCompile Include="Value\SizeValue.cpp" />
+    <ClCompile Include="Value\StringStdVectorValue.cpp" />
     <ClCompile Include="Value\StringValue.cpp" />
     <ClCompile Include="Value\StringVectorValue.cpp" />
     <ClCompile Include="Value\Value.cpp" />
@@ -448,6 +449,7 @@
     <ClInclude Include="Value\SavedDictValue.h" />
     <ClInclude Include="Value\SharedResourceWrapperValue.h" />
     <ClInclude Include="Value\SizeValue.h" />
+    <ClInclude Include="Value\StringStdVectorValue.h" />
     <ClInclude Include="Value\StringValue.h" />
     <ClInclude Include="Value\StringValueType.h" />
     <ClInclude Include="Value\StringVectorValue.h" />

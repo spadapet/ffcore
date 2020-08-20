@@ -716,6 +716,9 @@
     <ClCompile Include="UI\Internal\XamlResourceCache.cpp">
       <Filter>UI\Internal</Filter>
     </ClCompile>
+    <ClCompile Include="Value\StringStdVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1287,6 +1290,9 @@
     </ClInclude>
     <ClInclude Include="UI\Internal\XamlResourceCache.h">
       <Filter>UI\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\StringStdVectorValue.h">
+      <Filter>Value</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
