@@ -108,14 +108,37 @@ void ff::Dict::ExpandSavedDictValues()
 {
 	for (ff::StringRef name : GetAllNames())
 	{
-		ValuePtr value = GetValue(name)->Convert<DictValue>();
-		if (value)
+		ValuePtr value = GetValue(name);
+		if (value->IsType<ValueVectorValue>())
 		{
-			Dict dict = value->GetValue<DictValue>();
-			dict.ExpandSavedDictValues();
+			Vector<ValuePtr> values = value->GetValue<ValueVectorValue>();
+			for (size_t i = 0; i < values.Size(); i++)
+			{
+				ValuePtrT<DictValue> dictValue = values[i];
+				if (dictValue)
+				{
+					Dict dict = dictValue.GetValue();
+					dict.ExpandSavedDictValues();
 
-			value = Value::New<DictValue>(std::move(dict));
+					value = Value::New<DictValue>(std::move(dict));
+					values[i] = value;
+				}
+			}
+
+			value = Value::New<ValueVectorValue>(std::move(values));
 			SetValue(name, value);
+		}
+		else
+		{
+			ValuePtrT<DictValue> dictValue = value;
+			if (dictValue)
+			{
+				Dict dict = dictValue.GetValue();
+				dict.ExpandSavedDictValues();
+
+				value = Value::New<DictValue>(std::move(dict));
+				SetValue(name, value);
+			}
 		}
 	}
 }
