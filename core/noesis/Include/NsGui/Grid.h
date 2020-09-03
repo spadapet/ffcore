@@ -21,6 +21,7 @@ namespace Noesis
 
 class ColumnDefinition;
 class RowDefinition;
+class SharedSizeScope;
 
 template<class T> class UICollection;
 typedef Noesis::UICollection<Noesis::ColumnDefinition> ColumnDefinitionCollection;
@@ -104,6 +105,9 @@ protected:
     //@}
 
 private:
+    friend class BaseDefinition;
+    friend class SharedSizeGroup;
+
     // Simple measure of children
     Size SimpleMeasure(const Size& availableSize);
 
@@ -129,9 +133,11 @@ private:
         float size;
         float minSize;
         float maxSize;
+        const char* sharedGroup;
+        bool useSharedSize;
 
         DefinitionCache();
-        DefinitionCache(GridUnitType t, float s, float mins, float maxs);
+        DefinitionCache(GridUnitType t, float s, float mins, float maxs, const char* g);
     };
 
     typedef Vector<DefinitionCache> DefinitionCacheVector;
@@ -193,8 +199,17 @@ private:
     void DisconnectRows();
 
     // Detects changes in cell properties of children elements
-    static void StaticCellChanged(DependencyObject* obj,
-        const DependencyPropertyChangedEventArgs& args);
+    static void StaticCellChanged(DependencyObject* d,
+        const DependencyPropertyChangedEventArgs& e);
+
+    // Manages shared size scopes
+    static void StaticIsSharedSizeScopeChanged(DependencyObject* d,
+        const DependencyPropertyChangedEventArgs& e);
+
+    void UseSharedSize(uint32_t index, bool useSharedSize);
+    float MeasureSize(uint32_t index) const;
+    float ArrangeSize(uint32_t index) const;
+    float SharedSize(const DefinitionCache& def) const;
 
 private:
     mutable Ptr<ColumnDefinitionCollection> mColumnDefinitions;
@@ -260,6 +275,8 @@ private:
 
     struct CellStructureInfo
     {
+        SharedSizeScope* scope;
+
         DefinitionsInfo colInfo;
         DefinitionsInfo rowInfo;
         ElementInfoVector elements;
@@ -272,14 +289,14 @@ private:
 
         void ResetCellInfo();
         void ResetElementCache();
-        void ResetMeasureInfo();
+        void ResetMeasureInfo(IView* view);
         void ResetArrangeInfo();
 
         uint32_t GetNumOrderedIndices(uint32_t cell);
         void AddOrderedElements(uint32_t cell);
 
     private:
-        void ResetMeasureDef(const DefinitionsInfo& info, FloatVector& constraints,
+        void ResetMeasureDef(IView* view, const DefinitionsInfo& info, FloatVector& constraints,
             FloatVector& sizes, float& usedSize);
         void ResetArrangeDef(const DefinitionsInfo& info, FloatVector& sizes,
             FloatVector& positions);

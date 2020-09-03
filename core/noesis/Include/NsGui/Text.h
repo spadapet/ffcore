@@ -40,6 +40,7 @@ struct NS_GUI_CORE_API Text
 
     /// Dependency properties
     //@{
+    static const DependencyProperty* CharacterSpacingProperty;
     static const DependencyProperty* StrokeProperty;
     static const DependencyProperty* StrokeThicknessProperty;
     static const DependencyProperty* PlaceholderProperty;

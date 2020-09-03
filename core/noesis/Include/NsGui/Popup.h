@@ -182,6 +182,8 @@ private:
     void MouseCapture();
     void MouseRelease();
 
+    static void OnOffsetChanged(DependencyObject* d, const DependencyPropertyChangedEventArgs& e);
+
     bool CoerceIsOpen(const void* isOpen, void* coercedIsOpen) const;
     static bool StaticCoerceIsOpen(const DependencyObject* object, const void* isOpen,
         void* coercedIsOpen);
