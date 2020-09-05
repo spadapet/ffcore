@@ -29,6 +29,7 @@ namespace ff
 		RectType<T> TopEdge() const;
 		RectType<T> RightEdge() const;
 		RectType<T> BottomEdge() const;
+		std::array<PointType<T>, 4> Corners() const;
 
 		bool IsEmpty() const;
 		bool IsZeros() const;
@@ -53,6 +54,7 @@ namespace ff
 		RectType<T> CenterOn(const PointType<T>& point) const; // center (*this) on top of point
 		RectType<T> ScaleToFit(const RectType<T>& rhs) const; // moves bottom-right so that (*this) would fit within rhs, but keeps aspect ratio
 		RectType<T> MoveInside(const RectType<T>& rhs) const; // move this rect so that it is inside of rhs (impossible to do if rhs is smaller than *this)
+		RectType<T> MoveOutside(const RectType<T>& rhs) const; // move this rect in one direction so that it is outside of rhs
 		RectType<T> MoveTopLeft(const PointType<T>& point) const; // keeps the same size, but moves the rect to point
 		RectType<T> MoveTopLeft(T tx, T ty) const; // same as above
 		RectType<T> Crop(const RectType<T>& rhs) const; // cut off my edges so that I'm inside of rhs
@@ -275,6 +277,20 @@ template<typename T>
 ff::RectType<T> ff::RectType<T>::BottomEdge() const
 {
 	return RectType<T>(left, bottom, right, bottom);
+}
+
+template<typename T>
+std::array<ff::PointType<T>, 4> ff::RectType<T>::Corners() const
+{
+	std::array<ff::PointType<T>, 4> corners =
+	{
+		TopLeft(),
+		TopRight(),
+		BottomRight(),
+		BottomLeft(),
+	};
+
+	return corners;
 }
 
 template<typename T>
@@ -518,6 +534,40 @@ ff::RectType<T> ff::RectType<T>::MoveInside(const RectType<T>& rhs) const
 		rect.top -= offset;
 		rect.bottom -= offset;
 	}
+
+	return rect;
+}
+
+template<typename T>
+ff::RectType<T> ff::RectType<T>::MoveOutside(const RectType<T>& rhs) const
+{
+	if (DoesIntersect(rhs))
+	{
+		T leftMove = right - rhs.left;
+		T rightMove = rhs.right - left;
+		T topMove = bottom - rhs.top;
+		T bottomMove = rhs.bottom - top;
+		T move = std::min({ leftMove, rightMove, topMove, bottomMove });
+
+		if (move == leftMove)
+		{
+			return ff::RectType<T>(left - leftMove, top, right - leftMove, bottom);
+		}
+		else if (move == topMove)
+		{
+			return ff::RectType<T>(left, top - topMove, right, bottom - topMove);
+		}
+		else if (move == rightMove)
+		{
+			return ff::RectType<T>(left + rightMove, top, right + rightMove, bottom);
+		}
+		else
+		{
+			return ff::RectType<T>(left, top + bottomMove, right, bottom + bottomMove);
+		}
+	}
+
+	return *this;
 }
 
 template<typename T>
