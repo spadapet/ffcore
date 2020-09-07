@@ -411,9 +411,15 @@ bool RenderTargetWindow11::SetFullScreen(bool bFullScreen)
 	if (_hwnd)
 	{
 		ff::LockMutex lock(_hwndMutex);
-		if (_hwnd && !bFullScreen != !IsFullScreen() && SUCCEEDED(_swapChain->SetFullscreenState(bFullScreen, nullptr)))
+		if (_hwnd && !bFullScreen != !IsFullScreen())
 		{
-			return InitSetSize();
+			// SetFullscreenState will send messages to the main thread, don't hold any mutex
+			lock.Unlock();
+
+			if (SUCCEEDED(_swapChain->SetFullscreenState(bFullScreen, nullptr)))
+			{
+				return InitSetSize();
+			}
 		}
 	}
 
