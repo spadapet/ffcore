@@ -541,6 +541,8 @@ ff::RectType<T> ff::RectType<T>::MoveInside(const RectType<T>& rhs) const
 template<typename T>
 ff::RectType<T> ff::RectType<T>::MoveOutside(const RectType<T>& rhs) const
 {
+	RectType<T> rect = *this;
+
 	if (DoesIntersect(rhs))
 	{
 		T leftMove = right - rhs.left;
@@ -551,23 +553,26 @@ ff::RectType<T> ff::RectType<T>::MoveOutside(const RectType<T>& rhs) const
 
 		if (move == leftMove)
 		{
-			return ff::RectType<T>(left - leftMove, top, right - leftMove, bottom);
+			rect = rect.Offset(-leftMove, (T)0);
 		}
-		else if (move == topMove)
+
+		if (move == topMove)
 		{
-			return ff::RectType<T>(left, top - topMove, right, bottom - topMove);
+			rect = rect.Offset((T)0, -topMove);
 		}
-		else if (move == rightMove)
+
+		if (move == rightMove)
 		{
-			return ff::RectType<T>(left + rightMove, top, right + rightMove, bottom);
+			rect = rect.Offset(rightMove, (T)0);
 		}
-		else
+
+		if (move == bottomMove)
 		{
-			return ff::RectType<T>(left, top + bottomMove, right, bottom + bottomMove);
+			rect = rect.Offset((T)0, bottomMove);
 		}
 	}
 
-	return *this;
+	return rect;
 }
 
 template<typename T>
