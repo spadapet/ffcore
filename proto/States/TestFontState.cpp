@@ -73,7 +73,7 @@ void TestFontState::CreateSpriteFont()
 		ff::Vector<ff::String> errors;
 		ff::Dict dict = ff::LoadResourcesFromFileCached(jsonFile, false, errors);
 		assertRet(dict.Size() && errors.IsEmpty());
-		assertRet(ff::CreateResources(nullptr, nullptr, dict, &_resources));
+		assertRet(ff::CreateResources(nullptr, dict, &_resources));
 	},
 	[this]()
 	{

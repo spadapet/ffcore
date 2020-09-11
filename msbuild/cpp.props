@@ -54,7 +54,6 @@
         <AppContainerApplication Condition=" '$(AppContainerApplication)' == '' ">true</AppContainerApplication>
         <ApplicationType Condition=" '$(ApplicationType)' == '' ">Windows Store</ApplicationType>
         <ApplicationTypeRevision Condition=" '$(ApplicationTypeRevision)' == '' ">10.0</ApplicationTypeRevision>
-        <CompileAsWinRT Condition=" '$(CompileAsWinRT)' == '' And '$(ConfigurationType)' == 'StaticLibrary' ">false</CompileAsWinRT>
         <EnableDotNetNativeCompatibleProfile Condition=" '$(EnableDotNetNativeCompatibleProfile)' == '' And '$(ConfigurationType)' == 'Application' ">true</EnableDotNetNativeCompatibleProfile>
         <GenerateManifest Condition=" '$(GenerateManifest)' == '' And '$(ConfigurationType)' != 'Application' ">false</GenerateManifest>
         <GenerateWindowsMetadata Condition=" '$(GenerateWindowsMetadata)' == '' And '$(ConfigurationType)' == 'Application' ">true</GenerateWindowsMetadata>

@@ -11,10 +11,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\dxtex</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\zlib</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\libpng</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\noesis\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\libpng</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\libpng-inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)core\noesis\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -53,19 +54,6 @@
       <ModuleDefinitionFile>Assets\util.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\dxtex\dxtex.vcxproj">
-      <Project>{fb3fbbcf-8cf9-4c53-8baa-d451f3f79b42}</Project>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="..\libpng\libpng.vcxproj">
-      <Project>{20ad1cf4-69ef-49f3-b258-01903326bf25}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\zlib\zlib.vcxproj">
-      <Project>{968d9f08-835d-4844-a809-51a3efb915ac}</Project>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio\AudioBuffer.cpp" />
     <ClCompile Include="Audio\AudioDevice.cpp" />
@@ -495,6 +483,17 @@
     <None Include="UI\Shader\ShaderVS.hlsl">
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\vendor\DirectXTex-desktop.vcxproj">
+      <Project>{0f70b91f-324b-4f6a-a527-bc5a86f3cc3c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\vendor\libpng-desktop.vcxproj">
+      <Project>{f031344c-bd29-4bd5-a9df-b16824808768}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\vendor\zlib-desktop.vcxproj">
+      <Project>{13053a8d-3fa7-4e13-a0b0-21670f523076}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="..\..\msbuild\cpp.targets" />
   <Target Name="AfterBuild">

@@ -9,8 +9,8 @@
   <Import Project="..\msbuild\cpp.props" />
   <ItemDefinitionGroup>
     <ClCompile>
+      <CompileAsWinRT>false</CompileAsWinRT>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

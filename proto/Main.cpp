@@ -23,17 +23,12 @@ class AppGlobalsHelper : public ff::IAppGlobalsHelper, public ff::IXamlGlobalHel
 public:
 	virtual void OnGameThreadInitialized(ff::AppGlobals* globals) override
 	{
-		_uiGlobals = std::make_shared<ff::XamlGlobalState>(globals);
-		_uiGlobals->Startup(this);
+		_uiGlobals = std::make_shared<ff::XamlGlobalState>(globals, this);
 	}
 
 	virtual void OnGameThreadShutdown(ff::AppGlobals* globals) override
 	{
-		if (_uiGlobals != nullptr)
-		{
-			_uiGlobals->Shutdown();
-			_uiGlobals = nullptr;
-		}
+		_uiGlobals = nullptr;
 	}
 
 	virtual std::shared_ptr<ff::State> CreateInitialState(ff::AppGlobals* globals) override

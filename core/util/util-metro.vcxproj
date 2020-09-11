@@ -9,10 +9,11 @@
   <Import Project="..\..\msbuild\cpp.props" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\dxtex</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\zlib</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\libpng</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\noesis\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\libpng</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\libpng-inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)core\noesis\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -46,16 +47,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\dxtex\dxtex-metro.vcxproj">
-      <Project>{d6f468cf-1b2b-46e1-91dd-2c36ac216e7a}</Project>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    <ProjectReference Include="..\..\vendor\DirectXTex-metro.vcxproj">
+      <Project>{126607a1-c792-4c30-b015-fde9db0df6e1}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\libpng\libpng-metro.vcxproj">
-      <Project>{dab734ee-9037-4b24-adca-a6dc9d0d66dc}</Project>
+    <ProjectReference Include="..\..\vendor\libpng-metro.vcxproj">
+      <Project>{ca264a31-ade3-4721-b483-8082b1386f13}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\zlib\zlib-metro.vcxproj">
-      <Project>{49f8c1b7-6d04-44b7-82ba-a813d826b2f1}</Project>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    <ProjectReference Include="..\..\vendor\zlib-metro.vcxproj">
+      <Project>{839d0c2a-e8cc-4fd6-aa57-3a9cf3f700ac}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

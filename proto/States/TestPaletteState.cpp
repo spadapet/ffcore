@@ -21,17 +21,17 @@ namespace TestPalette
 	static const ff::RectFloat FULL_WORLD_RECT(0, 0, 1920, 1080);
 	static const ff::RectFloat SMALL_WORLD_RECT(0, 0, 1920 / 4, 1080 / 4);
 
-	struct PositionComponent : public ff::Component
+	struct PositionComponent
 	{
 		ff::PointFloat position;
 	};
 
-	struct VelocityComponent : public ff::Component
+	struct VelocityComponent
 	{
 		ff::PointFloat velocity;
 	};
 
-	struct VisualComponent : public ff::Component
+	struct VisualComponent
 	{
 		ff::ISprite* sprite;
 		ff::PointFloat scale;
@@ -39,34 +39,14 @@ namespace TestPalette
 	};
 
 	// Defines what components the "Update System" requires on each entity that it cares about
-	struct UpdateSystemEntry : public ff::EntityBucketEntry
+	struct UpdateSystemEntry : public ff::BucketEntry<PositionComponent, VelocityComponent, VisualComponent>
 	{
-		DECLARE_ENTRY_COMPONENTS()
-
-		PositionComponent* positionComponent;
-		VelocityComponent* velocityComponent;
-		VisualComponent* visualComponent;
 	};
-
-	BEGIN_ENTRY_COMPONENTS(UpdateSystemEntry)
-		HAS_COMPONENT(PositionComponent)
-		HAS_COMPONENT(VelocityComponent)
-		HAS_COMPONENT(VisualComponent)
-	END_ENTRY_COMPONENTS(UpdateSystemEntry)
 
 	// Defines what components the "Render System" requires on each entity that it cares about
-	struct RenderSystemEntry : public ff::EntityBucketEntry
+	struct RenderSystemEntry : public ff::BucketEntry<PositionComponent, VisualComponent>
 	{
-		DECLARE_ENTRY_COMPONENTS()
-
-		PositionComponent const* positionComponent;
-		VisualComponent const* visualComponent;
 	};
-
-	BEGIN_ENTRY_COMPONENTS(RenderSystemEntry)
-		HAS_COMPONENT(PositionComponent)
-		HAS_COMPONENT(VisualComponent)
-	END_ENTRY_COMPONENTS(RenderSystemEntry)
 }
 
 TestPaletteState::TestPaletteState(ff::AppGlobals* globals)
@@ -95,13 +75,11 @@ std::shared_ptr<ff::State> TestPaletteState::Advance(ff::AppGlobals* globals)
 		_domain.DeleteEntities();
 	}
 
-	_domain.Advance();
-
 	// Update Position
 	for (const TestPalette::UpdateSystemEntry& entry : _updateEntityBucket->GetEntries())
 	{
-		ff::PointFloat& pos = entry.positionComponent->position;
-		ff::PointFloat& vel = entry.velocityComponent->velocity;
+		ff::PointFloat& pos = entry.GetComponent<TestPalette::PositionComponent>()->position;
+		ff::PointFloat& vel = entry.GetComponent<TestPalette::VelocityComponent>()->velocity;
 
 		pos += vel;
 
@@ -131,11 +109,11 @@ void TestPaletteState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target
 	for (const TestPalette::RenderSystemEntry& entry : _renderEntityBucket->GetEntries())
 	{
 		render->DrawSprite(
-			entry.visualComponent->sprite,
+			entry.GetComponent<TestPalette::VisualComponent>()->sprite,
 			ff::Transform::Create(
-				entry.positionComponent->position,
-				entry.visualComponent->scale,
-				entry.visualComponent->rotate));
+				entry.GetComponent<TestPalette::PositionComponent>()->position,
+				entry.GetComponent<TestPalette::VisualComponent>()->scale,
+				entry.GetComponent<TestPalette::VisualComponent>()->rotate));
 	}
 
 	std::array<int, 4> c4{ 224, 224, 255, 255 };
@@ -167,9 +145,9 @@ void TestPaletteState::AddEntities()
 	for (int i = 0; i < 5000; i++)
 	{
 		ff::Entity entity = _domain.CreateEntity();
-		TestPalette::PositionComponent* positionComponent = entity->AddComponent<TestPalette::PositionComponent>();
-		TestPalette::VelocityComponent* velocityComponent = entity->AddComponent<TestPalette::VelocityComponent>();
-		TestPalette::VisualComponent* visualComponent = entity->AddComponent<TestPalette::VisualComponent>();
+		TestPalette::PositionComponent* positionComponent = entity->SetComponent<TestPalette::PositionComponent>();
+		TestPalette::VelocityComponent* velocityComponent = entity->SetComponent<TestPalette::VelocityComponent>();
+		TestPalette::VisualComponent* visualComponent = entity->SetComponent<TestPalette::VisualComponent>();
 		size_t sprite = (size_t)std::rand() % paletteSprites->GetCount();
 
 		positionComponent->position = ff::PointFloat((float)(std::rand() % 1920), (float)(std::rand() % 1080)) / 4.0f;

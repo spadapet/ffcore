@@ -454,7 +454,7 @@ void Texture11::Update(size_t arrayIndex, size_t mipIndex, const ff::RectSize& r
 		image.rowPitch = rowPitch;
 		image.slicePitch = slicePitch;
 		image.pixels = (BYTE*)const_cast<void*>(data);
-		verifyHr(DirectX::CopyRectangle(image, DirectX::Rect(0, 0, image.width, image.height), *scratch->GetImage(mipIndex, arrayIndex, 0), 0, rect.left, rect.top));
+		verifyHr(DirectX::CopyRectangle(image, DirectX::Rect(0, 0, image.width, image.height), *scratch->GetImage(mipIndex, arrayIndex, 0), DirectX::TEX_FILTER_DEFAULT, rect.left, rect.top));
 	}
 
 	if (_texture)

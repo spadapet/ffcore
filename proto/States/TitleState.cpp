@@ -88,7 +88,7 @@ std::shared_ptr<ff::State> TitleState::Advance(ff::AppGlobals* globals)
 		bool wasPlaying = _musicPlaying != nullptr;
 		_musicPlaying = nullptr;
 
-		if (_music.HasObject() && _music->Play(&_musicPlaying, false))
+		if (_music.HasObject() && _music->Play(false, 1.0f, 1.0f, &_musicPlaying))
 		{
 			if (!wasPlaying)
 			{
@@ -117,16 +117,10 @@ std::shared_ptr<ff::State> TitleState::Advance(ff::AppGlobals* globals)
 void TitleState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::IRenderDepth* depth)
 {
 	ff::RectFloat view = _viewport.GetView(target);
-	_render->BeginRender(target, depth, view, ff::RectFloat(view.Size()))->EndRender();
-	return;
-
-#if 0
-	ff::RectFloat view = _viewport.GetView(target);
 	ff::IKeyboardDevice* keys = globals->GetKeys();
 	ff::IPointerDevice* mouse = globals->GetPointer();
-	ff::RendererActive render;
 
-	render = _render->BeginRender(target, depth, view, ff::RectFloat(view.Size()))->EndRender();
+	ff::RendererActive render = _render->BeginRender(target, depth, view, ff::RectFloat(view.Size()));
 	if (render)
 	{
 		float absCos = std::abs(std::cos(_rotate));
@@ -264,5 +258,4 @@ void TitleState::Render(ff::AppGlobals* globals, ff::IRenderTarget* target, ff::
 			}
 		}
 	}
-#endif
 }
