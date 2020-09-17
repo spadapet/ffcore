@@ -45,7 +45,10 @@ static bool TestLoadResources(const ff::Dict &dict)
 
 	for (ff::StringRef name : names)
 	{
-		values.Push(ff::AutoResourceValue(resources, name));
+		if (name != L"Values" && std::wcsncmp(name.c_str(), L"res:", 4))
+		{
+			values.Push(ff::AutoResourceValue(resources, name));
+		}
 	}
 
 	for (ff::AutoResourceValue &value : values)

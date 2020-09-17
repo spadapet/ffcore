@@ -13,6 +13,7 @@
 
 static ff::StaticString PROP_HASHES(L"hashes");
 static ff::StaticString PROP_FILE(L"file");
+static ff::StaticString PROP_REMAPS(L"remaps");
 static ff::StaticString PROP_TEXTURE(L"texture");
 
 class __declspec(uuid("d1176b8c-4ebb-40a6-9f6a-f92044187a37"))
@@ -36,12 +37,14 @@ public:
 	virtual size_t GetRowCount() const override;
 	virtual ff::hash_t GetRowHash(size_t index) const override;
 	virtual ff::ITexture* GetTexture() override;
-	virtual ff::ComPtr<ff::IPalette> CreatePalette(float cyclesPerSecond) override;
+	virtual ff::ComPtr<ff::IPalette> CreatePalette(ff::StringRef remapName, float cyclesPerSecond) override;
 
 	// IPalette
 	virtual void Advance() override;
 	virtual size_t GetCurrentRow() const override;
 	virtual ff::IPaletteData* GetData() override;
+	virtual const unsigned char* GetRemap() const override;
+	virtual ff::hash_t GetRemapHash() const override;
 
 	// IResourcePersist
 	virtual bool LoadFromSource(const ff::Dict& dict) override;
@@ -52,6 +55,7 @@ private:
 	ff::ComPtr<ff::IGraphDevice> _device;
 	ff::ComPtr<ff::ITexture> _texture;
 	ff::Vector<ff::hash_t> _hashes;
+	ff::Map<ff::String, ff::ComPtr<ff::IData>> _remaps;
 };
 
 BEGIN_INTERFACES(PaletteData)
@@ -140,17 +144,20 @@ ff::ITexture* PaletteData::GetTexture()
 }
 
 // From Palette.cpp:
-bool CreatePalette(ff::IPaletteData* data, float cyclesPerSecond, ff::IPalette** obj);
+bool CreatePalette(ff::IPaletteData* data, ff::IData* remap, float cyclesPerSecond, ff::IPalette** obj);
 
-ff::ComPtr<ff::IPalette> PaletteData::CreatePalette(float cyclesPerSecond)
+ff::ComPtr<ff::IPalette> PaletteData::CreatePalette(ff::StringRef remapName, float cyclesPerSecond)
 {
-	if (cyclesPerSecond <= 0.0f)
+	if (remapName.empty() && cyclesPerSecond <= 0.0f)
 	{
 		return this;
 	}
 
+	auto i = _remaps.GetKey(remapName);
+	assertRetVal(i || remapName.empty(), nullptr);
+
 	ff::ComPtr<ff::IPalette> palette;
-	assertRetVal(::CreatePalette(this, cyclesPerSecond, &palette), nullptr);
+	assertRetVal(::CreatePalette(this, i ? i->GetValue() : nullptr, cyclesPerSecond, &palette), nullptr);
 	return palette;
 }
 
@@ -168,11 +175,48 @@ ff::IPaletteData* PaletteData::GetData()
 	return this;
 }
 
+const unsigned char* PaletteData::GetRemap() const
+{
+	return nullptr;
+}
+
+ff::hash_t PaletteData::GetRemapHash() const
+{
+	return 0;
+}
+
 bool PaletteData::LoadFromSource(const ff::Dict& dict)
 {
 	ff::String path = dict.Get<ff::StringValue>(PROP_FILE);
 	DirectX::ScratchImage scratch = ff::LoadTextureData(path, DXGI_FORMAT_R8G8B8A8_UNORM, 1, nullptr);
 	assertRetVal(scratch.GetImageCount(), false);
+
+	ff::Dict remaps = dict.Get<ff::DictValue>(::PROP_REMAPS);
+	for (ff::StringRef remapName : remaps.GetAllNames())
+	{
+		ff::Vector<unsigned char> remap;
+		remap.Resize(ff::PALETTE_SIZE);
+
+		for (size_t i = 0; i < ff::PALETTE_SIZE; i++)
+		{
+			remap[i] = static_cast<unsigned char>(i);
+		}
+
+		for (const ff::ValuePtr& value : remaps.Get<ff::ValueVectorValue>(remapName))
+		{
+			ff::ValuePtrT<ff::PointIntValue> pointValue = value;
+			assert(pointValue);
+
+			if (pointValue)
+			{
+				size_t i = static_cast<size_t>(pointValue.GetValue().x & 0xFF);
+				remap[i] = static_cast<unsigned char>(pointValue.GetValue().y & 0xFF);
+			}
+		}
+
+		ff::ComPtr<ff::IDataVector> remapData = ff::CreateDataVector(std::move(remap));
+		_remaps.SetKey(remapName, remapData.Interface());
+	}
 
 	return Init(std::move(scratch));
 }
@@ -188,6 +232,16 @@ bool PaletteData::LoadFromCache(const ff::Dict& dict)
 	_hashes.Resize(hashData->GetSize() / sizeof(ff::hash_t));
 	std::memcpy(_hashes.Data(), hashData->GetMem(), _hashes.ByteSize());
 
+	ff::Dict remaps = dict.Get<ff::DictValue>(::PROP_REMAPS);
+	for (ff::StringRef remapName : remaps.GetAllNames())
+	{
+		ff::ComPtr<ff::IData> remapData = remaps.Get<ff::DataValue>(remapName);
+		if (remapData && remapData->GetSize() == ff::PALETTE_SIZE)
+		{
+			_remaps.SetKey(remapName, remapData);
+		}
+	}
+
 	return true;
 }
 
@@ -201,6 +255,14 @@ bool PaletteData::SaveToCache(ff::Dict& dict)
 
 	ff::ComPtr<ff::IDataVector> hashData = ff::CreateDataVector(std::move(hashes));
 	dict.Set<ff::DataValue>(::PROP_HASHES, hashData);
+
+	ff::Dict remaps;
+	for (auto& i : _remaps)
+	{
+		remaps.Set<ff::DataValue>(i.GetKey(), i.GetValue());
+	}
+
+	dict.Set<ff::DictValue>(::PROP_REMAPS, std::move(remaps));
 
 	return true;
 }

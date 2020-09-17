@@ -84,6 +84,7 @@ cbuffer PixelShaderConstants0 : register(b0)
 Texture2D _textures[32] : register(t0);
 Texture2D<uint> _texturesPalette[32] : register(t32);
 Texture2D _palette : register(t64);
+Texture2D<uint> _paletteRemap : register(t65);
 SamplerState _sampler : register(s0);
 
 LineGeometry LineVS(LineGeometry input)
@@ -325,7 +326,7 @@ void SpriteGS(point SpriteGeometry input[1], inout TriangleStream<SpritePixel> o
 
 float4 ColorPS(ColorPixel input) : SV_TARGET
 {
-	if (input.color.w == 0)
+	if (input.color.a == 0)
 	{
 		discard;
 	}
@@ -335,14 +336,15 @@ float4 ColorPS(ColorPixel input) : SV_TARGET
 
 uint PaletteOutColorPS(ColorPixel input) : SV_TARGET
 {
-	uint color = (uint)(input.color.r * 256);
+	uint index = (uint)(input.color.r * 256) * (uint)(input.color.a != 0);
+	index = _paletteRemap.Load(int3(index, 0, 0));
 
-	if (color == 0)
+	if (index == 0)
 	{
 		discard;
 	}
 
-	return color;
+	return index;
 }
 
 float4 SampleSpriteTexture(float2 tex, uint ntex)
@@ -440,7 +442,8 @@ float4 SpritePS(SpritePixel input) : SV_TARGET
 float4 SpritePalettePS(SpritePixel input) : SV_TARGET
 {
 	uint textureIndex = input.tex & 0xFF;
-	uint paletteIndex = input.tex >> 8;
+	uint paletteIndex = (input.tex & 0xFF00) >> 8;
+	uint remapIndex = (input.tex & 0xFF0000) >> 16;
 
 	uint index = SamplePaletteSpriteTexture(int3(input.uv * _texturePaletteSizes[textureIndex].xy, 0), textureIndex);
 	if (index == 0)
@@ -448,6 +451,7 @@ float4 SpritePalettePS(SpritePixel input) : SV_TARGET
 		discard;
 	}
 
+	index = _paletteRemap.Load(int3(index, remapIndex, 0));
 	float4 color = input.color * _palette.Load(int3(index, paletteIndex, 0));
 	if (color.a == 0)
 	{
@@ -471,8 +475,13 @@ float4 SpriteAlphaPS(SpritePixel input) : SV_TARGET
 
 uint PaletteOutSpritePS(SpritePixel input) : SV_TARGET
 {
-	float4 color = SampleSpriteTexture(input.uv, input.tex);
-	uint index = (uint)(input.color.r * 256) * (uint)(color.a != 0);
+	uint textureIndex = input.tex & 0xFF;
+	uint remapIndex = (input.tex & 0xFF0000) >> 16;
+
+	float4 color = SampleSpriteTexture(input.uv, textureIndex);
+	uint index = (uint)(color.r * 256) * (uint)(color.a != 0) * (uint)(input.color.a != 0);
+	index = _paletteRemap.Load(int3(index, remapIndex, 0));
+
 	if (index == 0)
 	{
 		discard;
@@ -483,7 +492,12 @@ uint PaletteOutSpritePS(SpritePixel input) : SV_TARGET
 
 uint PaletteOutSpritePalettePS(SpritePixel input) : SV_TARGET
 {
-	uint index = SamplePaletteSpriteTexture(int3(input.uv * _texturePaletteSizes[input.tex].xy, 0), input.tex);
+	uint textureIndex = input.tex & 0xFF;
+	uint remapIndex = (input.tex & 0xFF0000) >> 16;
+
+	uint index = SamplePaletteSpriteTexture(int3(input.uv * _texturePaletteSizes[textureIndex].xy, 0), textureIndex);
+	index = _paletteRemap.Load(int3(index, remapIndex, 0));
+
 	if (index == 0)
 	{
 		discard;

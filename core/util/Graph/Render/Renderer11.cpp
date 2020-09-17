@@ -25,12 +25,35 @@
 static const size_t MAX_TEXTURES = 32;
 static const size_t MAX_TEXTURES_USING_PALETTE = 32;
 static const size_t MAX_PALETTES = 128; // 256 color palettes only
+static const size_t MAX_PALETTE_REMAPS = 128; // 256 entries only
 static const size_t MAX_TRANSFORM_MATRIXES = 1024;
 static const size_t MAX_RENDER_COUNT = 524288; // 0x00080000
 static const float MAX_RENDER_DEPTH = 1.0f;
 static const float RENDER_DEPTH_DELTA = MAX_RENDER_DEPTH / MAX_RENDER_COUNT;
 
-static std::array<ID3D11ShaderResourceView*, ::MAX_TEXTURES + ::MAX_TEXTURES_USING_PALETTE + 1 /* palette */>  NULL_TEXTURES = { nullptr };
+static std::array<ID3D11ShaderResourceView*, ::MAX_TEXTURES + ::MAX_TEXTURES_USING_PALETTE + 2 /* palette + remap */>  NULL_TEXTURES = { nullptr };
+
+static std::array<unsigned char, ff::PALETTE_SIZE> DEFAULT_PALETTE_REMAP =
+{
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+	17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+	33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+	49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64,
+	65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
+	81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96,
+	97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
+	113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128,
+	129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144,
+	145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160,
+	161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176,
+	177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192,
+	193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208,
+	209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224,
+	225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240,
+	241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
+};
+
+static ff::hash_t DEFAULT_PALETTE_REMAP_HASH = ff::HashBytes(DEFAULT_PALETTE_REMAP.data(), DEFAULT_PALETTE_REMAP.size());
 
 enum class GeometryBucketType
 {
@@ -340,6 +363,8 @@ public:
 
 	virtual void PushPalette(ff::IPalette* palette) override;
 	virtual void PopPalette() override;
+	virtual void PushPaletteRemap(const unsigned char* remap, ff::hash_t hash) override;
+	virtual void PopPaletteRemap() override;
 	virtual void PushCustomContext(ff::CustomRenderContextFunc11&& func) override;
 	virtual void PopCustomContext() override;
 	virtual void PushTextureSampler(D3D11_FILTER filter) override;
@@ -403,6 +428,8 @@ private:
 	unsigned int GetWorldMatrixIndexNoFlush();
 	unsigned int GetTextureIndexNoFlush(ff::ITextureView* texture, bool usePalette);
 	unsigned int GetPaletteIndexNoFlush();
+	unsigned int GetPaletteRemapIndexNoFlush();
+	int RemapPaletteIndex(int color);
 	void GetWorldMatrixAndTextureIndex(ff::ITextureView* texture, bool usePalette, unsigned int& modelIndex, unsigned int& textureIndex);
 	void GetWorldMatrixAndTextureIndexes(ff::ITextureView** textures, bool usePalette, unsigned int* textureIndexes, size_t count, unsigned int& modelIndex);
 	void AddGeometry(const void* data, GeometryBucketType bucketType, float depth);
@@ -454,12 +481,19 @@ private:
 	size_t _texturesUsingPaletteCount;
 
 	// Palettes
+	bool _targetRequiresPalette;
+
 	ff::Vector<ff::IPalette*> _paletteStack;
 	ff::ComPtr<ff::ITexture> _paletteTexture;
 	std::array<ff::hash_t, ::MAX_PALETTES> _paletteTextureHashes;
 	ff::Map<ff::hash_t, std::pair<ff::IPalette*, unsigned int>, ff::NonHasher<ff::hash_t>> _paletteToIndex;
 	unsigned int _paletteIndex;
-	bool _targetRequiresPalette;
+
+	ff::Vector<std::pair<const unsigned char*, ff::hash_t>> _paletteRemapStack;
+	ff::ComPtr<ff::ITexture> _paletteRemapTexture;
+	std::array<ff::hash_t, ::MAX_PALETTE_REMAPS> _paletteRemapTextureHashes;
+	ff::Map<ff::hash_t, std::pair<const unsigned char*, unsigned int>, ff::NonHasher<ff::hash_t>> _paletteRemapToIndex;
+	unsigned int _paletteRemapIndex;
 
 	// Render data
 	ff::Vector<AlphaGeometryEntry> _alphaGeometry;
@@ -840,18 +874,18 @@ Renderer11::Renderer11(ff::IGraphDevice* device)
 	: _device(device)
 	, _worldMatrixStack(this)
 	, _geometryBuckets
-	{
-		GeometryBucket::New<ff::LineGeometryInput, GeometryBucketType::Lines>(),
-		GeometryBucket::New<ff::CircleGeometryInput, GeometryBucketType::Circle>(),
-		GeometryBucket::New<ff::TriangleGeometryInput, GeometryBucketType::Triangles>(),
-		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::Sprites>(),
-		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::PaletteSprites>(),
+{
+	GeometryBucket::New<ff::LineGeometryInput, GeometryBucketType::Lines>(),
+	GeometryBucket::New<ff::CircleGeometryInput, GeometryBucketType::Circle>(),
+	GeometryBucket::New<ff::TriangleGeometryInput, GeometryBucketType::Triangles>(),
+	GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::Sprites>(),
+	GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::PaletteSprites>(),
 
-		GeometryBucket::New<ff::LineGeometryInput, GeometryBucketType::LinesAlpha>(),
-		GeometryBucket::New<ff::CircleGeometryInput, GeometryBucketType::CircleAlpha>(),
-		GeometryBucket::New<ff::TriangleGeometryInput, GeometryBucketType::TrianglesAlpha>(),
-		GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::SpritesAlpha>(),
-	}
+	GeometryBucket::New<ff::LineGeometryInput, GeometryBucketType::LinesAlpha>(),
+	GeometryBucket::New<ff::CircleGeometryInput, GeometryBucketType::CircleAlpha>(),
+	GeometryBucket::New<ff::TriangleGeometryInput, GeometryBucketType::TrianglesAlpha>(),
+	GeometryBucket::New<ff::SpriteGeometryInput, GeometryBucketType::SpritesAlpha>(),
+}
 {
 	Init();
 
@@ -900,6 +934,12 @@ void Renderer11::Destroy()
 	_paletteTexture = nullptr;
 	_paletteIndex = ff::INVALID_DWORD;
 
+	ff::ZeroObject(_paletteRemapTextureHashes);
+	_paletteRemapStack.Clear();
+	_paletteRemapToIndex.Clear();
+	_paletteRemapTexture = nullptr;
+	_paletteRemapIndex = ff::INVALID_DWORD;
+
 	_alphaGeometry.Clear();
 	_lastDepthType = LastDepthType::None;
 	_drawDepth = 0;
@@ -931,7 +971,10 @@ bool Renderer11::Init()
 
 	// Palette
 	_paletteStack.Push(nullptr);
-	_paletteTexture = _device->CreateTexture(ff::PointInt(256, (int)::MAX_PALETTES), ff::TextureFormat::RGBA32);
+	_paletteTexture = _device->CreateTexture(ff::PointInt((int)ff::PALETTE_SIZE, (int)::MAX_PALETTES), ff::TextureFormat::RGBA32);
+
+	_paletteRemapStack.Push(std::make_pair(::DEFAULT_PALETTE_REMAP.data(), ::DEFAULT_PALETTE_REMAP_HASH));
+	_paletteRemapTexture = _device->CreateTexture(ff::PointInt((int)ff::PALETTE_SIZE, (int)::MAX_PALETTE_REMAPS), ff::TextureFormat::R8_UINT);
 
 	// States
 	_samplerStack.Push(::GetTextureSamplerState(_device->AsGraphDevice11()->GetStateCache(), D3D11_FILTER_MIN_MAG_MIP_POINT));
@@ -1092,7 +1135,8 @@ void Renderer11::UpdatePaletteTexture()
 
 	ff::GraphContext11& deviceContext = _device->AsGraphDevice11()->GetStateContext();
 	ID3D11Resource* destResource = _paletteTexture->AsTexture11()->GetTexture2d();
-	CD3D11_BOX srcBox(0, 0, 0, 256, 1, 1);
+	ID3D11Resource* destRemapResource = _paletteRemapTexture->AsTexture11()->GetTexture2d();
+	CD3D11_BOX box(0, 0, 0, (int)ff::PALETTE_SIZE, 1, 1);
 
 	for (const auto& iter : _paletteToIndex)
 	{
@@ -1108,10 +1152,25 @@ void Renderer11::UpdatePaletteTexture()
 			{
 				_paletteTextureHashes[index] = rowHash;
 				ID3D11Resource* srcResource = paletteData->GetTexture()->AsTexture11()->GetTexture2d();
-				srcBox.top = (UINT)paletteRow;
-				srcBox.bottom = srcBox.top + 1;
-				deviceContext.CopySubresourceRegion(destResource, 0, 0, index, 0, srcResource, 0, &srcBox);
+				box.top = (UINT)paletteRow;
+				box.bottom = box.top + 1;
+				deviceContext.CopySubresourceRegion(destResource, 0, 0, index, 0, srcResource, 0, &box);
 			}
+		}
+	}
+
+	for (const auto& iter : _paletteRemapToIndex)
+	{
+		const unsigned char* remap = iter.GetValue().first;
+		unsigned int row = iter.GetValue().second;
+		ff::hash_t rowHash = iter.GetKey();
+
+		if (_paletteRemapTextureHashes[row] != rowHash)
+		{
+			_paletteTextureHashes[row] = rowHash;
+			box.top = row;
+			box.bottom = row + 1;
+			deviceContext.UpdateSubresource(destRemapResource, 0, &box, remap, static_cast<UINT>(ff::PALETTE_SIZE), 0);
 		}
 	}
 }
@@ -1149,7 +1208,11 @@ void Renderer11::SetShaderInput()
 
 		context.SetResourcesPS(texturesUsingPalette.data(), ::MAX_TEXTURES, _texturesUsingPaletteCount);
 
-		std::array < ID3D11ShaderResourceView*, 1> palettes = { _paletteTexture->AsTextureView()->AsTextureView11()->GetView() };
+		std::array<ID3D11ShaderResourceView*, 2> palettes =
+		{
+			_paletteTexture->AsTextureView()->AsTextureView11()->GetView(),
+			_paletteRemapTexture->AsTextureView()->AsTextureView11()->GetView(),
+		};
 		context.SetResourcesPS(palettes.data(), ::MAX_TEXTURES + ::MAX_TEXTURES_USING_PALETTE, palettes.size());
 	}
 }
@@ -1274,6 +1337,8 @@ void Renderer11::PostFlush()
 
 	_paletteToIndex.Clear();
 	_paletteIndex = ff::INVALID_DWORD;
+	_paletteRemapToIndex.Clear();
+	_paletteRemapIndex = ff::INVALID_DWORD;
 
 	_textureCount = 0;
 	_texturesUsingPaletteCount = 0;
@@ -1293,6 +1358,7 @@ void Renderer11::EndRender()
 
 	_state = State::Valid;
 	_paletteStack.Resize(1);
+	_paletteRemapStack.Resize(1);
 	_samplerStack.Resize(1);
 	_customContextStack.Clear();
 	_worldMatrixStack.Reset();
@@ -1369,6 +1435,12 @@ unsigned int Renderer11::GetTextureIndexNoFlush(ff::ITextureView* texture, bool 
 			return ff::INVALID_DWORD;
 		}
 
+		unsigned int paletteRemapIndex = (_paletteRemapIndex == ff::INVALID_DWORD) ? GetPaletteRemapIndexNoFlush() : _paletteRemapIndex;
+		if (paletteRemapIndex == ff::INVALID_DWORD)
+		{
+			return ff::INVALID_DWORD;
+		}
+
 		unsigned int textureIndex = ff::INVALID_DWORD;
 
 		for (size_t i = _texturesUsingPaletteCount; i != 0; i--)
@@ -1391,7 +1463,7 @@ unsigned int Renderer11::GetTextureIndexNoFlush(ff::ITextureView* texture, bool 
 			textureIndex = (unsigned int)_texturesUsingPaletteCount++;
 		}
 
-		return textureIndex | (paletteIndex << 8);
+		return textureIndex | (paletteIndex << 8) | (paletteRemapIndex << 16);
 	}
 	else
 	{
@@ -1449,6 +1521,32 @@ unsigned int Renderer11::GetPaletteIndexNoFlush()
 	}
 
 	return _paletteIndex;
+}
+
+unsigned int Renderer11::GetPaletteRemapIndexNoFlush()
+{
+	if (_paletteRemapIndex == ff::INVALID_DWORD)
+	{
+		auto& remapPair = _paletteRemapStack.GetLast();
+		auto iter = _paletteRemapToIndex.GetKey(remapPair.second);
+
+		if (!iter && _paletteRemapToIndex.Size() != ::MAX_PALETTE_REMAPS)
+		{
+			iter = _paletteRemapToIndex.SetKey(remapPair.second, std::make_pair(remapPair.first, (unsigned int)_paletteRemapToIndex.Size()));
+		}
+
+		if (iter)
+		{
+			_paletteRemapIndex = iter->GetValue().second;
+		}
+	}
+
+	return _paletteRemapIndex;
+}
+
+int Renderer11::RemapPaletteIndex(int color)
+{
+	return _paletteRemapStack.GetLast().first[color];
 }
 
 void Renderer11::GetWorldMatrixAndTextureIndex(ff::ITextureView* texture, bool usePalette, unsigned int& modelIndex, unsigned int& textureIndex)
@@ -1534,6 +1632,8 @@ void Renderer11::PushPalette(ff::IPalette* palette)
 	assertRet(!_targetRequiresPalette && palette);
 	_paletteStack.Push(palette);
 	_paletteIndex = ff::INVALID_DWORD;
+
+	PushPaletteRemap(palette->GetRemap(), palette->GetRemapHash());
 }
 
 void Renderer11::PopPalette()
@@ -1541,6 +1641,23 @@ void Renderer11::PopPalette()
 	assertRet(_paletteStack.Size() > 1);
 	_paletteStack.Pop();
 	_paletteIndex = ff::INVALID_DWORD;
+
+	PopPaletteRemap();
+}
+
+void Renderer11::PushPaletteRemap(const unsigned char* remap, ff::hash_t hash)
+{
+	_paletteRemapStack.Push(std::make_pair(
+		remap ? remap : ::DEFAULT_PALETTE_REMAP.data(),
+		remap ? (hash ? hash : ff::HashBytes(remap, ff::PALETTE_SIZE)) : ::DEFAULT_PALETTE_REMAP_HASH));
+	_paletteRemapIndex = ff::INVALID_DWORD;
+}
+
+void Renderer11::PopPaletteRemap()
+{
+	assertRet(_paletteRemapStack.Size() > 1);
+	_paletteRemapStack.Pop();
+	_paletteRemapIndex = ff::INVALID_DWORD;
 }
 
 void Renderer11::PushCustomContext(ff::CustomRenderContextFunc11&& func)
@@ -1639,11 +1756,11 @@ void Renderer11::DrawSprite(ff::ISprite* sprite, const ff::Transform& transform)
 	input.pos.x = transform._position.x;
 	input.pos.y = transform._position.y;
 	input.pos.z = depth;
-	input.scale = *(DirectX::XMFLOAT2*) & transform._scale;
+	input.scale = *(DirectX::XMFLOAT2*)&transform._scale;
 	input.rotate = transform.GetRotationRadians();
 	input.color = transform._color;
-	input.uvrect = *(DirectX::XMFLOAT4*) & data._textureUV;
-	input.rect = *(DirectX::XMFLOAT4*) & data._worldRect;
+	input.uvrect = *(DirectX::XMFLOAT4*)&data._textureUV;
+	input.rect = *(DirectX::XMFLOAT4*)&data._worldRect;
 }
 
 void Renderer11::DrawLineStrip(
@@ -1864,35 +1981,45 @@ void Renderer11::DrawPaletteLineStrip(const ff::PointFloat* points, const int* c
 {
 	ff::Vector<DirectX::XMFLOAT4, 64> colors2;
 	colors2.Resize(count);
-	ff::PaletteIndexToColor(colors, colors2.Data(), count);
+
+	for (size_t i = 0; i != colors2.Size(); i++)
+	{
+		ff::PaletteIndexToColor(RemapPaletteIndex(colors[i]), colors2[i]);
+	}
+
 	DrawLineStrip(points, count, colors2.Data(), count, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteLineStrip(const ff::PointFloat* points, size_t count, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	ff::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(color), color2);
 	DrawLineStrip(points, count, &color2, 1, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteLine(ff::PointFloat start, ff::PointFloat end, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	ff::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(color), color2);
 	DrawLine(start, end, color2, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteFilledRectangle(ff::RectFloat rect, const int* colors)
 {
 	std::array<DirectX::XMFLOAT4, 4> colors2;
-	ff::PaletteIndexToColor(colors, colors2.data(), colors2.size());
+
+	for (size_t i = 0; i != colors2.size(); i++)
+	{
+		ff::PaletteIndexToColor(RemapPaletteIndex(colors[i]), colors2[i]);
+	}
+
 	DrawFilledRectangle(rect, colors2.data());
 }
 
 void Renderer11::DrawPaletteFilledRectangle(ff::RectFloat rect, int color)
 {
 	DirectX::XMFLOAT4 color2;
-	ff::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(color), color2);
 	DrawFilledRectangle(rect, color2);
 }
 
@@ -1900,44 +2027,49 @@ void Renderer11::DrawPaletteFilledTriangles(const ff::PointFloat* points, const 
 {
 	ff::Vector<DirectX::XMFLOAT4, 64 * 3> colors2;
 	colors2.Resize(count * 3);
-	ff::PaletteIndexToColor(colors, colors2.Data(), count);
+
+	for (size_t i = 0; i != colors2.Size(); i++)
+	{
+		ff::PaletteIndexToColor(RemapPaletteIndex(colors[i]), colors2[i]);
+	}
+
 	DrawFilledTriangles(points, colors2.Data(), count);
 }
 
 void Renderer11::DrawPaletteFilledCircle(ff::PointFloat center, float radius, int color)
 {
 	DirectX::XMFLOAT4 color2;
-	ff::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(color), color2);
 	DrawFilledCircle(center, radius, color2);
 }
 
 void Renderer11::DrawPaletteFilledCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor)
 {
 	DirectX::XMFLOAT4 insideColor2, outsideColor2;
-	ff::PaletteIndexToColor(insideColor, insideColor2);
-	ff::PaletteIndexToColor(outsideColor, outsideColor2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(insideColor), insideColor2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(outsideColor), outsideColor2);
 	DrawFilledCircle(center, radius, insideColor2, outsideColor2);
 }
 
 void Renderer11::DrawPaletteOutlineRectangle(ff::RectFloat rect, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	ff::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(color), color2);
 	DrawOutlineRectangle(rect, color2, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int color, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 color2;
-	ff::PaletteIndexToColor(color, color2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(color), color2);
 	DrawOutlineCircle(center, radius, color2, thickness, pixelThickness);
 }
 
 void Renderer11::DrawPaletteOutlineCircle(ff::PointFloat center, float radius, int insideColor, int outsideColor, float thickness, bool pixelThickness)
 {
 	DirectX::XMFLOAT4 insideColor2, outsideColor2;
-	ff::PaletteIndexToColor(insideColor, insideColor2);
-	ff::PaletteIndexToColor(outsideColor, outsideColor2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(insideColor), insideColor2);
+	ff::PaletteIndexToColor(RemapPaletteIndex(outsideColor), outsideColor2);
 	DrawOutlineCircle(center, radius, insideColor2, outsideColor2, thickness, pixelThickness);
 }
 

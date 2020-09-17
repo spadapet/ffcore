@@ -12,5 +12,7 @@ namespace ff
 		virtual void Advance() = 0;
 		virtual size_t GetCurrentRow() const = 0;
 		virtual IPaletteData* GetData() = 0;
+		virtual const unsigned char* GetRemap() const = 0;
+		virtual ff::hash_t GetRemapHash() const = 0;
 	};
 }

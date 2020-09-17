@@ -46,6 +46,8 @@ namespace ff
 
 		virtual void PushPalette(IPalette* palette) = 0;
 		virtual void PopPalette() = 0;
+		virtual void PushPaletteRemap(const unsigned char* remap, ff::hash_t hash) = 0;
+		virtual void PopPaletteRemap() = 0;
 		virtual void PushNoOverlap() = 0;
 		virtual void PopNoOverlap() = 0;
 		virtual void PushOpaque() = 0;

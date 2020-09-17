@@ -19,7 +19,7 @@ namespace ff
 		virtual hash_t GetRowHash(size_t index) const = 0;
 		virtual ITexture* GetTexture() = 0;
 
-		virtual ComPtr<IPalette> CreatePalette(float cyclesPerSecond = 0.0f) = 0;
+		virtual ComPtr<IPalette> CreatePalette(ff::StringRef remapName = ff::GetEmptyString(), float cyclesPerSecond = 0.0f) = 0;
 	};
 
 	bool CreatePaletteData(ff::IGraphDevice* device, DirectX::ScratchImage&& paletteScratch, ff::IPaletteData** obj);
