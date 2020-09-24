@@ -719,6 +719,9 @@
     <ClCompile Include="Value\StringStdVectorValue.cpp">
       <Filter>Value</Filter>
     </ClCompile>
+    <ClCompile Include="Value\IntStdVectorValue.cpp">
+      <Filter>Value</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBuffer.h">
@@ -1295,6 +1298,9 @@
       <Filter>UI\Internal</Filter>
     </ClInclude>
     <ClInclude Include="Value\StringStdVectorValue.h">
+      <Filter>Value</Filter>
+    </ClInclude>
+    <ClInclude Include="Value\IntStdVectorValue.h">
       <Filter>Value</Filter>
     </ClInclude>
   </ItemGroup>

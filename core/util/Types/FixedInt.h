@@ -46,6 +46,7 @@ namespace ff
 		inline FixedInt operator-(const FixedInt& rhs) const;
 		inline FixedInt operator*(const FixedInt& rhs) const;
 		inline FixedInt operator/(const FixedInt& rhs) const;
+		inline FixedInt operator%(const FixedInt& rhs) const;
 
 		inline FixedInt& operator*=(int rhs);
 		inline FixedInt& operator/=(int rhs);
@@ -247,6 +248,11 @@ ff::FixedInt ff::FixedInt::operator*(const ff::FixedInt& rhs) const
 ff::FixedInt ff::FixedInt::operator/(const ff::FixedInt& rhs) const
 {
 	return FromExpanded((GetExpanded() << FIXED_COUNT) / rhs.GetExpanded());
+}
+
+ff::FixedInt ff::FixedInt::operator%(const ff::FixedInt& rhs) const
+{
+	return FromRaw(_data % rhs._data);
 }
 
 ff::FixedInt& ff::FixedInt::operator*=(int rhs)

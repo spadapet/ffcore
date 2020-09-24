@@ -240,6 +240,7 @@
     <ClCompile Include="Value\FloatVectorValue.cpp" />
     <ClCompile Include="Value\GuidValue.cpp" />
     <ClCompile Include="Value\HashValue.cpp" />
+    <ClCompile Include="Value\IntStdVectorValue.cpp" />
     <ClCompile Include="Value\IntValue.cpp" />
     <ClCompile Include="Value\IntVectorValue.cpp" />
     <ClCompile Include="Value\NullValue.cpp" />
@@ -432,6 +433,7 @@
     <ClInclude Include="Value\FloatVectorValue.h" />
     <ClInclude Include="Value\GuidValue.h" />
     <ClInclude Include="Value\HashValue.h" />
+    <ClInclude Include="Value\IntStdVectorValue.h" />
     <ClInclude Include="Value\IntValue.h" />
     <ClInclude Include="Value\IntVectorValue.h" />
     <ClInclude Include="Value\NullValue.h" />

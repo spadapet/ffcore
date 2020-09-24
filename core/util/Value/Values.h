@@ -11,6 +11,7 @@
 #include "Value/FloatVectorValue.h"
 #include "Value/GuidValue.h"
 #include "Value/HashValue.h"
+#include "Value/IntStdVectorValue.h"
 #include "Value/IntValue.h"
 #include "Value/IntVectorValue.h"
 #include "Value/NullValue.h"

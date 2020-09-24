@@ -17,6 +17,7 @@ static ff::ProcessStartup RegisterDefaultTypes([](ff::ProcessGlobals& globals)
 		ff::Value::RegisterType<ff::FloatVectorValue, ff::FloatVectorValueType>();
 		ff::Value::RegisterType<ff::GuidValue, ff::GuidValueType>();
 		ff::Value::RegisterType<ff::HashValue, ff::HashValueType>();
+		ff::Value::RegisterType<ff::IntStdVectorValue, ff::IntStdVectorValueType>();
 		ff::Value::RegisterType<ff::IntValue, ff::IntValueType>();
 		ff::Value::RegisterType<ff::IntVectorValue, ff::IntVectorValueType>();
 		ff::Value::RegisterType<ff::NullValue, ff::NullValueType>();
