@@ -264,7 +264,7 @@ size_t ThreadDispatch::WaitForAnyHandle(const HANDLE* handles, size_t count)
 	assertRetVal(IsCurrentThread(), ff::INVALID_SIZE);
 	assertRetVal(count < MAXIMUM_WAIT_OBJECTS - 1, ff::INVALID_SIZE);
 
-	ff::Vector<HANDLE> myHandles;
+	ff::Vector<HANDLE, 16> myHandles;
 	myHandles.Reserve(count + 1);
 
 	myHandles.Push(handles, count);
