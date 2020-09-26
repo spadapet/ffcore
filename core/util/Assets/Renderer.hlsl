@@ -337,8 +337,6 @@ float4 ColorPS(ColorPixel input) : SV_TARGET
 uint PaletteOutColorPS(ColorPixel input) : SV_TARGET
 {
 	uint index = (uint)(input.color.r * 256) * (uint)(input.color.a != 0);
-	index = _paletteRemap.Load(int3(index, 0, 0));
-
 	if (index == 0)
 	{
 		discard;

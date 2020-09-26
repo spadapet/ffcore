@@ -1136,7 +1136,7 @@ void Renderer11::UpdatePaletteTexture()
 	ff::GraphContext11& deviceContext = _device->AsGraphDevice11()->GetStateContext();
 	ID3D11Resource* destResource = _paletteTexture->AsTexture11()->GetTexture2d();
 	ID3D11Resource* destRemapResource = _paletteRemapTexture->AsTexture11()->GetTexture2d();
-	CD3D11_BOX box(0, 0, 0, (int)ff::PALETTE_SIZE, 1, 1);
+	CD3D11_BOX box(0, 0, 0, static_cast<int>(ff::PALETTE_SIZE), 1, 1);
 
 	for (const auto& iter : _paletteToIndex)
 	{
@@ -1167,7 +1167,7 @@ void Renderer11::UpdatePaletteTexture()
 
 		if (_paletteRemapTextureHashes[row] != rowHash)
 		{
-			_paletteTextureHashes[row] = rowHash;
+			_paletteRemapTextureHashes[row] = rowHash;
 			box.top = row;
 			box.bottom = row + 1;
 			deviceContext.UpdateSubresource(destRemapResource, 0, &box, remap, static_cast<UINT>(ff::PALETTE_SIZE), 0);
