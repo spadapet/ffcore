@@ -8,17 +8,16 @@
   <Import Project="..\msbuild\cpp.props" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\util</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\ui</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\noesis\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)util</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(NoesisRoot)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(ConfigOutRoot)util\bin\util.lib;$(FFCoreRoot)core\noesis\Lib\$(XPlatform)\Noesis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ConfigOutRoot)util\bin\util.lib;$(NoesisLib);%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>Noesis.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\core\util\util.vcxproj">
+    <ProjectReference Include="..\util\util.vcxproj">
       <Project>{8877ef09-1cdd-4e67-95ba-58e3b251b7d8}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -56,6 +55,6 @@
   </ItemGroup>
   <Import Project="..\msbuild\cpp.targets" />
   <Target Name="AfterBuild">
-    <Copy SourceFiles="..\core\noesis\Bin\$(XPlatform)\Noesis.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="True" />
+    <Copy SourceFiles="$(NoesisDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="True" />
   </Target>
 </Project>

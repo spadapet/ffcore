@@ -6,6 +6,7 @@
     <FFCoreRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), ..))</FFCoreRoot>
     <DevRoot Condition=" '$(DevRoot)' == '' ">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::ValueOrDefault($([MSBuild]::GetDirectoryNameOfFileAbove($(FFCoreRoot).., .gitmodules)), $(FFCoreRoot)))))</DevRoot>
     <OutRoot Condition=" '$(OutRoot)' == '' ">$(DevRoot)out\</OutRoot>
+    <PackagesRoot Condition=" '$(PackagesRoot)' == '' ">$(SolutionDir)packages\</PackagesRoot>
   </PropertyGroup>
 
   <Import Condition=" Exists('$(DevRoot)build.props') " Project="$(DevRoot)build.props" />
@@ -37,6 +38,17 @@
     <IntDir>$(ProjectOutRoot)obj\</IntDir>
     <OutDir>$(ProjectOutRoot)bin\</OutDir>
     <GeneratedFilesDir>$(ProjectOutRoot)inc\</GeneratedFilesDir>
+
+    <!-- Noesis -->
+    <NoesisRoot Condition=" '$(NoesisRoot)' == '' ">$(PackagesRoot)ffui.3.0.6\content\</NoesisRoot>
+    <NoesisLib Condition=" '$(AppType)' == 'Desktop' And '$(XPlatform)' == 'x86' ">$(NoesisRoot)Lib\windows_x86\noesis.lib</NoesisLib>
+    <NoesisLib Condition=" '$(AppType)' == 'Desktop' And '$(XPlatform)' == 'x64' ">$(NoesisRoot)Lib\windows_x86_64\noesis.lib</NoesisLib>
+    <NoesisLib Condition=" '$(AppType)' == 'Metro' And '$(XPlatform)' == 'x86' ">$(NoesisRoot)Lib\uwp_x86\noesis.lib</NoesisLib>
+    <NoesisLib Condition=" '$(AppType)' == 'Metro' And '$(XPlatform)' == 'x64' ">$(NoesisRoot)Lib\uwp_x86_64\noesis.lib</NoesisLib>
+    <NoesisDll Condition=" '$(AppType)' == 'Desktop' And '$(XPlatform)' == 'x86' ">$(NoesisRoot)Bin\windows_x86\noesis.dll</NoesisDll>
+    <NoesisDll Condition=" '$(AppType)' == 'Desktop' And '$(XPlatform)' == 'x64' ">$(NoesisRoot)Bin\windows_x86_64\noesis.dll</NoesisDll>
+    <NoesisDll Condition=" '$(AppType)' == 'Metro' And '$(XPlatform)' == 'x86' ">$(NoesisRoot)Bin\uwp_x86\noesis.dll</NoesisDll>
+    <NoesisDll Condition=" '$(AppType)' == 'Metro' And '$(XPlatform)' == 'x64' ">$(NoesisRoot)Bin\uwp_x86_64\noesis.dll</NoesisDll>
   </PropertyGroup>
 
   <!-- Property pages -->

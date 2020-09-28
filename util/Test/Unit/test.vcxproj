@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ConfigurationType>Application</ConfigurationType>
+    <ProjectName>util.test</ProjectName>
+    <ProjectGuid>{6d05f968-cb86-48d7-a689-ebc67987f127}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="..\..\..\msbuild\cpp.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(NoesisRoot)Include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(ConfigOutRoot)util\bin\util.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\util.vcxproj">
+      <Project>{8877ef09-1cdd-4e67-95ba-58e3b251b7d8}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Dict\DictPerf.cpp" />
+    <ClCompile Include="Dict\JsonTest.cpp" />
+    <ClCompile Include="Dict\SmallDictTest.cpp" />
+    <ClCompile Include="Entity\EntityTest.cpp" />
+    <ClCompile Include="Globals\ProgramGlobalsTest.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Types\CompareTest.cpp" />
+    <ClCompile Include="Types\FixedIntTest.cpp" />
+    <ClCompile Include="Types\ListTest.cpp" />
+    <ClCompile Include="Types\MapTest.cpp" />
+    <ClCompile Include="Types\PoolTest.cpp" />
+    <ClCompile Include="Types\SmartPtrTest.cpp" />
+    <ClCompile Include="Types\StringTest.cpp" />
+    <ClCompile Include="Types\VectorTest.cpp" />
+    <ClCompile Include="Value\ValueTest.cpp" />
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <Import Project="..\..\..\msbuild\cpp.targets" />
+</Project>

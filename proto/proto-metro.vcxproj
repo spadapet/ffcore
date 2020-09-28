@@ -10,12 +10,11 @@
   <Import Project="..\msbuild\cpp.props" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\util</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\ui</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\core\noesis\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)util</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(NoesisRoot)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(FFCoreRoot)core\noesis\Lib\uwp-$(XPlatform)\Noesis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(NoesisLib);%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>Noesis.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -63,7 +62,7 @@
     <Image Include="Assets\StoreLogo.scale-100.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\core\util\util-metro.vcxproj">
+    <ProjectReference Include="..\util\util-metro.vcxproj">
       <Project>{eff8144d-f91e-4bbd-b09b-d6db6b3a5512}</Project>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -72,7 +71,7 @@
   <ItemGroup>
     <ResJson Include="Assets\Assets.res.json" />
     <ResJson Include="Assets\Assets.Xaml.res.json" />
-    <None Include="..\core\noesis\Bin\uwp-$(XPlatform)\Noesis.dll">
+    <None Include="$(NoesisDll)">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Assets\TestAssets.res.json">
