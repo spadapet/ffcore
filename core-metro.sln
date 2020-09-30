@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.zlib", "vendor\zlib-me
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Proto", "proto\proto-metro.vcxproj", "{5029024D-8FFF-4ECF-94FC-3ACAD731CAA1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.interactivity", "vendor\noesis-interactivity-metro.vcxproj", "{72FE8809-CC45-472A-9BCD-0B76A2EE6830}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -71,6 +73,14 @@ Global
 		{5029024D-8FFF-4ECF-94FC-3ACAD731CAA1}.Release|x64.ActiveCfg = Release|x64
 		{5029024D-8FFF-4ECF-94FC-3ACAD731CAA1}.Release|x64.Build.0 = Release|x64
 		{5029024D-8FFF-4ECF-94FC-3ACAD731CAA1}.Release|x64.Deploy.0 = Release|x64
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Debug|Win32.ActiveCfg = Debug|Win32
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Debug|Win32.Build.0 = Debug|Win32
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Debug|x64.ActiveCfg = Debug|x64
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Debug|x64.Build.0 = Debug|x64
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Release|Win32.ActiveCfg = Release|Win32
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Release|Win32.Build.0 = Release|Win32
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Release|x64.ActiveCfg = Release|x64
+		{72FE8809-CC45-472A-9BCD-0B76A2EE6830}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

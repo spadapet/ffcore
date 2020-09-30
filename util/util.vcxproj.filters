@@ -91,9 +91,6 @@
     <Filter Include="UI\Internal">
       <UniqueIdentifier>{de092403-de66-4be4-aa80-9b7eaded0c51}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UI\Interactivity">
-      <UniqueIdentifier>{26e97924-c196-409b-b14b-df8c235d5f11}</UniqueIdentifier>
-    </Filter>
     <Filter Include="UI\Utility">
       <UniqueIdentifier>{1e1b5c96-f4b7-45f7-a3c2-7424ff964fe2}</UniqueIdentifier>
     </Filter>
@@ -562,138 +559,6 @@
     </ClCompile>
     <ClCompile Include="UI\XamlGlobalHelper.cpp">
       <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\App.Interactivity.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\AttachableObject.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\Behavior.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\BehaviorCollection.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\ChangePropertyAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\CollectionFilterBehavior.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\CollectionSortBehavior.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\ComparisonCondition.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\ComparisonLogic.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\ConditionalExpression.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\ConditionBehavior.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\ControlStoryboardAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\DataBindingHelper.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\DataTrigger.Interactivity.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\EventTrigger.Interactivity.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\EventTriggerBase.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\FilterPredicate.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\GamepadTrigger.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\GoToStateAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\Interaction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\InvokeCommandAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\KeyTrigger.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\LaunchUriOrFileAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\MouseDragElementBehavior.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\PlaySoundAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\PropertyChangedTrigger.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\RemoveElementAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\SelectAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\SelectAllAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\SetFocusAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\SortComparer.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\StoryboardAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\StoryboardCompletedTrigger.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\StoryboardTrigger.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\StringFilterPredicate.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\StringSortComparer.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\StyleInteraction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\TargetedTriggerAction.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\TimerTrigger.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\TranslateZoomRotateBehavior.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\TriggerAction.Interactivity.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\TriggerActionCollection.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\TriggerBase.Interactivity.cpp">
-      <Filter>UI\Interactivity</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Interactivity\TriggerCollection.cpp">
-      <Filter>UI\Interactivity</Filter>
     </ClCompile>
     <ClCompile Include="UI\Utility\Converters.cpp">
       <Filter>UI\Utility</Filter>
@@ -1272,12 +1137,6 @@
     </ClInclude>
     <ClInclude Include="UI\XamlGlobalHelper.h">
       <Filter>UI</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\Interactivity\ComparisonLogic.h">
-      <Filter>UI\Interactivity</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\Interactivity\DataBindingHelper.h">
-      <Filter>UI\Interactivity</Filter>
     </ClInclude>
     <ClInclude Include="UI\Utility\Converters.h">
       <Filter>UI\Utility</Filter>

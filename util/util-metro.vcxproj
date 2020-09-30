@@ -54,6 +54,9 @@
     <ProjectReference Include="..\vendor\libpng-metro.vcxproj">
       <Project>{ca264a31-ade3-4721-b483-8082b1386f13}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\vendor\noesis-interactivity-metro.vcxproj">
+      <Project>{72fe8809-cc45-472a-9bcd-0b76a2ee6830}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\vendor\zlib-metro.vcxproj">
       <Project>{839d0c2a-e8cc-4fd6-aa57-3a9cf3f700ac}</Project>
     </ProjectReference>
@@ -168,50 +171,6 @@
     <ClCompile Include="Types\Hash.cpp" />
     <ClCompile Include="Types\MemAlloc.cpp" />
     <ClCompile Include="Types\Timer.cpp" />
-    <ClCompile Include="UI\Interactivity\App.Interactivity.cpp" />
-    <ClCompile Include="UI\Interactivity\AttachableObject.cpp" />
-    <ClCompile Include="UI\Interactivity\Behavior.cpp" />
-    <ClCompile Include="UI\Interactivity\BehaviorCollection.cpp" />
-    <ClCompile Include="UI\Interactivity\ChangePropertyAction.cpp" />
-    <ClCompile Include="UI\Interactivity\CollectionFilterBehavior.cpp" />
-    <ClCompile Include="UI\Interactivity\CollectionSortBehavior.cpp" />
-    <ClCompile Include="UI\Interactivity\ComparisonCondition.cpp" />
-    <ClCompile Include="UI\Interactivity\ComparisonLogic.cpp" />
-    <ClCompile Include="UI\Interactivity\ConditionalExpression.cpp" />
-    <ClCompile Include="UI\Interactivity\ConditionBehavior.cpp" />
-    <ClCompile Include="UI\Interactivity\ControlStoryboardAction.cpp" />
-    <ClCompile Include="UI\Interactivity\DataBindingHelper.cpp" />
-    <ClCompile Include="UI\Interactivity\DataTrigger.Interactivity.cpp" />
-    <ClCompile Include="UI\Interactivity\EventTrigger.Interactivity.cpp" />
-    <ClCompile Include="UI\Interactivity\EventTriggerBase.cpp" />
-    <ClCompile Include="UI\Interactivity\FilterPredicate.cpp" />
-    <ClCompile Include="UI\Interactivity\GamepadTrigger.cpp" />
-    <ClCompile Include="UI\Interactivity\GoToStateAction.cpp" />
-    <ClCompile Include="UI\Interactivity\Interaction.cpp" />
-    <ClCompile Include="UI\Interactivity\InvokeCommandAction.cpp" />
-    <ClCompile Include="UI\Interactivity\KeyTrigger.cpp" />
-    <ClCompile Include="UI\Interactivity\LaunchUriOrFileAction.cpp" />
-    <ClCompile Include="UI\Interactivity\MouseDragElementBehavior.cpp" />
-    <ClCompile Include="UI\Interactivity\PlaySoundAction.cpp" />
-    <ClCompile Include="UI\Interactivity\PropertyChangedTrigger.cpp" />
-    <ClCompile Include="UI\Interactivity\RemoveElementAction.cpp" />
-    <ClCompile Include="UI\Interactivity\SelectAction.cpp" />
-    <ClCompile Include="UI\Interactivity\SelectAllAction.cpp" />
-    <ClCompile Include="UI\Interactivity\SetFocusAction.cpp" />
-    <ClCompile Include="UI\Interactivity\SortComparer.cpp" />
-    <ClCompile Include="UI\Interactivity\StoryboardAction.cpp" />
-    <ClCompile Include="UI\Interactivity\StoryboardCompletedTrigger.cpp" />
-    <ClCompile Include="UI\Interactivity\StoryboardTrigger.cpp" />
-    <ClCompile Include="UI\Interactivity\StringFilterPredicate.cpp" />
-    <ClCompile Include="UI\Interactivity\StringSortComparer.cpp" />
-    <ClCompile Include="UI\Interactivity\StyleInteraction.cpp" />
-    <ClCompile Include="UI\Interactivity\TargetedTriggerAction.cpp" />
-    <ClCompile Include="UI\Interactivity\TimerTrigger.cpp" />
-    <ClCompile Include="UI\Interactivity\TranslateZoomRotateBehavior.cpp" />
-    <ClCompile Include="UI\Interactivity\TriggerAction.Interactivity.cpp" />
-    <ClCompile Include="UI\Interactivity\TriggerActionCollection.cpp" />
-    <ClCompile Include="UI\Interactivity\TriggerBase.Interactivity.cpp" />
-    <ClCompile Include="UI\Interactivity\TriggerCollection.cpp" />
     <ClCompile Include="UI\Internal\XamlFontProvider.cpp" />
     <ClCompile Include="UI\Internal\XamlKeyMap.cpp" />
     <ClCompile Include="UI\Internal\XamlRenderDevice11.cpp" />
@@ -402,8 +361,6 @@
     <ClInclude Include="Types\SmartPtr.h" />
     <ClInclude Include="Types\Timer.h" />
     <ClInclude Include="Types\Vector.h" />
-    <ClInclude Include="UI\Interactivity\ComparisonLogic.h" />
-    <ClInclude Include="UI\Interactivity\DataBindingHelper.h" />
     <ClInclude Include="UI\Internal\XamlFontProvider.h" />
     <ClInclude Include="UI\Internal\XamlKeyMap.h" />
     <ClInclude Include="UI\Internal\XamlRenderDevice11.h" />

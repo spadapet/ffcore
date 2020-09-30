@@ -565,7 +565,7 @@ void ff::XamlGlobalState::StaticSoftwareKeyboardCallback(void* user, Noesis::UIE
 	globals->SoftwareKeyboardCallback(focused, open);
 }
 
-void NsRegisterReflectionAppInteractivity();
+extern "C" void NsRegisterReflectionAppInteractivity();
 
 void ff::XamlGlobalState::RegisterComponents()
 {

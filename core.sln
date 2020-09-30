@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.zlib", "vendor\zlib-de
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proto", "proto\proto.vcxproj", "{88617B7D-BE22-4835-A8D3-140518425CE9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util.interactivity", "vendor\noesis-interactivity.vcxproj", "{88455D87-AC7A-474C-875A-5F6DC86D1BDD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -87,6 +89,14 @@ Global
 		{88617B7D-BE22-4835-A8D3-140518425CE9}.Release|Win32.Build.0 = Release|Win32
 		{88617B7D-BE22-4835-A8D3-140518425CE9}.Release|x64.ActiveCfg = Release|x64
 		{88617B7D-BE22-4835-A8D3-140518425CE9}.Release|x64.Build.0 = Release|x64
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Debug|Win32.Build.0 = Debug|Win32
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Debug|x64.ActiveCfg = Debug|x64
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Debug|x64.Build.0 = Debug|x64
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Release|Win32.ActiveCfg = Release|Win32
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Release|Win32.Build.0 = Release|Win32
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Release|x64.ActiveCfg = Release|x64
+		{88455D87-AC7A-474C-875A-5F6DC86D1BDD}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
