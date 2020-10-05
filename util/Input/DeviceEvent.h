@@ -89,13 +89,3 @@ namespace ff
 
 	UTIL_API ComPtr<IDeviceEventSink> CreateDeviceEventSink();
 }
-
-MAKE_POD(ff::DeviceEvent);
-MAKE_POD(ff::DeviceEventKeyPress);
-MAKE_POD(ff::DeviceEventKeyChar);
-MAKE_POD(ff::DeviceEventMousePress);
-MAKE_POD(ff::DeviceEventMouseMove);
-MAKE_POD(ff::DeviceEventMouseWheelX);
-MAKE_POD(ff::DeviceEventMouseWheelY);
-MAKE_POD(ff::DeviceEventTouchPress);
-MAKE_POD(ff::DeviceEventTouchMove);

@@ -6,9 +6,9 @@ namespace ff
 	class PointType
 	{
 	public:
-		PointType();
+		PointType() = default;
+		PointType(const PointType<T>& rhs) = default;
 		PointType(T tx, T ty);
-		PointType(const PointType<T>& rhs);
 
 		static PointType<T> Zeros();
 		static PointType<T> Ones();
@@ -23,7 +23,7 @@ namespace ff
 
 		// operators
 
-		PointType<T>& operator=(const PointType<T>& rhs);
+		PointType<T>& operator=(const PointType<T>& rhs) = default;
 
 		bool operator==(const PointType<T>& rhs) const;
 		bool operator!=(const PointType<T>& rhs) const;
@@ -74,21 +74,9 @@ namespace ff
 }
 
 template<typename T>
-ff::PointType<T>::PointType()
-{
-}
-
-template<typename T>
 ff::PointType<T>::PointType(T tx, T ty)
 	: x(tx)
 	, y(ty)
-{
-}
-
-template<typename T>
-ff::PointType<T>::PointType(const PointType<T>& rhs)
-	: x(rhs.x)
-	, y(rhs.y)
 {
 }
 
@@ -102,14 +90,6 @@ template<typename T>
 ff::PointType<T> ff::PointType<T>::Ones()
 {
 	return PointType<T>((T)1, (T)1);
-}
-
-template<typename T>
-ff::PointType<T>& ff::PointType<T>::operator=(const PointType<T>& rhs)
-{
-	x = rhs.x;
-	y = rhs.y;
-	return *this;
 }
 
 template<typename T>
@@ -238,10 +218,3 @@ ff::PointType<T> ff::PointType<T>::operator/(const PointType<T>& rhs) const
 {
 	return PointType<T>(x / rhs.x, y / rhs.y);
 }
-
-MAKE_POD(ff::PointInt);
-MAKE_POD(ff::PointShort);
-MAKE_POD(ff::PointFloat);
-MAKE_POD(ff::PointDouble);
-MAKE_POD(ff::PointSize);
-MAKE_POD(ff::PointFixedInt);

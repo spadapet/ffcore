@@ -45,6 +45,9 @@
     <ClCompile Include="Value\ValueTest.cpp">
       <Filter>Value</Filter>
     </ClCompile>
+    <ClCompile Include="Dict\MapPerf.cpp">
+      <Filter>Dict</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

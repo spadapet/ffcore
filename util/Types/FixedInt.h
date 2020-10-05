@@ -6,12 +6,13 @@ namespace ff
 	class FixedInt
 	{
 	public:
-		inline FixedInt();
-		inline FixedInt(const FixedInt& rhs);
+		inline FixedInt() = default;
+		inline FixedInt(const FixedInt& rhs) = default;
 		inline FixedInt(int data);
 		inline FixedInt(float data);
 		inline FixedInt(double data);
 		inline FixedInt(bool data);
+		inline FixedInt(unsigned int data);
 		inline FixedInt(unsigned long long data);
 		inline FixedInt(long double data);
 
@@ -76,15 +77,6 @@ namespace ff
 	};
 }
 
-ff::FixedInt::FixedInt()
-{
-}
-
-ff::FixedInt::FixedInt(const ff::FixedInt& rhs)
-	: _data(rhs._data)
-{
-}
-
 ff::FixedInt::FixedInt(int data)
 	: _data(data << FIXED_COUNT)
 {
@@ -102,6 +94,11 @@ ff::FixedInt::FixedInt(double data)
 
 ff::FixedInt::FixedInt(bool data)
 	: _data((int)data << FIXED_COUNT)
+{
+}
+
+ff::FixedInt::FixedInt(unsigned int data)
+	: _data((int)(data << FIXED_COUNT))
 {
 }
 

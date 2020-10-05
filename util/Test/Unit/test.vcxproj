@@ -24,6 +24,7 @@
   <ItemGroup>
     <ClCompile Include="Dict\DictPerf.cpp" />
     <ClCompile Include="Dict\JsonTest.cpp" />
+    <ClCompile Include="Dict\MapPerf.cpp" />
     <ClCompile Include="Dict\SmallDictTest.cpp" />
     <ClCompile Include="Entity\EntityTest.cpp" />
     <ClCompile Include="Globals\ProgramGlobalsTest.cpp" />

@@ -49,8 +49,3 @@ namespace ff
 		UTIL_API static const std::array<D3D11_INPUT_ELEMENT_DESC, 8>& GetLayout11();
 	};
 }
-
-MAKE_POD(ff::LineGeometryInput);
-MAKE_POD(ff::CircleGeometryInput);
-MAKE_POD(ff::TriangleGeometryInput);
-MAKE_POD(ff::SpriteGeometryInput);

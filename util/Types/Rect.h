@@ -6,9 +6,9 @@ namespace ff
 	class RectType
 	{
 	public:
-		RectType();
+		RectType() = default;
 		RectType(T tLeft, T tTop, T tRight, T tBottom);
-		RectType(const RectType<T>& rhs);
+		RectType(const RectType<T>& rhs) = default;
 		RectType(const PointType<T>& rhs1, const PointType<T>& rhs2);
 		explicit RectType(const PointType<T>& rhs);
 
@@ -75,7 +75,7 @@ namespace ff
 
 		// operators
 
-		RectType<T>& operator=(const RectType<T>& rhs);
+		RectType<T>& operator=(const RectType<T>& rhs) = default;
 		bool operator==(const RectType<T>& rhs) const;
 		bool operator!=(const RectType<T>& rhs) const;
 
@@ -121,23 +121,12 @@ namespace ff
 }
 
 template<typename T>
-ff::RectType<T>::RectType()
-{
-}
-
-template<typename T>
 ff::RectType<T>::RectType(T tLeft, T tTop, T tRight, T tBottom)
 	: left(tLeft)
 	, top(tTop)
 	, right(tRight)
 	, bottom(tBottom)
 {
-}
-
-template<typename T>
-ff::RectType<T>::RectType(const RectType<T>& rhs)
-{
-	*this = rhs;
 }
 
 template<typename T>
@@ -664,17 +653,6 @@ ff::RectType<T> ff::RectType<T>::Interpolate(const RectType<T>& rhs, double valu
 }
 
 template<typename T>
-ff::RectType<T>& ff::RectType<T>::operator=(const RectType<T>& rhs)
-{
-	if (this != &rhs)
-	{
-		std::memcpy(this, &rhs, sizeof(rhs));
-	}
-
-	return *this;
-}
-
-template<typename T>
 bool ff::RectType<T>::operator==(const RectType<T>& rhs) const
 {
 	return std::memcmp(this, &rhs, sizeof(rhs)) == 0;
@@ -751,10 +729,3 @@ ff::RectType<T> ff::RectType<T>::operator/(T rhs) const
 {
 	return RectType<T>(left / rhs, top / rhs, right / rhs, bottom / rhs);
 }
-
-MAKE_POD(ff::RectInt);
-MAKE_POD(ff::RectShort);
-MAKE_POD(ff::RectFloat);
-MAKE_POD(ff::RectDouble);
-MAKE_POD(ff::RectSize);
-MAKE_POD(ff::RectFixedInt);

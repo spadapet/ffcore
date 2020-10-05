@@ -30,18 +30,17 @@ namespace ff
 			}
 		};
 
-		template<typename T>
-		class ConstructTypeBase
+		class VectorTypeHelper
 		{
 		protected:
-			template<class... Args>
-			static typename std::enable_if_t<!std::is_trivially_constructible<T, Args...>::value> ConstructInPlace(T* data, Args&&... args)
+			template<class T2, class... Args>
+			static typename std::enable_if_t<!std::is_trivially_constructible<T2, Args...>::value> ConstructInPlace(T2* data, Args&&... args)
 			{
-				::new(data) T(std::forward<Args>(args)...);
+				::new(data) T2(std::forward<Args>(args)...);
 			}
 
-			template<class... Args>
-			static typename std::enable_if_t<std::is_trivially_constructible<T, Args...>::value> ConstructInPlace(T* data, Args&&... args)
+			template<class T2, class... Args>
+			static typename std::enable_if_t<std::is_trivially_constructible<T2, Args...>::value> ConstructInPlace(T2* data, Args&&... args)
 			{
 				// No constructor
 			}
@@ -204,7 +203,7 @@ namespace ff
 	template<typename T, size_t StackSize = 0, typename Allocator = MemAllocator<T>>
 	class Vector
 		: private ff::details::StackVectorBase<T, StackSize>
-		, private ff::details::ConstructTypeBase<T>
+		, private ff::details::VectorTypeHelper
 	{
 		typedef Vector<T, StackSize, Allocator> MyType;
 		typedef PushCollector<T, MyType> MyCollector;

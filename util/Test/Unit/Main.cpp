@@ -4,6 +4,7 @@
 #include "MainUtilInclude.h"
 
 bool DictPerfTest();
+bool MapPerfTest();
 
 bool EntityTest();
 bool FixedIntTest();
@@ -37,6 +38,7 @@ int wmain(int argc, wchar_t *argv[])
 	if (runPerfTests)
 	{
 		assertRetVal(DictPerfTest(), 1);
+		assertRetVal(MapPerfTest(), 1);
 	}
 	else
 	{
