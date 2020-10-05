@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Types/Event.h"
-
 namespace ff
 {
 	class AppGlobals;

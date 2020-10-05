@@ -1,7 +1,6 @@
 #pragma once
 
 #include "State/State.h"
-#include "Types/Event.h"
 
 namespace Noesis
 {

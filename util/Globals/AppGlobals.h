@@ -2,7 +2,6 @@
 
 #include "Dict/Dict.h"
 #include "Globals/AppGlobalsHelper.h"
-#include "Types/Event.h"
 #include "Types/Timer.h"
 #include "Windows/Handles.h"
 
@@ -97,7 +96,7 @@ namespace ff
 		UTIL_API void SetState(StringRef name, const Dict& dict);
 
 		// Events
-		UTIL_API ff::Event<bool>& ActiveChanged();
+		UTIL_API entt::sink<void(bool)> ActiveChangedSink();
 
 	protected:
 		// Event handlers
@@ -204,7 +203,7 @@ namespace ff
 		GlobalTime _globalTime;
 
 		// Events
-		ff::Event<bool> _activeChangedEvent;
+		entt::sigh<void(bool)> _activeChangedEvent;
 
 		// Graphic commands
 		class PendingGraphCommands

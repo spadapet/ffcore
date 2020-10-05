@@ -336,7 +336,7 @@ void ff::AppGlobals::SetState(StringRef name, const Dict& dict)
 	}
 }
 
-ff::Event<bool>& ff::AppGlobals::ActiveChanged()
+entt::sink<void(bool)> ff::AppGlobals::ActiveChangedSink()
 {
 	return _activeChangedEvent;
 }
@@ -403,7 +403,7 @@ void ff::AppGlobals::OnActiveChanged()
 		bool active = GetAppActive();
 		_gameLoopDispatch->Post([this, active]()
 			{
-				_activeChangedEvent.Notify(active);
+				_activeChangedEvent.publish(active);
 			});
 	}
 }

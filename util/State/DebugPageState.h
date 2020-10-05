@@ -23,7 +23,7 @@ namespace ff
 		UTIL_API DebugPageState(AppGlobals* globals);
 		UTIL_API virtual ~DebugPageState();
 
-		UTIL_API ff::Event<void>& CustomDebugEvent();
+		UTIL_API entt::sink<void(void)> CustomDebugSink();
 
 		// State
 		virtual std::shared_ptr<State> Advance(AppGlobals* globals) override;
@@ -57,7 +57,7 @@ namespace ff
 		size_t _debugPage;
 		ff::AppGlobals* _globals;
 		ff::InputDevices _inputDevices;
-		ff::Event<void> _customDebugEvent;
+		entt::sigh<void(void)> _customDebugEvent;
 		ff::TypedResource<ff::ISpriteFont> _font;
 		ff::TypedResource<ff::IInputMapping> _input;
 		std::unique_ptr<ff::IRenderer> _render;

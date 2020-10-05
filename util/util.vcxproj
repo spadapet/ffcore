@@ -12,9 +12,10 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\DirectXTex\DirectXTex</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\entt\src</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\libpng</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\libpng-inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(FFCoreRoot)vendor\zlib</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(NoesisRoot)Include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(NoesisRoot)Src\Packages\App\Interactivity\Include</AdditionalIncludeDirectories>
     </ClCompile>
@@ -161,7 +162,6 @@
     <ClCompile Include="Thread\ThreadDispatch.cpp" />
     <ClCompile Include="Thread\ThreadPool.cpp" />
     <ClCompile Include="Thread\ThreadUtil.cpp" />
-    <ClCompile Include="Types\Event.cpp" />
     <ClCompile Include="Types\Hash.cpp" />
     <ClCompile Include="Types\MemAlloc.cpp" />
     <ClCompile Include="Types\Timer.cpp" />
@@ -339,7 +339,6 @@
     <ClInclude Include="Thread\ThreadDispatch.h" />
     <ClInclude Include="Thread\ThreadPool.h" />
     <ClInclude Include="Thread\ThreadUtil.h" />
-    <ClInclude Include="Types\Event.h" />
     <ClInclude Include="Types\FixedInt.h" />
     <ClInclude Include="Types\Hash.h" />
     <ClInclude Include="Types\ItemCollector.h" />

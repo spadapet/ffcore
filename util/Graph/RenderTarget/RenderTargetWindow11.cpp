@@ -49,7 +49,7 @@ public:
 
 	// IRenderTargetWindow
 	virtual bool SetSize(const ff::SwapChainSize& size) override;
-	virtual ff::Event<ff::PointInt, double, int>& SizeChanged() override;
+	virtual entt::sink<void(ff::PointInt, double, int)> SizeChangedSink() override;
 	virtual bool Present(bool vsync) override;
 	virtual bool CanSetFullScreen() const override;
 	virtual bool IsFullScreen() override;
@@ -73,7 +73,7 @@ private:
 	ff::ComPtr<IDXGISwapChainX> _swapChain;
 	ff::ComPtr<ID3D11Texture2D> _backBuffer;
 	ff::ComPtr<ID3D11RenderTargetView> _target;
-	ff::Event<ff::PointInt, double, int> _sizeChangedEvent;
+	entt::sigh<void(ff::PointInt, double, int)> _sizeChangedEvent;
 	ff::Mutex _hwndMutex;
 	HWND _hwnd;
 	HWND _hwndTop;
@@ -259,12 +259,12 @@ bool RenderTargetWindow11::SetSize(const ff::SwapChainSize& size)
 
 	assertHrRetVal(_swapChain->SetRotation(displayRotation), false);
 
-	_sizeChangedEvent.Notify(GetBufferSize(), GetDpiScale(), GetRotatedDegrees());
+	_sizeChangedEvent.publish(GetBufferSize(), GetDpiScale(), GetRotatedDegrees());
 
 	return true;
 }
 
-ff::Event<ff::PointInt, double, int>& RenderTargetWindow11::SizeChanged()
+entt::sink<void(ff::PointInt, double, int)> RenderTargetWindow11::SizeChangedSink()
 {
 	return _sizeChangedEvent;
 }

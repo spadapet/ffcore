@@ -21,7 +21,7 @@ namespace ff
 		inline operator double() const;
 		inline operator bool() const;
 
-		inline FixedInt& operator=(const FixedInt& rhs);
+		inline FixedInt& operator=(const FixedInt& rhs) = default;
 
 		inline bool operator!() const;
 		inline bool operator==(const FixedInt& rhs) const;
@@ -130,12 +130,6 @@ ff::FixedInt::operator double() const
 ff::FixedInt::operator bool() const
 {
 	return _data != 0;
-}
-
-ff::FixedInt& ff::FixedInt::operator=(const ff::FixedInt& rhs)
-{
-	_data = rhs._data;
-	return *this;
 }
 
 bool ff::FixedInt::operator!() const

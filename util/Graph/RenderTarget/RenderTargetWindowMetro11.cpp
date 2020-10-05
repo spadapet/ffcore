@@ -46,7 +46,7 @@ public:
 	// IRenderTargetSwapChain
 	virtual bool Present(bool vsync) override;
 	virtual bool SetSize(const ff::SwapChainSize& size) override;
-	virtual ff::Event<ff::PointInt, double, int>& SizeChanged() override;
+	virtual entt::sink<void(ff::PointInt, double, int)> SizeChangedSink() override;
 
 	// IRenderTargetWindow
 	virtual bool CanSetFullScreen() const override;
@@ -84,7 +84,7 @@ private:
 	Windows::UI::Xaml::Window^ _window;
 	KeyEvents^ _keyEvents;
 
-	ff::Event<ff::PointInt, double, int> _sizeChangedEvent;
+	entt::sigh<void(ff::PointInt, double, int)> _sizeChangedEvent;
 	ff::SwapChainSize _size;
 	bool _cachedFullScreenMode;
 	bool _fullScreenMode;
@@ -289,12 +289,12 @@ bool RenderTargetWindowMetro11::SetSize(const ff::SwapChainSize& size)
 	assertHrRetVal(_swapChain->SetRotation(displayRotation), false);
 	assertHrRetVal(_swapChain->SetMatrixTransform(&inverseScale), false);
 
-	_sizeChangedEvent.Notify(GetBufferSize(), GetDpiScale(), GetRotatedDegrees());
+	_sizeChangedEvent.publish(GetBufferSize(), GetDpiScale(), GetRotatedDegrees());
 
 	return true;
 }
 
-ff::Event<ff::PointInt, double, int>& RenderTargetWindowMetro11::SizeChanged()
+entt::sink<void(ff::PointInt, double, int)> RenderTargetWindowMetro11::SizeChangedSink()
 {
 	return _sizeChangedEvent;
 }

@@ -16,23 +16,12 @@ ff::XamlViewState::XamlViewState(std::shared_ptr<XamlView> view, ff::IRenderTarg
 	ff::ComPtr<ff::IRenderTargetSwapChain> swapChainTarget;
 	if (swapChainTarget.QueryFrom(_target))
 	{
-		_sizeChangedCookie = swapChainTarget->SizeChanged().Add([this](ff::PointInt size, double scale, int rotate)
-			{
-				_view->SetSize(size, scale, rotate);
-			});
+		_sizeChangedCookie = swapChainTarget->SizeChangedSink().connect<&ff::XamlViewState::OnTargetSizeChanged>(this);
 	}
 }
 
 ff::XamlViewState::~XamlViewState()
 {
-	if (_sizeChangedCookie)
-	{
-		ff::ComPtr<ff::IRenderTargetSwapChain> swapChainTarget;
-		if (swapChainTarget.QueryFrom(_target))
-		{
-			swapChainTarget->SizeChanged().Remove(_sizeChangedCookie);
-		}
-	}
 }
 
 ff::XamlView* ff::XamlViewState::GetView() const
@@ -66,4 +55,9 @@ ff::State::Cursor ff::XamlViewState::GetCursor()
 	case Noesis::Cursor_Hand:
 		return ff::State::Cursor::Hand;
 	}
+}
+
+void ff::XamlViewState::OnTargetSizeChanged(ff::PointInt size, double scale, int rotate)
+{
+	_view->SetSize(size, scale, rotate);
 }

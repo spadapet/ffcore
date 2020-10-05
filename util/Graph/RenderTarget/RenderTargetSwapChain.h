@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Graph/RenderTarget/RenderTarget.h"
-#include "Types/Event.h"
 
 namespace ff
 {
@@ -13,6 +12,6 @@ namespace ff
 	public:
 		virtual bool Present(bool vsync) = 0;
 		virtual bool SetSize(const ff::SwapChainSize& size) = 0;
-		virtual ff::Event<ff::PointInt, double, int>& SizeChanged() = 0; // bufferPixelSize, dpiScale, rotation
+		virtual entt::sink<void(ff::PointInt, double, int)> SizeChangedSink() = 0; // bufferPixelSize, dpiScale, rotation
 	};
 }

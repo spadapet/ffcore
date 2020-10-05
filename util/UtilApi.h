@@ -18,6 +18,7 @@
 #include "Windows/WindowsPch.h"
 #include "Graph/DirectXPch.h"
 #include <NoesisPCH.h>
+#include <entt/entt.hpp>
 
 // Internal basic stuff (order matters)
 

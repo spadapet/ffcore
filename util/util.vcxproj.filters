@@ -446,9 +446,6 @@
     <ClCompile Include="Entity\Entity.cpp">
       <Filter>Entity</Filter>
     </ClCompile>
-    <ClCompile Include="Types\Event.cpp">
-      <Filter>Types</Filter>
-    </ClCompile>
     <ClCompile Include="Globals\AppGlobalsHelper.cpp">
       <Filter>Globals</Filter>
     </ClCompile>
@@ -1047,9 +1044,6 @@
     </ClInclude>
     <ClInclude Include="Value\HashValue.h">
       <Filter>Value</Filter>
-    </ClInclude>
-    <ClInclude Include="Types\Event.h">
-      <Filter>Types</Filter>
     </ClInclude>
     <ClInclude Include="Globals\AppGlobalsHelper.h">
       <Filter>Globals</Filter>

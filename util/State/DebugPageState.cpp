@@ -84,7 +84,7 @@ void ff::DebugPageState::AdvanceInput(AppGlobals* globals)
 
 	if (_input->HasStartEvent(EVENT_CUSTOM) && !_input->HasStartEvent(EVENT_PREV_PAGE))
 	{
-		_customDebugEvent.Notify();
+		_customDebugEvent.publish();
 	}
 	else if (_input->HasStartEvent(EVENT_TOGGLE_NUMBERS) && !_input->HasStartEvent(EVENT_NEXT_PAGE))
 	{
@@ -337,7 +337,7 @@ void ff::DebugPageState::DebugToggle(size_t page, size_t index)
 	}
 }
 
-ff::Event<void>& ff::DebugPageState::CustomDebugEvent()
+entt::sink<void(void)> ff::DebugPageState::CustomDebugSink()
 {
 	return _customDebugEvent;
 }

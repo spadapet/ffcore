@@ -392,13 +392,13 @@ void ff::Module::RebuildResourcesFromSourceAsync()
 			if (newResources->IsValid())
 			{
 				_resources = *newResources;
-				_resourcesRebuiltEvent.Notify(this);
+				_resourcesRebuiltEvent.publish(this);
 			}
 		});
 #endif
 }
 
-ff::Event<ff::Module*>& ff::Module::GetResourceRebuiltEvent()
+entt::sink<void(ff::Module*)> ff::Module::GetResourceRebuiltSink()
 {
 	return _resourcesRebuiltEvent;
 }

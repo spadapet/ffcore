@@ -1,7 +1,6 @@
 #pragma once
 
 #include "State/State.h"
-#include "Types/Event.h"
 
 namespace ff
 {
@@ -22,9 +21,11 @@ namespace ff
 		virtual Cursor GetCursor() override;
 
 	private:
+		void OnTargetSizeChanged(ff::PointInt size, double scale, int rotate);
+
 		std::shared_ptr<XamlView> _view;
 		ff::ComPtr<ff::IRenderTarget> _target;
 		ff::ComPtr<ff::IRenderDepth> _depth;
-		ff::EventCookie _sizeChangedCookie;
+		entt::connection _sizeChangedCookie;
 	};
 }
