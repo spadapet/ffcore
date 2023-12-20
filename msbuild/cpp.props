@@ -2,7 +2,7 @@
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <VsRelease Condition=" '$(VsRelease)' == '' ">16</VsRelease>
-    <WinSdkRelease10 Condition=" '$(WinSdkRelease10)' == '' ">18362</WinSdkRelease10>
+    <WinSdkRelease10 Condition=" '$(WinSdkRelease10)' == '' ">19041</WinSdkRelease10>
     <FFCoreRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), ..))</FFCoreRoot>
     <DevRoot Condition=" '$(DevRoot)' == '' ">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::ValueOrDefault($([MSBuild]::GetDirectoryNameOfFileAbove($(FFCoreRoot).., .gitmodules)), $(FFCoreRoot)))))</DevRoot>
     <OutRoot Condition=" '$(OutRoot)' == '' ">$(DevRoot)out\</OutRoot>
@@ -22,7 +22,7 @@
     <DefaultLanguage Condition=" '$(DefaultLanguage)' == '' ">en-US</DefaultLanguage>
     <Keyword Condition=" '$(Keyword)' == '' ">Win32Proj</Keyword>
     <MinimumVisualStudioVersion Condition=" '$(MinimumVisualStudioVersion)' == '' ">$(VsRelease).0</MinimumVisualStudioVersion>
-    <PlatformToolset Condition=" '$(PlatformToolset)' == '' ">v142</PlatformToolset>
+    <PlatformToolset Condition=" '$(PlatformToolset)' == '' ">v143</PlatformToolset>
     <ProjectName Condition=" '$(ProjectName)' == '' ">$(MSBuildProjectName)</ProjectName>
     <RootNamespace Condition=" '$(RootNamespace)' == '' ">$(ProjectName)</RootNamespace>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
