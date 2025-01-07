@@ -49,6 +49,9 @@ public:
 	virtual int GetKeyButtonPressCount(int vk) const override;
 	virtual ff::String GetKeyButtonName(int vk) const override;
 
+	virtual void Vibrate(float low_value, float high_value, float time) override {}
+	virtual void VibrateStop() override {}
+
 private:
 	void CheckPresses(WORD prevButtons);
 	static int ChooseRandomConnectionCount();

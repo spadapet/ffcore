@@ -32,6 +32,9 @@ namespace ff
 		virtual bool GetKeyButton(int vk) const = 0;
 		virtual int GetKeyButtonPressCount(int vk) const = 0;
 		virtual String GetKeyButtonName(int vk) const = 0;
+
+		virtual void Vibrate(float low_value, float high_value, float time) = 0;
+		virtual void VibrateStop() = 0;
 	};
 
 #if METRO_APP

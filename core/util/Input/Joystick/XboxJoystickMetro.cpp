@@ -45,14 +45,25 @@ public:
 	virtual int GetKeyButtonPressCount(int vk) const override;
 	virtual ff::String GetKeyButtonName(int vk) const override;
 
+	virtual void Vibrate(float low_value, float high_value, float time) override;
+	virtual void VibrateStop() override;
+
 	// IXboxJoystick
 	virtual Windows::Gaming::Input::Gamepad^ GetGamepad() const override;
 	virtual void SetGamepad(Windows::Gaming::Input::Gamepad^ gamepad) override;
 
 private:
+	struct vibrate_t
+	{
+		float value{};
+		size_t count{};
+	};
+
 	void CheckPresses(const Windows::Gaming::Input::GamepadReading& prevState);
 	BYTE& GetPressed(int vk);
 	BYTE GetPressed(int vk) const;
+	void SetVibration();
+	static void InsertVibration(std::vector<vibrate_t>& dest, vibrate_t value);
 
 	static const int VK_GAMEPAD_FIRST = VK_GAMEPAD_A;
 	static const int VK_GAMEPAD_COUNT = VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT - VK_GAMEPAD_A + 1;
@@ -62,6 +73,10 @@ private:
 	float _triggerPressing[2];
 	ff::PointFloat _stickPressing[2];
 	BYTE _pressed[VK_GAMEPAD_COUNT];
+
+	std::vector<vibrate_t> _vibrate_low;
+	std::vector<vibrate_t> _vibrate_high;
+	Windows::Gaming::Input::GamepadVibration _current_vibration{};
 };
 
 BEGIN_INTERFACES(XboxJoystick)
@@ -116,11 +131,28 @@ void XboxJoystick::Advance()
 	}
 
 	CheckPresses(prevState);
+
+	// Update vibration
+	{
+		const auto remove_completed = [](std::vector<vibrate_t>& v)
+		{
+			const auto update_count = [](vibrate_t& i) { if (i.count) i.count--; };
+			const auto count_completed = [](const vibrate_t& i) { return !i.count; };
+
+			std::for_each(v.begin(), v.end(), update_count);
+			v.erase(std::remove_if(v.begin(), v.end(), count_completed), v.end());
+		};
+
+		remove_completed(_vibrate_low);
+		remove_completed(_vibrate_high);
+
+		SetVibration();
+	}
 }
 
 void XboxJoystick::KillPending()
 {
-	// state is polled, so there is never pending input
+	this->VibrateStop();
 }
 
 static bool WasPressed(
@@ -571,6 +603,89 @@ ff::String XboxJoystick::GetKeyButtonName(int vk) const
 	}
 
 	assertRetVal(false, ff::String());
+}
+
+void XboxJoystick::Vibrate(float low_value, float high_value, float time)
+{
+	noAssertRet(IsConnected());
+
+	constexpr float MAX_VIBRATE_TIME = 2.0f;
+
+	low_value = std::clamp(low_value, 0.0f, 1.0f);
+	high_value = std::clamp(high_value, 0.0f, 1.0f);
+	time = std::clamp(time, 0.0f, MAX_VIBRATE_TIME);
+
+	const size_t count = static_cast<size_t>(time * 60.0f);
+	InsertVibration(_vibrate_low, { low_value, count });
+	InsertVibration(_vibrate_high, { high_value, count });
+
+	this->SetVibration();
+}
+
+void XboxJoystick::VibrateStop()
+{
+	_vibrate_low.clear();
+	_vibrate_high.clear();
+	SetVibration();
+}
+
+void XboxJoystick::SetVibration()
+{
+	Windows::Gaming::Input::GamepadVibration vibration{};
+
+	if (_vibrate_low.size())
+  	{
+		vibration.LeftMotor = _vibrate_low.front().value;
+	}
+
+	if (_vibrate_high.size())
+	{
+		vibration.RightMotor = _vibrate_high.front().value;
+	}
+
+	if (vibration.LeftMotor != _current_vibration.LeftMotor ||
+		vibration.RightMotor != _current_vibration.RightMotor)
+	{
+		_current_vibration = vibration;
+
+		if (_gamepad)
+		{
+			_gamepad->Vibration = vibration;
+		}
+	}
+}
+
+void XboxJoystick::InsertVibration(std::vector<vibrate_t>& dest, vibrate_t value)
+{
+	noAssertRet(value.value && value.count);
+
+	// Function to find the insertion point using binary search
+	auto insert_pos = std::lower_bound(dest.begin(), dest.end(), value,
+		[](const vibrate_t& a, const vibrate_t& b)
+		{
+			return a.value > b.value; // highest values first
+		});
+
+	if (insert_pos != dest.end() && insert_pos->value == value.value)
+	{
+		// Combine with existing value
+		insert_pos->count = std::max(insert_pos->count, value.count);
+		return;
+	}
+
+	for (auto i = dest.begin(); i != insert_pos; i++)
+	{
+		if (i->count >= value.count)
+		{
+			// No need for this new value, an existing value will last longer
+			return;
+		}
+	}
+
+	insert_pos = dest.insert(insert_pos, value);
+
+	// Remove any lower values that would complete during the new higher value's lifetime
+	dest.erase(std::remove_if(insert_pos + 1, dest.end(), [&](const vibrate_t& v) { return v.count <= value.count; }), dest.end());
 }
 
 Windows::Gaming::Input::Gamepad^ XboxJoystick::GetGamepad() const
